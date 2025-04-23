@@ -1,0 +1,159 @@
+/* Home.css */
+
+#home {
+  font-family: Arial, sans-serif;
+  padding: 2rem;
+  background-color: #f9f9f9;
+}
+
+/* Header Styles */
+.home-header {
+  text-align: center;
+  padding: 1.5rem;
+  background-color: #4caf50;
+  color: white;
+}
+
+.home-header h1 {
+  font-size: 2.8rem;
+  margin: 0;
+}
+
+.home-header p {
+  font-size: 1.3rem;
+  margin-top: 0.5rem;
+}
+
+/* Image Carousel */
+.image-carousel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.carousel-container {
+  width: 100%;
+  max-width: 1400px; /* Limit maximum width */
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.carousel-image {
+  width: 100%; /* Full device width */
+  max-height: 500px; /* Adjust height for larger displays */
+  object-fit: cover; /* Ensures proper aspect ratio */
+  transition: transform 0.5s ease-in-out;
+}
+
+/* Banner Section */
+.banner-section {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 2rem;
+  background-color: #e7f5e2;
+  border-radius: 10px;
+}
+
+.banner-section h2 {
+  font-size: 2.5rem;
+  color: #2e7d32;
+}
+
+.banner-section p {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+/* Upload Section */
+.upload-section {
+  text-align: center;
+  padding: 2rem;
+  background-color: #ffffff;
+  margin-top: 2rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.upload-section h2 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.upload-section input[type="file"] {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid #4caf50;
+  border-radius: 5px;
+}
+
+.upload-section button {
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.upload-section button:hover {
+  background-color: #45a049;
+}
+
+.upload-section p {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: #4caf50;
+}
+
+/* Display Section */
+.report-preview-section {
+  margin-top: 2rem;
+}
+
+.report-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.report-item .icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+}
+
+.report-item .file-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.report-item .upload-time {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+.report-item .view-button {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.report-item .view-button:hover {
+  background-color: #45a049;
+}
+.report-item:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}
