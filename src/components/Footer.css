@@ -1,0 +1,86 @@
+.footer-container {
+    background-color: #1d1d1d;
+    color: white;
+    padding: 20px 10px; /* Compact padding */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: left;
+    width: 100%; /* Ensures full width */
+    margin: 0; /* Removes auto margin to stretch edge-to-edge */
+    border-top: 1px solid #444;
+    height: auto; /* Optional: Adjust height as needed */
+}
+
+
+.footer-top {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px; /* Reduced gap for a more compact look */
+    animation: fadeInUp 0.6s ease-in-out;
+}
+
+.footer-section {
+    flex: 1;
+    min-width: 200px; /* Adjusted to fit better with reduced spacing */
+}
+
+.footer-section h2,
+.footer-section h3 {
+    font-size: 16px; /* Slightly smaller font for premium minimalism */
+    margin-bottom: 8px;
+    color: white;
+}
+
+.footer-section p {
+    color: #ccc;
+    font-size: 13px; /* Slightly smaller font for compactness */
+    margin-bottom: 10px;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 5px; /* Reduced spacing for a neat alignment */
+}
+
+.footer-section ul li a {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 13px; /* Adjusted font size */
+    transition: color 0.3s ease;
+}
+
+.footer-section ul li a:hover {
+    color: #ffffff;
+}
+
+.footer-socials {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Compact social icons spacing */
+    margin-top: 10px; /* Reduced top margin */
+    animation: fadeIn 1s ease-in-out;
+}
+
+.social-icon {
+    font-size: 24px; /* Slightly smaller icons */
+    cursor: pointer;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.social-icon:hover {
+    transform: scale(1.1); /* Subtle hover effect */
+    color: #00ffae;
+}
+
+.footer-bottom {
+    text-align: center;
+    margin-top: 10px; /* Reduced margin for a tighter layout */
+    font-size: 11px; /* Compact font size */
+    color: #888;
+    animation: fadeIn 1.2s ease-in-out;
+}

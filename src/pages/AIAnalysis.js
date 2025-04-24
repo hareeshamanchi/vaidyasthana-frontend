@@ -1,46 +1,51 @@
-// src/pages/AIAnalysis.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './AIAnalysis.css';
 
 const AIAnalysis = () => {
   const [reports, setReports] = useState([]);
-  const [analysisResults, setAnalysisResults] = useState({});
-  const [loadingId, setLoadingId] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  // Fetch all uploaded reports
   useEffect(() => {
     axios.get('http://localhost:5000/upload/all')
       .then(res => setReports(res.data))
-      .catch(err => console.error(err));
+      .catch(err => console.error('Error fetching reports:', err));
   }, []);
 
-  const analyzeReport = async (reportId) => {
-    setLoadingId(reportId);
+  // Analyze all reports together
+  const analyzeAllReports = async () => {
+    setLoading(true);
     try {
-      const res = await axios.post(`http://localhost:5000/analysis/${reportId}`);
-      setAnalysisResults(prev => ({ ...prev, [reportId]: res.data }));
+      const res = await axios.post('http://localhost:5000/analyze/');
+      setAnalysisResult(res.data.analysis);
     } catch (err) {
-      setAnalysisResults(prev => ({ ...prev, [reportId]: { error: 'Analysis failed.' } }));
+      setAnalysisResult('❌ Analysis failed. Please try again.');
     }
-    setLoadingId(null);
+    setLoading(false);
   };
 
   return (
     <div className="ai-analysis-container">
       <h2>AI Analysis of Uploaded Reports</h2>
-      {reports.map(report => (
-        <div key={report._id} className="report-analysis-card">
-          <p><strong>{report.fileName}</strong></p>
-          <button onClick={() => analyzeReport(report._id)} disabled={loadingId === report._id}>
-            {loadingId === report._id ? 'Analyzing...' : 'Analyze'}
-          </button>
-          {analysisResults[report._id] && (
-            <pre className="analysis-output">
-              {JSON.stringify(analysisResults[report._id], null, 2)}
-            </pre>
-          )}
+
+      <ul>
+        {reports.map((report) => (
+          <li key={report._id}>{report.fileName}</li>
+        ))}
+      </ul>
+
+      <button onClick={analyzeAllReports} disabled={loading}>
+        {loading ? 'Analyzing All Reports...' : 'Analyze All'}
+      </button>
+
+      {analysisResult && (
+        <div className="analysis-output">
+          <h3>AI Combined Analysis</h3>
+          <pre>{analysisResult}</pre>
         </div>
-      ))}
+      )}
     </div>
   );
 };

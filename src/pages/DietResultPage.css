@@ -1,0 +1,120 @@
+.diet-page {
+    padding: 2rem;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, #f0f8ff, #dce3f3);
+    color: #2c3e50;
+    text-align: center;
+  }
+  
+  .coming-soon h1 {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    color: #0077b6;
+    animation: pulse 2s infinite;
+  }
+  
+  .coming-soon p {
+    font-size: 1.3rem;
+    color: #555;
+    margin-bottom: 2rem;
+  }
+  
+  .diet-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .spinning-dish {
+    width: 80px;
+    height: 80px;
+    border: 8px solid #0077b6;
+    border-top: 8px solid #ff6f61;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  .glowing-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ff6f61, #0077b6);
+    box-shadow: 0px 0px 15px #ff6f61;
+    animation: glow 1.5s ease-in-out infinite;
+  }
+  
+  .fade-in {
+    animation: fadeIn 2s ease-in-out;
+  }
+  
+  .slide-in {
+    animation: slideIn 1.5s ease;
+  }
+  
+  .zoom-in {
+    animation: zoomIn 1.5s ease-in-out;
+  }
+  
+  ul li {
+    margin: 0.8rem 0;
+    font-size: 1.2rem;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes glow {
+    0%, 100% {
+      opacity: 0.7;
+      box-shadow: 0px 0px 15px #ff6f61;
+    }
+    50% {
+      opacity: 1;
+      box-shadow: 0px 0px 25px #ff6f61;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes zoomIn {
+    from {
+      transform: scale(0.8);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+  

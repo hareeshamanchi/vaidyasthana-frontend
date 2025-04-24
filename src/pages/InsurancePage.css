@@ -1,0 +1,137 @@
+.insurance-container {
+    min-height: 100vh;
+    padding: 4rem 2rem;
+    background: linear-gradient(to bottom right, #e0f7fa, #e1bee7);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  .insurance-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  
+  .insurance-header p {
+    font-size: 1.2rem;
+    text-align: center;
+    max-width: 600px;
+    margin: auto;
+    color: #555;
+  }
+  
+  .sub-heading {
+    font-size: 1.1rem;
+    text-align: center;
+    color: #333;
+    margin-top: 1rem;
+  }
+  
+  .insurance-card {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .insurance-card h2 {
+    font-size: 2rem;
+    color: #3b3b98;
+    margin-bottom: 1rem;
+  }
+  
+  .ai-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0077cc;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .features-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 1.5rem;
+  }
+  
+  .features-list li {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .features-list li::before {
+    content: "✔";
+    margin-right: 10px;
+    color: #2575fc;
+  }
+  
+  .enroll-btn {
+    background: #6a11cb;
+    color: white;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-top: 2rem;
+    box-shadow: 0 6px 18px rgba(106, 17, 203, 0.3);
+  }
+  
+  .enroll-btn:hover {
+    background: #2575fc;
+    box-shadow: 0 8px 24px rgba(37, 117, 252, 0.35);
+  }
+  
+  .time-bar {
+    width: 80%;
+    height: 10px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 2rem auto;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    animation: progressAnim 5s ease-in-out infinite;
+  }
+  
+  @keyframes progressAnim {
+    0% {
+      width: 0%;
+    }
+    50% {
+      width: 60%;
+    }
+    100% {
+      width: 100%;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  

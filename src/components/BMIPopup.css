@@ -1,0 +1,135 @@
+/* Modal overlay styling */
+.bmi-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal styling */
+.bmi-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 350px;
+  position: relative;
+  text-align: center;
+}
+
+/* Close button styling */
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* Input fields styling */
+.bmi-modal input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  font-size: 16px;
+}
+
+/* Calculate button styling */
+.calculate-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.calculate-btn:hover {
+  transform: scale(1.05) rotate(3deg);
+}
+
+/* Back button styling */
+.back-btn {
+  margin-top: 20px;
+  padding: 10px 15px;
+  border: none;
+  background: #555;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* BMI category styling */
+.bmi-category {
+  font-size: 1.3rem;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.bmi-category.underweight {
+  color: #f39c12; /* Orange for underweight */
+}
+
+.bmi-category.normal-weight {
+  color: #27ae60; /* Green for normal weight */
+}
+
+.bmi-category.overweight {
+  color: #e67e22; /* Bright orange for overweight */
+}
+
+.bmi-category.obese {
+  color: #c0392b; /* Red for obesity */
+}
+
+
+.bmi-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(45deg, #ff5722, #2196f3); /* Gradient color */
+  color: white;
+  border: none;
+  border-radius: 50%; /* Circular shape */
+  width: 70px;
+  height: 70px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pop-animation 0.6s ease-out; /* Popping animation */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth interactions */
+}
+
+/* Hover effect */
+.bmi-button:hover {
+  transform: scale(1.1); /* Slightly enlarge the button */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Enhance the shadow */
+}
+
+/* Popping animation */
+@keyframes pop-animation {
+  0% {
+    transform: scale(0.5) rotate(-20deg); /* Start small and rotated */
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg); /* Scale up larger briefly */
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg); /* Final size and rotation */
+  }
+}

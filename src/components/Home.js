@@ -1,50 +1,55 @@
-// src/components/Home.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Home.css';
+import BMIPopup from './BMIPopup';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Home = () => {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [message, setMessage] = useState('');
   const [reports, setReports] = useState([]);
   const [currentImage, setCurrentImage] = useState(0);
+  const [isBMIPopupOpen, setBMIPopupOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Image paths directly listed here
   const images = [
-    "/assets/1.png",
-    "/assets/2.png",
-    "/assets/3.png",
+    "/assets/11.png",
+    "/assets/22.png",
+    "/assets/33.png",
+    "/assets/55.png",
+    "/assets/44.png",
     "/assets/5.png",
-    "/assets/4.png",
-    "/assets/6.png",
-    "/assets/i.jpg"
+   
   ];
 
-  // Image Carousel Scroll
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevIndex) => (prevIndex + 1) % images.length);
-    }, 4000); // Change image every 4 seconds
+    }, 4000);
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, []);
 
-  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    setFiles([...e.target.files]);
+  };
 
   const handleFileUpload = async () => {
-    if (!file) return setMessage('Please select a file to upload.');
+    if (!files.length) return setMessage('Please select at least one file.');
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('patientId', '12345'); // Hardcoded for now
+    files.forEach(file => formData.append('file', file));
 
     try {
-      const res = await axios.post('http://localhost:5000/upload', formData, {
+      const res = await axios.post('http://localhost:5000/upload/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setMessage('File uploaded successfully.');
+      setMessage('Files uploaded successfully.');
+      setFiles([]);
       fetchReports();
     } catch (error) {
-      setMessage('There was an error uploading the file.');
+      console.error(error);
+      setMessage('Error uploading files.');
     }
   };
 
@@ -57,17 +62,38 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
   const getFileIcon = (fileName) => {
     const ext = fileName.split('.').pop().toLowerCase();
     if (['pdf'].includes(ext)) return '📄';
-    if (['jpg', 'jpeg', 'png'].includes(ext)) return '🖼️';
+    if (['jpg', 'jpeg', 'png'].includes(ext)) return '🖼';
     if (['doc', 'docx'].includes(ext)) return '📃';
     return '📁';
   };
+
+  const handleDietPlan = async () => {
+    if (!reports.length) return toast.error("No reports found.");
+
+    const latestReport = reports[0]; // latest due to descending sort
+
+    try {
+      const res = await axios.post("http://localhost:5000/analyze-path", {
+        image_path: latestReport.filePath
+      });
+
+      if (res.data?.conditions) {
+        navigate("/diet", { state: { results: res.data } });
+      } else {
+        toast.error("No analysis result.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Analysis failed.");
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
   return (
     <div id="home">
@@ -90,12 +116,17 @@ const Home = () => {
       {/* Upload Section */}
       <section className="upload-section">
         <h2>Upload Your Reports or Documents</h2>
-        <input type="file" accept=".pdf,.jpg,.png,.doc,.docx,.txt" onChange={handleFileChange} />
+        <input
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt,.csv,.xlsx"
+          onChange={handleFileChange}
+        />
         <button onClick={handleFileUpload}>Upload</button>
         <p>{message}</p>
       </section>
 
-      {/* Display Uploaded Files */}
+      {/* Uploaded Reports */}
       <section className="report-preview-section">
         <h2>Uploaded Reports</h2>
         {reports.length === 0 ? (
@@ -110,7 +141,7 @@ const Home = () => {
                   <p className="upload-time">Uploaded on {new Date(report.uploadedAt).toLocaleString()}</p>
                 </div>
                 <a
-                  href={`http://localhost:5000${report.filePath}`}
+                  href={`http://localhost:5000/${report.filePath}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="view-button"
@@ -122,6 +153,18 @@ const Home = () => {
           </ul>
         )}
       </section>
+
+      {/* Floating BMI Button */}
+      <button
+        onClick={() => setBMIPopupOpen(true)}
+        className="floating-bmi-button animated-bmi"
+      >
+        BMI
+      </button>
+
+      {isBMIPopupOpen && (
+        <BMIPopup onClose={() => setBMIPopupOpen(false)} />
+      )}
     </div>
   );
 };

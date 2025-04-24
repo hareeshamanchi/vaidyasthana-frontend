@@ -1,129 +1,94 @@
-/* Full-Screen Modal Overlay */
+/* Fullscreen Overlay */
 .auth-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
-    display: flex;
-    justify-content: center;  /* Centering modal horizontally */
-    align-items: center;      /* Centering modal vertically */
-    z-index: 1000;
-  }
-  
-  /* Modal Container */
-  .auth-modal {
-    background-color: white;
-    padding: 30px;
-    width: 100%;
-    max-width: 500px; /* You can adjust this width */
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-    position: relative;
-    border-radius: 8px;
-    text-align: center;
-  }
-  
-  /* Close Button */
-  .close-modal-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 20px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #333;
-  }
-  
-  /* Form Heading */
-  .auth-modal h2 {
-    font-size: 30px;
-    margin-bottom: 20px;
-    color: #333;
-    font-weight: 600;
-  }
-  
-  /* Form Group */
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  .form-group label {
-    display: block;
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 5px;
-  }
-  
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    color: #333;
-  }
-  
-  .form-group input:focus,
-  .form-group select:focus {
-    border-color: #3b79e8;
-    outline: none;
-  }
-  
-  /* Submit Button */
-  .auth-button {
-    width: 100%;
-    padding: 15px;
-    background-color: #3b79e8;
-    color: white;
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .auth-button:hover {
-    background-color: #2c64b1;
-  }
-  
-  .auth-button:disabled {
-    background-color: #b0b0b0;
-    cursor: not-allowed;
-  }
-  
-  /* Toggle between Login and Sign Up */
-  .toggle-link {
-    text-align: center;
-    margin-top: 15px;
-    font-size: 14px;
-  }
-  
-  .toggle-link span {
-    color: #3b79e8;
-    cursor: pointer;
-  }
-  
-  /* Responsive Design for smaller screens */
-  @media (max-width: 500px) {
-    .auth-modal {
-      width: 90%;
-      padding: 20px;
-    }
-  
-    .auth-modal h2 {
-      font-size: 24px;
-    }
-  
-    .form-group input,
-    .form-group select {
-      font-size: 14px;
-    }
-  
-    .auth-button {
-      font-size: 14px;
-    }
-  }
-  
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensures it stays above other elements */
+}
+
+/* Modal Container */
+.auth-modal {
+  width: 90%;
+  max-width: 400px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center; /* Aligns content inside the modal */
+  position: relative; /* Needed for the close button to be positioned */
+}
+
+/* Close Button (X) */
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.close-modal-btn:hover {
+  color: #ff0000; /* Red color on hover */
+}
+
+/* Header Text */
+.auth-modal h2 {
+  font-size: 24px;
+  color: #333333;
+  margin-bottom: 20px;
+}
+
+/* Form Fields */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: #555555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dddddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  border-color: #007bff; /* Highlighted border color */
+  outline: none;
+}
+
+/* Submit Button */
+.auth-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #ffffff;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.auth-button:hover {
+  background-color: #0056b3; /* Darker shade on hover */
+}
+
+.auth-button:disabled {
+  background-color: #cccccc; /* Grey color when disabled */
+  cursor: not-allowed;
+}

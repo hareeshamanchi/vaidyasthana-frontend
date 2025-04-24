@@ -157,3 +157,70 @@
   background-color: #f1f1f1;
   cursor: pointer;
 }
+
+/* Floating BMI Button */
+.floating-bmi-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(45deg, #ff5722, #2196f3); /* Gradient color */
+  color: white;
+  border: none;
+  border-radius: 50%; /* Circular button */
+  width: 70px;
+  height: 70px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+  animation: pulse 1.5s infinite; /* Pulsing effect */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth interactions */
+}
+
+/* Hover effect for the button */
+.floating-bmi-button:hover {
+  transform: scale(1.1); /* Slightly enlarges the button */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Enhances the shadow */
+}
+
+/* Pulsing animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1); /* Default size */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Default shadow */
+  }
+  50% {
+    transform: scale(1.2); /* Enlarged size */
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+  }
+  100% {
+    transform: scale(1); /* Back to default size */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Back to default shadow */
+  }
+}
+
+/* Twinkling animation */
+.floating-bmi-button::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+  animation: twinkle 2s infinite;
+}
+
+/* Twinkle animation */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}

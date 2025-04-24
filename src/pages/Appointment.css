@@ -1,0 +1,23 @@
+
+.time-left-floating {
+  color: green;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #e7ffe7;
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: relative;
+  animation: float 2s infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
