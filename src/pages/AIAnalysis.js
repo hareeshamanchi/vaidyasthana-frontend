@@ -1,49 +1,84 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './AIAnalysis.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "./AIAnalysis.css";
+
+const API = "http://localhost:5000";
 
 const AIAnalysis = () => {
   const [reports, setReports] = useState([]);
-  const [analysisResult, setAnalysisResult] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(null); // store filename or "all"
+  const [results, setResults] = useState({});   // key: filename, value: result
 
-  // Fetch all uploaded reports
   useEffect(() => {
-    axios.get('http://localhost:5000/upload/all')
-      .then(res => setReports(res.data))
-      .catch(err => console.error('Error fetching reports:', err));
+    axios
+      .get(`${API}/upload/all`)
+      .then((res) => setReports(res.data))
+      .catch((err) => console.error("Error fetching reports:", err));
   }, []);
 
-  // Analyze all reports together
   const analyzeAllReports = async () => {
-    setLoading(true);
+    setLoading("all");
     try {
-      const res = await axios.post('http://localhost:5000/analyze/');
-      setAnalysisResult(res.data.analysis);
+      const res = await axios.post(`${API}/analyze/`);
+      setResults((prev) => ({
+        ...prev,
+        all: JSON.stringify(res.data.analysis, null, 2),
+      }));
     } catch (err) {
-      setAnalysisResult('❌ Analysis failed. Please try again.');
+      setResults((prev) => ({ ...prev, all: "❌ Analysis failed. Please try again." }));
     }
-    setLoading(false);
+    setLoading(null);
+  };
+
+  const analyzeSingleReport = async (report) => {
+    setLoading(report.fileName);
+    try {
+      const res = await axios.post(`${API}/analyze/${report.filePath}`);
+      setResults((prev) => ({
+        ...prev,
+        [report.fileName]: JSON.stringify(res.data, null, 2),
+      }));
+    } catch (err) {
+      setResults((prev) => ({
+        ...prev,
+        [report.fileName]: `❌ Analysis failed for ${report.fileName}`,
+      }));
+    }
+    setLoading(null);
   };
 
   return (
     <div className="ai-analysis-container">
-      <h2>AI Analysis of Uploaded Reports</h2>
+      <h2>🧠 AI Analysis of Medical Reports</h2>
 
-      <ul>
-        {reports.map((report) => (
-          <li key={report._id}>{report.fileName}</li>
+      <ul className="analysis-list">
+        {reports.map((r) => (
+          <li key={r.id || r._id} className="analysis-item">
+            <div className="report-title">{r.fileName}</div>
+
+            <button
+              className="analyze-btn"
+              onClick={() => analyzeSingleReport(r)}
+              disabled={loading !== null}
+            >
+              {loading === r.fileName ? "Analyzing..." : "Analyze"}
+            </button>
+
+            {results[r.fileName] && (
+              <pre className="analysis-text animate-fade-in">{results[r.fileName]}</pre>
+            )}
+          </li>
         ))}
       </ul>
 
-      <button onClick={analyzeAllReports} disabled={loading}>
-        {loading ? 'Analyzing All Reports...' : 'Analyze All'}
+      <button className="analyze-all-btn" onClick={analyzeAllReports} disabled={loading !== null}>
+        {loading === "all" ? "Analyzing All..." : "Analyze All"}
       </button>
 
-      {analysisResult && (
-        <div className="analysis-output">
-          <h3>AI Combined Analysis</h3>
-          <pre>{analysisResult}</pre>
+      {results["all"] && (
+        <div className="analysis-output animate-fade-in">
+          <h3>🧾 AI Combined Analysis</h3>
+          <pre className="analysis-text">{results["all"]}</pre>
         </div>
       )}
     </div>

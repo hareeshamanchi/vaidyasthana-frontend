@@ -37,7 +37,7 @@ const Reports = () => {
                 <p className="upload-date">Uploaded: {formatDate(report.uploadedAt)}</p>
               </div>
               <a
-                href={`http://localhost:5000${report.filePath}`}
+               href={`http://localhost:5000/uploads/${report.filePath}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="view-btn"
