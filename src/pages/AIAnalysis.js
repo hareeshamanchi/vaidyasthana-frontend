@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./AIAnalysis.css";
 
-const API = "http://localhost:5000";
+const API = "http://localhost:5000"; // Define API base URL
 
 const AIAnalysis = () => {
   const [reports, setReports] = useState([]);
@@ -33,7 +33,8 @@ const AIAnalysis = () => {
   const analyzeSingleReport = async (report) => {
     setLoading(report.fileName);
     try {
-      const res = await axios.post(`${API}/analyze/${report.filePath}`);
+      // Changed endpoint to use report.id (_id from MongoDB)
+      const res = await axios.post(`${API}/analyze/${report.id}`); // Use report.id
       setResults((prev) => ({
         ...prev,
         [report.fileName]: JSON.stringify(res.data, null, 2),

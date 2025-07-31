@@ -1,0 +1,117 @@
+.patient-dashboard-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 2rem auto;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.loading-container {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.5rem;
+  color: #6c757d;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.dashboard-header h1 {
+  font-size: 2.5rem;
+  color: #343a40;
+}
+
+.dashboard-header p {
+  font-size: 1.1rem;
+  color: #6c757d;
+}
+
+.upload-section, .reports-section {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.upload-section h2, .reports-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #007bff;
+}
+
+.upload-section input[type="file"] {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.upload-section button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.upload-section button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.message {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: #28a745;
+}
+
+.report-list {
+  list-style: none;
+  padding: 0;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s;
+}
+
+.report-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.report-item .icon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.report-item .file-name {
+  flex-grow: 1;
+  font-weight: 500;
+}
+
+.report-item .view-button {
+  background-color: #28a745;
+  color: white;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.report-item .view-button:hover {
+  background-color: #218838;
+}

@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Reports.css';
 
+const API = 'http://localhost:5000'; // Define API base URL
+
 const Reports = () => {
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/upload/all')
+    axios.get(`${API}/upload/all`) // Use API variable
       .then((res) => setReports(res.data))
       .catch((err) => console.error('Error fetching reports:', err));
   }, []);
@@ -36,8 +38,9 @@ const Reports = () => {
                 <p className="file-name">{report.fileName}</p>
                 <p className="upload-date">Uploaded: {formatDate(report.uploadedAt)}</p>
               </div>
+              {/* Use report.fileURL directly for viewing reports from Azure Blob */}
               <a
-               href={`http://localhost:5000/uploads/${report.filePath}`}
+                 href={report.fileURL} // Changed to fileURL
                 target="_blank"
                 rel="noopener noreferrer"
                 className="view-btn"
