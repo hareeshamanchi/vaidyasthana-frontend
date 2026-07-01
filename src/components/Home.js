@@ -33,7 +33,7 @@ const Home = () => {
       return;
     }
     try {
-      const { data } = await axios.get('http://localhost:5000/upload/all');
+      const { data } = await axios.get('http//localhost:5000/upload/all');
       setReports(data);
     } catch (err) {
       console.error('Could not fetch reports.', err);
@@ -68,7 +68,7 @@ const Home = () => {
 
     try {
       await axios.post(
-        'http://localhost:5000/upload/',
+        'https://wood-grow-excerpt-devoted.trycloudflare.com/upload/',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -136,7 +136,7 @@ const Home = () => {
                       <p className="file-name">{r.fileName}</p>
                     </div>
                     <a
-                      href={`http://localhost:5000/upload/view/${r.fileName}`}
+                      href={`https://wood-grow-excerpt-devoted.trycloudflare.com/upload/view/${r.fileName}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-button"

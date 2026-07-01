@@ -18,7 +18,8 @@ const DoctorDashboard = () => {
     setMessage('Fetching reports...');
     setSearchedPatient(patientId);
     try {
-      const response = await axios.get(`http://localhost:5000/doctor/patient-reports/${patientId}`);
+      const response = await axios.get(``${process.env.REACT_APP_API}
+/doctor/patient-reports/${patientId}`);
       setReports(response.data);
       if (response.data.length === 0) {
         setMessage('No reports found for this patient.');
@@ -72,7 +73,8 @@ const DoctorDashboard = () => {
                 <span className="icon">{getFileIcon(report.fileName)}</span>
                 <p className="file-name">{report.fileName}</p>
                 <a
-                  href={`http://localhost:5000/upload/view/${report.fileName}`}
+                  href={``${process.env.REACT_APP_API}
+/upload/view/${report.fileName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="view-button"

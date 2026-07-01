@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Reports.css';
 
-const API = 'http://localhost:5000'; // Define API base URL
+const API = '`${process.env.REACT_APP_API}
+'; // Define API base URL
 
 const Reports = () => {
   const [reports, setReports] = useState([]);
