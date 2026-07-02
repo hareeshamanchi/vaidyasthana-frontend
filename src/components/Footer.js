@@ -43,7 +43,7 @@ const Footer = () => {
       {/* Social Media Icons */}
       <div className="footer-socials">
         {[
-          { href: 'https://wa.me/9849839103', icon: <FaWhatsapp color="#25D366" /> },
+          { href: 'https://wa.me/7207097501', icon: <FaWhatsapp color="#25D366" /> },
           { href: 'https://www.instagram.com/vaidyasthana_30?igsh=cGpta3NzMzY2bGdq', icon: <FaInstagram color="#E1306C" /> },
           { href: 'https://twitter.com/vaidhyasthana', icon: <FaTwitter color="#1DA1F2" /> },
         ].map((social, index) => (
