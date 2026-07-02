@@ -33,7 +33,7 @@ const Home = () => {
       return;
     }
     try {
-      const { data } = await axios.get('http//localhost:5000/upload/all');
+      const { data } = await axios.get(`${process.env.REACT_APP_API}/upload/all`);
       setReports(data);
     } catch (err) {
       console.error('Could not fetch reports.', err);

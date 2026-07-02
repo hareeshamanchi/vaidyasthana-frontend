@@ -34,7 +34,7 @@ const PatientDashboard = () => {
   const fetchReports = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/upload/all",
+        `${process.env.REACT_APP_API}/upload/all`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,7 +66,7 @@ const PatientDashboard = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/upload",
+        `${process.env.REACT_APP_API}/upload`,
         formData,
         {
           headers: {
@@ -107,7 +107,7 @@ const PatientDashboard = () => {
     try {
 
       const res = await axios.get(
-        `http://localhost:5000/upload/view/${reportId}`,
+        `${process.env.REACT_APP_API}/upload/view/${reportId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
