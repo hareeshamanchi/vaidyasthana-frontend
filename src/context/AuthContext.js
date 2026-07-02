@@ -6,6 +6,8 @@ import React, {
 
 import axios from "axios";
 
+const API = process.env.REACT_APP_API;
+
 export const AuthContext =
   createContext();
 
@@ -34,7 +36,7 @@ export const AuthProvider = ({
         try {
           const response =
             await axios.get(
-              "http://localhost:5000/api/auth/profile",
+              `${API}/api/auth/profile`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

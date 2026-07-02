@@ -1,37 +1,50 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import axios from "axios";
 import "./AIAnalysis.css";
 
-const API = "http://localhost:5000";
+const API = process.env.REACT_APP_API;
 
 const AIAnalysis = () => {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [reports, setReports] =
+    useState([]);
 
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] =
+    useState(true);
+
+  const token =
+    localStorage.getItem("token");
+
+  const fetchReports =
+    useCallback(async () => {
+      try {
+        const { data } =
+          await axios.get(
+            `${API}/upload/all`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+        setReports(data);
+      } catch (err) {
+        console.error(
+          "Failed to fetch reports:",
+          err
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, [token]);
 
   useEffect(() => {
     fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
-    try {
-      const { data } = await axios.get(
-        `${API}/upload/all`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setReports(data);
-    } catch (err) {
-      console.error(err);
-    }
-
-    setLoading(false);
-  };
+  }, [fetchReports]);
 
   if (loading) {
     return (
@@ -44,7 +57,9 @@ const AIAnalysis = () => {
   return (
     <div className="ai-analysis-container">
 
-      <h1>🧠 AI Medical Report Analysis</h1>
+      <h1>
+        🧠 AI Medical Report Analysis
+      </h1>
 
       {reports.length === 0 ? (
 
@@ -64,19 +79,13 @@ const AIAnalysis = () => {
             </h2>
 
             <p>
-
               <strong>Status :</strong>{" "}
-
               {report.analysisStatus}
-
             </p>
 
             <p>
-
               <strong>Pages :</strong>{" "}
-
               {report.pageCount}
-
             </p>
 
             <hr />
@@ -84,51 +93,39 @@ const AIAnalysis = () => {
             <h3>🩺 AI Summary</h3>
 
             <p>
-
               {report.aiAnalysis?.summary ||
                 "No Summary"}
-
             </p>
 
             <h3>⚠ Severity</h3>
 
             <p>
-
               {report.aiAnalysis?.severity ||
                 "Unknown"}
-
             </p>
 
             <h3>
               🧪 Abnormal Parameters
             </h3>
 
-            {report.aiAnalysis?.abnormalParameters
+            {report.aiAnalysis
+              ?.abnormalParameters
               ?.length > 0 ? (
 
               <ul>
 
                 {report.aiAnalysis.abnormalParameters.map(
-                  (item, index) => (
-
+                  (
+                    item,
+                    index
+                  ) => (
                     <li key={index}>
-
                       <strong>
                         {item.parameter}
-                      </strong>
-
-                      {" : "}
-
-                      {item.value}
-
-                      {" ("}
-
-                      {item.status}
-
-                      {")"}
-
+                      </strong>{" "}
+                      : {item.value} (
+                      {item.status})
                     </li>
-
                   )
                 )}
 
@@ -144,101 +141,156 @@ const AIAnalysis = () => {
               🦠 Possible Diseases
             </h3>
 
-            <ul>
+            {report.aiAnalysis
+              ?.possibleDiseases
+              ?.length > 0 ? (
 
-              {report.aiAnalysis?.possibleDiseases?.map(
-                (disease, index) => (
+              <ul>
 
-                  <li key={index}>
-                    {disease}
-                  </li>
+                {report.aiAnalysis.possibleDiseases.map(
+                  (
+                    disease,
+                    index
+                  ) => (
+                    <li key={index}>
+                      {disease}
+                    </li>
+                  )
+                )}
 
-                )
-              )}
+              </ul>
 
-            </ul>
+            ) : (
+
+              <p>None</p>
+
+            )}
 
             <h3>
               💊 Recommendations
             </h3>
 
-            <ul>
+            {report.aiAnalysis
+              ?.recommendations
+              ?.length > 0 ? (
 
-              {report.aiAnalysis?.recommendations?.map(
-                (item, index) => (
+              <ul>
 
-                  <li key={index}>
-                    {item}
-                  </li>
+                {report.aiAnalysis.recommendations.map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  )
+                )}
 
-                )
-              )}
+              </ul>
 
-            </ul>
+            ) : (
+
+              <p>None</p>
+
+            )}
 
             <h3>
               🥗 Diet Plan
             </h3>
 
-            <ul>
+            {report.aiAnalysis
+              ?.dietPlan
+              ?.length > 0 ? (
 
-              {report.aiAnalysis?.dietPlan?.map(
-                (item, index) => (
+              <ul>
 
-                  <li key={index}>
-                    {item}
-                  </li>
+                {report.aiAnalysis.dietPlan.map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  )
+                )}
 
-                )
-              )}
+              </ul>
 
-            </ul>
+            ) : (
+
+              <p>None</p>
+
+            )}
 
             <h3>
               🏃 Exercise Plan
             </h3>
 
-            <ul>
+            {report.aiAnalysis
+              ?.exercisePlan
+              ?.length > 0 ? (
 
-              {report.aiAnalysis?.exercisePlan?.map(
-                (item, index) => (
+              <ul>
 
-                  <li key={index}>
-                    {item}
-                  </li>
+                {report.aiAnalysis.exercisePlan.map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  )
+                )}
 
-                )
-              )}
+              </ul>
 
-            </ul>
+            ) : (
+
+              <p>None</p>
+
+            )}
 
             <h3>
               👨‍⚕ Doctor Advice
             </h3>
 
             <p>
-
-              {report.aiAnalysis?.doctorAdvice}
-
+              {report.aiAnalysis
+                ?.doctorAdvice ||
+                "No advice available."}
             </p>
 
             <h3>
               🧪 Follow-up Tests
             </h3>
 
-            <ul>
+            {report.aiAnalysis
+              ?.followUpTests
+              ?.length > 0 ? (
 
-              {report.aiAnalysis?.followUpTests?.map(
-                (item, index) => (
+              <ul>
 
-                  <li key={index}>
-                    {item}
-                  </li>
+                {report.aiAnalysis.followUpTests.map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  )
+                )}
 
-                )
-              )}
+              </ul>
 
-            </ul>
+            ) : (
+
+              <p>None</p>
+
+            )}
 
           </div>
 

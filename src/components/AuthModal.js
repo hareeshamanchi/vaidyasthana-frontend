@@ -2,6 +2,8 @@ import React, { useState, useContext } from "react";
 import "./AuthModal.css";
 import { AuthContext } from "../context/AuthContext";
 
+const API = process.env.REACT_APP_API;
+
 const AuthModal = ({
   type,
   onClose,
@@ -56,6 +58,7 @@ const AuthModal = ({
     setMessage("");
 
     try {
+
       const payload = {
         email: formData.email,
         password:
@@ -72,7 +75,7 @@ const AuthModal = ({
       };
 
       const res = await fetch(
-        `http://localhost:5000/api/auth/${type}`,
+        `${API}/api/auth/${type}`,
         {
           method: "POST",
           headers: {
@@ -91,6 +94,7 @@ const AuthModal = ({
       setLoading(false);
 
       if (res.ok) {
+
         setMessage(
           data.message ||
             `${
@@ -103,40 +107,55 @@ const AuthModal = ({
         if (
           type === "login"
         ) {
+
           login(
             data.user,
             data.token
           );
+
         }
 
         setTimeout(() => {
+
           if (
             onLoginSuccess
           ) {
+
             onLoginSuccess(
               data
             );
+
           }
 
           onClose();
+
         }, 1000);
+
       } else {
+
         setError(
           data.message ||
             "An error occurred."
         );
+
       }
+
     } catch (err) {
+
+      console.error(err);
+
       setLoading(false);
 
       setError(
         "Server not reachable. Please try again later."
       );
+
     }
   };
 
   return (
     <div className="auth-modal-overlay">
+
       <div className="auth-modal">
 
         <button
@@ -170,7 +189,9 @@ const AuthModal = ({
             handleSubmit
           }
         >
+
           <div className="form-group">
+
             <label>
               Email
             </label>
@@ -186,9 +207,11 @@ const AuthModal = ({
                 handleChange
               }
             />
+
           </div>
 
           <div className="form-group">
+
             <label>
               Password
             </label>
@@ -204,12 +227,15 @@ const AuthModal = ({
                 handleChange
               }
             />
+
           </div>
 
           {type ===
             "register" && (
             <>
+
               <div className="form-group">
+
                 <label>
                   Full Name
                 </label>
@@ -225,9 +251,11 @@ const AuthModal = ({
                     handleChange
                   }
                 />
+
               </div>
 
               <div className="form-group">
+
                 <label>
                   Phone Number
                 </label>
@@ -243,9 +271,11 @@ const AuthModal = ({
                     handleChange
                   }
                 />
+
               </div>
 
               <div className="form-group">
+
                 <label>
                   Address
                 </label>
@@ -261,14 +291,19 @@ const AuthModal = ({
                     handleChange
                   }
                 />
+
               </div>
+
             </>
           )}
 
           {type ===
             "login" && (
+
             <div className="form-group remember-me">
+
               <label>
+
                 <input
                   type="checkbox"
                   name="rememberMe"
@@ -279,9 +314,13 @@ const AuthModal = ({
                     handleChange
                   }
                 />
+
                 Remember me
+
               </label>
+
             </div>
+
           )}
 
           <button
@@ -289,15 +328,20 @@ const AuthModal = ({
             className="auth-button"
             disabled={loading}
           >
+
             {loading
               ? "Processing..."
               : type ===
                 "login"
               ? "Login"
               : "Sign Up"}
+
           </button>
+
         </form>
+
       </div>
+
     </div>
   );
 };
