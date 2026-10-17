@@ -286,7 +286,7 @@ const VideoConsultation = () => {
         setConnectionState((curr) => {
           if (curr === "connecting" || curr === "initializing") {
             setServiceError(
-              "Connection timed out while negotiating WebRTC media gateway. The server may be unreachable, or your network/firewall is restricting WebRTC media packets. You can retry connection or open the meeting in a dedicated window."
+              "Connection timed out while negotiating the WebRTC connection. The video meeting service may be temporarily unreachable or your network/firewall is restricting WebRTC traffic. You can retry connection or open the meeting in a dedicated window."
             );
             if (jitsiApiRef.current) {
               try {
@@ -516,7 +516,7 @@ const VideoConsultation = () => {
               <ul>
                 <li>Verify your browser has permission to access your Camera and Microphone.</li>
                 <li>If using a corporate network, mobile hotspot, or VPN, ensure WebRTC and WebSockets traffic is allowed.</li>
-                <li>Ad-blockers, brave shields, or privacy extensions can block third-party media gateway scripts.</li>
+                <li>Ad-blockers, brave shields, or privacy extensions can block video meeting scripts.</li>
                 <li>You can retry the in-browser connection or launch the room in a dedicated window below.</li>
               </ul>
             )}
