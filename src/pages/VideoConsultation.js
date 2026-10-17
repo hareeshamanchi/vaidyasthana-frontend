@@ -31,7 +31,7 @@ const VideoConsultation = () => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [meetingData, setMeetingData] = useState(null);
-  const [connectionState, setConnectionState] = useState("authorizing"); // authorizing | ready | connecting | connected | ended | error
+  const [connectionState, setConnectionState] = useState("authorizing"); // authorizing | ready | initializing | connecting | waiting_for_peer | connected | reconnecting | failed | ended | error
   const [serviceError, setServiceError] = useState("");
 
   // Media Permissions State
@@ -49,6 +49,7 @@ const VideoConsultation = () => {
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
   const timerRef = useRef(null);
+  const watchdogRef = useRef(null);
   const containerWrapperRef = useRef(null);
 
   // Format call duration helper
@@ -185,8 +186,16 @@ const VideoConsultation = () => {
     const permitted = await requestMediaPermissions();
     if (!permitted) return;
 
+    // Set transition state and clear existing errors
     setConnectionState("connecting");
     setServiceError("");
+    setRemoteParticipantJoined(false);
+
+    // Clear any active timers
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
 
     try {
       const domain =
@@ -194,10 +203,13 @@ const VideoConsultation = () => {
         meetingData.domain ||
         "meet.jit.si";
 
+      // Allow React a tick to mount container if transitioning from lobby
+      await new Promise((resolve) => setTimeout(resolve, 60));
+
       await loadJitsiScript(domain);
 
       if (!jitsiContainerRef.current) {
-        throw new Error("Video container element is not available.");
+        throw new Error("Video container element is not available in DOM.");
       }
 
       // Cleanup any previous instance
@@ -225,9 +237,17 @@ const VideoConsultation = () => {
           startWithAudioMuted: false,
           startWithVideoMuted: false,
           prejoinPageEnabled: false,
+          prejoinConfig: {
+            enabled: false,
+          },
           disableDeepLinking: true,
           enableWelcomePage: false,
           enableClosePage: false,
+          p2p: {
+            enabled: true,
+          },
+          requireDisplayName: false,
+          disableThirdPartyRequests: false,
           toolbarButtons: [
             "microphone",
             "camera",
@@ -254,29 +274,88 @@ const VideoConsultation = () => {
               ? meetingData.patientName || "Patient"
               : meetingData.doctorName || "Doctor",
           MOBILE_APP_PROMO: false,
+          TOOLBAR_ALWAYS_VISIBLE: true,
         },
       };
 
       const api = new window.JitsiMeetExternalAPI(domain, options);
       jitsiApiRef.current = api;
 
+      // Start 25-second connection watchdog timer
+      watchdogRef.current = setTimeout(() => {
+        setConnectionState((curr) => {
+          if (curr === "connecting" || curr === "initializing") {
+            setServiceError(
+              "Connection timed out while negotiating WebRTC media gateway. The server may be unreachable, or your network/firewall is restricting WebRTC media packets. You can retry connection or open the meeting in a dedicated window."
+            );
+            if (jitsiApiRef.current) {
+              try {
+                jitsiApiRef.current.dispose();
+              } catch (e) {
+                // ignore
+              }
+              jitsiApiRef.current = null;
+            }
+            return "failed";
+          }
+          return curr;
+        });
+      }, 25000);
+
       // Event Listeners
       api.addEventListener("videoConferenceJoined", (event) => {
-        setConnectionState("connected");
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
+        }
+        // Local participant joined room. Transition to connected if peer already joined, else waiting_for_peer
+        setConnectionState((prev) => (remoteParticipantJoined ? "connected" : "waiting_for_peer"));
+
         // Start duration counter
-        setCallDuration(0);
-        if (timerRef.current) clearInterval(timerRef.current);
-        timerRef.current = setInterval(() => {
-          setCallDuration((prev) => prev + 1);
-        }, 1000);
+        if (!timerRef.current) {
+          setCallDuration(0);
+          timerRef.current = setInterval(() => {
+            setCallDuration((prev) => prev + 1);
+          }, 1000);
+        }
       });
 
       api.addEventListener("participantJoined", (event) => {
         setRemoteParticipantJoined(true);
+        setConnectionState("connected");
       });
 
       api.addEventListener("participantLeft", (event) => {
-        // Still in room, but remote peer left
+        setRemoteParticipantJoined(false);
+        setConnectionState((prev) => (prev === "connected" ? "waiting_for_peer" : prev));
+      });
+
+      api.addEventListener("connectionFailed", (event) => {
+        console.error("Jitsi connectionFailed event:", event);
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
+        }
+        setServiceError(
+          "WebRTC media connection failed. Please check your network connection, browser shields, or firewall."
+        );
+        setConnectionState("failed");
+      });
+
+      api.addEventListener("conferenceFailed", (event) => {
+        console.error("Jitsi conferenceFailed event:", event);
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
+        }
+        setServiceError(
+          "The consultation conference could not be joined or was rejected by the server."
+        );
+        setConnectionState("failed");
+      });
+
+      api.addEventListener("suspendDetected", () => {
+        setConnectionState("reconnecting");
       });
 
       api.addEventListener("audioMuteStatusChanged", (event) => {
@@ -288,23 +367,39 @@ const VideoConsultation = () => {
       });
 
       api.addEventListener("videoConferenceLeft", () => {
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
+        }
         handleCallFinished();
       });
 
       api.addEventListener("readyToClose", () => {
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
+        }
         handleCallFinished();
       });
     } catch (err) {
       console.error("Jitsi initialization error:", err);
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current);
+        watchdogRef.current = null;
+      }
       setServiceError(
         err.message ||
           "Unable to establish video connection. Please check your internet connectivity or network firewall settings."
       );
-      setConnectionState("error");
+      setConnectionState("failed");
     }
   };
 
   const handleCallFinished = () => {
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -323,6 +418,10 @@ const VideoConsultation = () => {
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current);
+        watchdogRef.current = null;
+      }
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -392,29 +491,39 @@ const VideoConsultation = () => {
   // ==========================================
   // Render: 2. Authorization or Service Error State
   // ==========================================
-  if (authError || (connectionState === "error" && serviceError)) {
+  if (authError || connectionState === "failed" || connectionState === "error") {
+    const isServiceFailure = !authError && (connectionState === "failed" || connectionState === "error");
     return (
       <div className="video-consultation-error-wrap">
         <div className="consult-error-card">
           <div className="error-icon-circle">
             <FiAlertTriangle size={36} />
           </div>
-          <h2>Consultation Access Restricted</h2>
-          <p className="error-desc">{authError || serviceError}</p>
+          <h2>{authError ? "Consultation Access Restricted" : "Connection Failed"}</h2>
+          <p className="error-desc">{authError || serviceError || "Unable to establish video consultation session."}</p>
 
           <div className="error-guidance-box">
             <div className="guidance-title">
-              <FiShield size={16} /> Clinical Security & Policy
+              <FiShield size={16} /> {authError ? "Clinical Security & Policy" : "WebRTC Troubleshooting & Guidance"}
             </div>
-            <ul>
-              <li>Video consultations are strictly reserved for the assigned patient and clinician.</li>
-              <li>Cancelled, rejected, or already completed visits cannot initiate active calls.</li>
-              <li>In-person consultations do not offer WebRTC telehealth rooms.</li>
-            </ul>
+            {authError ? (
+              <ul>
+                <li>Video consultations are strictly reserved for the assigned patient and clinician.</li>
+                <li>Cancelled, rejected, or already completed visits cannot initiate active calls.</li>
+                <li>In-person consultations do not offer WebRTC telehealth rooms.</li>
+              </ul>
+            ) : (
+              <ul>
+                <li>Verify your browser has permission to access your Camera and Microphone.</li>
+                <li>If using a corporate network, mobile hotspot, or VPN, ensure WebRTC and WebSockets traffic is allowed.</li>
+                <li>Ad-blockers, brave shields, or privacy extensions can block third-party media gateway scripts.</li>
+                <li>You can retry the in-browser connection or launch the room in a dedicated window below.</li>
+              </ul>
+            )}
           </div>
 
           <div className="error-actions-row">
-            {serviceError && !authError ? (
+            {isServiceFailure && (
               <button
                 className="btn-retry-consult"
                 onClick={startVideoCall}
@@ -422,10 +531,20 @@ const VideoConsultation = () => {
               >
                 <FiRefreshCw size={16} /> Retry Call Connection
               </button>
-            ) : null}
+            )}
+            {isServiceFailure && meetingData?.roomName && (
+              <a
+                href={`https://${process.env.REACT_APP_JITSI_DOMAIN || meetingData.domain || "meet.jit.si"}/${meetingData.roomName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-external-room"
+              >
+                <FiVideo size={16} /> Open in Dedicated Window
+              </a>
+            )}
             <button
               className="btn-back-appts"
-              onClick={() => navigate("/appointment")}
+              onClick={() => navigate(meetingData?.userRole === "doctor" ? "/doctor-dashboard" : "/appointment")}
               type="button"
             >
               <FiArrowLeft size={16} /> Return to Appointments
@@ -632,15 +751,25 @@ const VideoConsultation = () => {
           <div className="call-live-indicator">
             <span
               className={`status-circle ${
-                connectionState === "connected" ? "connected" : "connecting"
+                connectionState === "connected"
+                  ? "connected"
+                  : connectionState === "waiting_for_peer"
+                  ? "waiting"
+                  : connectionState === "reconnecting"
+                  ? "reconnecting"
+                  : "connecting"
               }`}
             ></span>
             <span className="status-text">
               {connectionState === "connected"
-                ? `LIVE • ${formatDuration(callDuration)}${
-                    remoteParticipantJoined ? " • In Call" : " • Waiting for Peer"
-                  }`
-                : "Connecting to Room..."}
+                ? `Connected to meeting • LIVE ${formatDuration(callDuration)}`
+                : connectionState === "waiting_for_peer"
+                ? "Waiting for the other participant..."
+                : connectionState === "reconnecting"
+                ? "Reconnecting..."
+                : connectionState === "initializing"
+                ? "Initializing meeting..."
+                : "Connecting to meeting server..."}
             </span>
           </div>
         </div>
@@ -664,10 +793,29 @@ const VideoConsultation = () => {
       {/* Main Video Viewport */}
       <main className="consultation-video-viewport">
         {connectionState === "connecting" && (
-          <div className="viewport-connecting-overlay">
-            <div className="connecting-spinner"></div>
-            <h3>Establishing Secure WebRTC Media Gateway</h3>
-            <p>Connecting to {meetingData?.doctorName} and {meetingData?.patientName}...</p>
+          <div className="non-blocking-status-banner connecting" role="status">
+            <div className="status-spinner-small"></div>
+            <span>Connecting to meeting server...</span>
+          </div>
+        )}
+
+        {connectionState === "waiting_for_peer" && (
+          <div className="non-blocking-status-banner waiting" role="status">
+            <FiUser className="banner-icon" />
+            <span>
+              Waiting for the other participant (
+              {meetingData?.userRole === "doctor"
+                ? meetingData?.patientName
+                : meetingData?.doctorName}
+              ) to join...
+            </span>
+          </div>
+        )}
+
+        {connectionState === "reconnecting" && (
+          <div className="non-blocking-status-banner reconnecting" role="status">
+            <div className="status-spinner-small"></div>
+            <span>Reconnecting to meeting...</span>
           </div>
         )}
 

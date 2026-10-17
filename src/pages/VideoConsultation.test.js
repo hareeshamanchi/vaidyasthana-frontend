@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import VideoConsultation from "./VideoConsultation";
 import { appointmentsAPI } from "../services/api";
@@ -140,5 +140,177 @@ describe("VideoConsultation Telehealth Component Suite", () => {
     ).toBeInTheDocument();
 
     navigator.mediaDevices = originalMediaDevices;
+  });
+
+  test("Initializes Jitsi with non-blocking banner and transitions across waiting and connected states", async () => {
+    // Mock JitsiMeetExternalAPI on window
+    const listeners = {};
+    class MockJitsiAPI {
+      constructor(domain, options) {
+        this.domain = domain;
+        this.options = options;
+        MockJitsiAPI.lastInstance = this;
+        if (options.parentNode) {
+          const iframe = document.createElement("iframe");
+          iframe.setAttribute("data-testid", "jitsi-iframe");
+          options.parentNode.appendChild(iframe);
+        }
+      }
+      addEventListener(event, cb) {
+        listeners[event] = cb;
+      }
+      executeCommand(cmd) {}
+      dispose() {}
+    }
+    window.JitsiMeetExternalAPI = MockJitsiAPI;
+
+    appointmentsAPI.getVideoAccess.mockResolvedValue({
+      data: {
+        success: true,
+        meeting: {
+          roomName: "vaidyasthana-consult-test-room-123",
+          domain: "meet.jit.si",
+          appointmentId: "appt-789",
+          appointmentDate: "2026-10-20T00:00:00.000Z",
+          timeSlot: "10:30 AM",
+          consultationType: "Video / Online",
+          status: "Scheduled",
+          doctorName: "Dr. Sunita Rao",
+          patientName: "Amit Kumar",
+          department: "Cardiology",
+          userRole: "patient",
+          displayName: "Amit Kumar",
+        },
+      },
+    });
+
+    const originalMediaDevices = navigator.mediaDevices;
+    navigator.mediaDevices = {
+      getUserMedia: jest.fn().mockResolvedValue({
+        getTracks: () => [{ stop: jest.fn() }],
+      }),
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/consultation/appt-789"]}>
+        <Routes>
+          <Route path="/consultation/:id" element={<VideoConsultation />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const enterBtn = await screen.findByRole("button", { name: /Enter Video Consultation/i });
+    fireEvent.click(enterBtn);
+
+    // 1. Should show "Connecting to meeting server..." non-blocking banner & header status
+    const connectingElements = await screen.findAllByText(/Connecting to meeting server.../i);
+    expect(connectingElements.length).toBeGreaterThanOrEqual(1);
+
+    // 2. Simulate local user joining the conference (videoConferenceJoined)
+    // Wait for JitsiMeetExternalAPI to instantiate and register event listeners
+    await waitFor(() => {
+      expect(listeners["videoConferenceJoined"]).toBeDefined();
+    });
+    act(() => {
+      listeners["videoConferenceJoined"]({});
+    });
+
+    const waitingElements = await screen.findAllByText(/Waiting for the other participant/i);
+    expect(waitingElements.length).toBeGreaterThanOrEqual(1);
+
+    // 3. Simulate remote peer joining (participantJoined)
+    // Should transition to "Connected to meeting"
+    expect(listeners["participantJoined"]).toBeDefined();
+    act(() => {
+      listeners["participantJoined"]({ id: "peer-1" });
+    });
+
+    const connectedElements = await screen.findAllByText(/Connected to meeting/i);
+    expect(connectedElements.length).toBeGreaterThanOrEqual(1);
+
+    // 4. Simulate hanging up (readyToClose)
+    // Should transition to "Consultation Session Concluded"
+    expect(listeners["readyToClose"]).toBeDefined();
+    act(() => {
+      listeners["readyToClose"]({});
+    });
+
+    expect(await screen.findByRole("heading", { name: /Consultation Session Concluded/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rejoin Consultation/i })).toBeInTheDocument();
+
+    navigator.mediaDevices = originalMediaDevices;
+    delete window.JitsiMeetExternalAPI;
+  });
+
+  test("Handles WebRTC connection failure with diagnostic instructions and retry action", async () => {
+    const listeners = {};
+    class MockJitsiAPI {
+      constructor(domain, options) {
+        MockJitsiAPI.lastInstance = this;
+      }
+      addEventListener(event, cb) {
+        listeners[event] = cb;
+      }
+      executeCommand(cmd) {}
+      dispose() {}
+    }
+    window.JitsiMeetExternalAPI = MockJitsiAPI;
+
+    appointmentsAPI.getVideoAccess.mockResolvedValue({
+      data: {
+        success: true,
+        meeting: {
+          roomName: "vaidyasthana-consult-test-room-123",
+          domain: "meet.jit.si",
+          appointmentId: "appt-789",
+          appointmentDate: "2026-10-20T00:00:00.000Z",
+          timeSlot: "10:30 AM",
+          consultationType: "Video / Online",
+          status: "Scheduled",
+          doctorName: "Dr. Sunita Rao",
+          patientName: "Amit Kumar",
+          department: "Cardiology",
+          userRole: "patient",
+          displayName: "Amit Kumar",
+        },
+      },
+    });
+
+    const originalMediaDevices = navigator.mediaDevices;
+    navigator.mediaDevices = {
+      getUserMedia: jest.fn().mockResolvedValue({
+        getTracks: () => [{ stop: jest.fn() }],
+      }),
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/consultation/appt-789"]}>
+        <Routes>
+          <Route path="/consultation/:id" element={<VideoConsultation />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const enterBtn = await screen.findByRole("button", { name: /Enter Video Consultation/i });
+    fireEvent.click(enterBtn);
+
+    const connectingElements = await screen.findAllByText(/Connecting to meeting server.../i);
+    expect(connectingElements.length).toBeGreaterThanOrEqual(1);
+
+    // Wait for connectionFailed listener and trigger it
+    await waitFor(() => {
+      expect(listeners["connectionFailed"]).toBeDefined();
+    });
+    act(() => {
+      listeners["connectionFailed"]({ error: "CONNECTION_DROPPED" });
+    });
+
+    expect(await screen.findByRole("heading", { name: /^Connection Failed$/i })).toBeInTheDocument();
+    expect(screen.getByText(/WebRTC media connection failed/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Retry Call Connection/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open in Dedicated Window/i })).toBeInTheDocument();
+
+    navigator.mediaDevices = originalMediaDevices;
+    delete window.JitsiMeetExternalAPI;
   });
 });
