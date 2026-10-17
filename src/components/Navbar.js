@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import ReactDOM from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Navbar.css";
 import AuthModal from "./AuthModal";
@@ -361,15 +362,17 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
-        <div className="mobile-drawer-backdrop" onClick={closeMobileMenu}>
-          <div
-            className="mobile-drawer"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="Mobile Navigation"
-          >
+      {/* Mobile Drawer Menu (Portaled to document.body to prevent backdrop-filter clipping) */}
+      {isMobileMenuOpen &&
+        (typeof document !== "undefined"
+          ? ReactDOM.createPortal(
+              <div className="mobile-drawer-backdrop" onClick={closeMobileMenu}>
+                <div
+                  className="mobile-drawer"
+                  onClick={(e) => e.stopPropagation()}
+                  role="dialog"
+                  aria-label="Mobile Navigation"
+                >
             <div className="mobile-drawer-header">
               <div className="brand-text">
                 <span className="navbar-title">Vaidyasthana</span>
@@ -626,8 +629,10 @@ function Navbar() {
               )}
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      )
+    : null)}
 
       {/* Auth Modal Portal */}
       {authModalType && (

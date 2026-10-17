@@ -25,17 +25,30 @@
 .auth-modal-card {
   background: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 25px 60px -15px rgba(10, 25, 47, 0.4), 0 0 0 1px rgba(15, 23, 42, 0.08);
   border: 1px solid var(--border-subtle);
   width: 100%;
-  max-width: 440px;
-  max-height: min(90vh, 780px);
+  max-width: 450px;
+  max-height: min(92vh, 800px);
   overflow-y: auto;
   position: relative;
   padding: 2.25rem 2.25rem 2rem;
   margin: auto;
   box-sizing: border-box;
   animation: authModalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-modal-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auth-modal-card::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
 }
 
 @keyframes authModalPop {
@@ -55,23 +68,28 @@
   }
 }
 
-/* Close Button */
+/* Sticky Accessible Close Button */
 .auth-close-btn {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
+  position: sticky;
+  top: 0;
+  float: right;
+  margin-top: -0.85rem;
+  margin-right: -0.85rem;
   background: var(--bg-secondary);
   color: var(--text-muted);
-  border: none;
-  width: 36px;
-  height: 36px;
+  border: 1px solid var(--border-subtle);
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
-  z-index: 10;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .auth-close-btn:hover {
@@ -645,9 +663,37 @@
   }
 
   .auth-close-btn {
-    top: 1rem;
-    right: 1rem;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    margin-top: -0.5rem;
+    margin-right: -0.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .auth-modal-card {
+    padding: 1.25rem 0.85rem 1rem;
+    border-radius: 14px;
+  }
+
+  .auth-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .auth-brand-logo-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .field-input-wrap input,
+  .field-input-wrap select {
+    font-size: 0.85rem;
+    padding-left: 2.25rem;
   }
 }

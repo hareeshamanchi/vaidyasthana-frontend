@@ -286,13 +286,14 @@ const Home = () => {
             </div>
 
             <h1 className="hero-main-title">
-              Welcome to Vaidyasthana
+              <span className="hero-title-lead">Welcome to Vaidyasthana</span>
+              <span className="hero-gradient-text">Intelligent Clinical Health Records</span>
             </h1>
 
             <p className="hero-description">
-              The modern healthcare platform unifying medical record storage,
-              automated laboratory OCR extraction, and plain-language clinical
-              explanations for patients and physicians.
+              The unified healthcare platform combining private Azure Cloud Vaults,
+              automated laboratory OCR extraction, and plain-language clinical AI
+              insights for patients and certified physicians.
             </p>
 
             <div className="hero-cta-buttons">
@@ -320,13 +321,16 @@ const Home = () => {
 
             <div className="hero-feature-pills">
               <span className="pill-item">
-                <FiCheckCircle className="pill-icon" /> Private Blob Storage
+                <FiLock className="pill-icon" /> Private Cloud Vault
               </span>
               <span className="pill-item">
-                <FiCheckCircle className="pill-icon" /> Document Intelligence OCR
+                <FiCpu className="pill-icon" /> Automated OCR Extraction
               </span>
               <span className="pill-item">
-                <FiCheckCircle className="pill-icon" /> SAS Token Protection
+                <FiShield className="pill-icon" /> 60-Min SAS Authorization
+              </span>
+              <span className="pill-item">
+                <FiCheckCircle className="pill-icon" /> Physician Audit Trail
               </span>
             </div>
           </div>
@@ -341,13 +345,15 @@ const Home = () => {
                   <span></span>
                 </div>
                 <span className="mockup-header-title">Diagnostic Panel • Azure AI Extraction</span>
-                <span className="mockup-badge-live">Live Preview</span>
+                <span className="mockup-badge-live">
+                  <span className="live-dot"></span> Live Analysis
+                </span>
               </div>
 
               <div className="mockup-body">
                 <div className="mockup-patient-strip">
                   <div className="mockup-patient-id">
-                    <strong>Report:</strong> Comprehensive Metabolic Panel (CMP)
+                    <strong>Record:</strong> Comprehensive Metabolic Panel (CMP)
                   </div>
                   <span className="mockup-status-tag">OCR Verified</span>
                 </div>
@@ -384,10 +390,18 @@ const Home = () => {
                     <FiCpu size={14} /> AI Clinical Summary
                   </div>
                   <p>
-                    Fasting glucose is mildly elevated above the baseline reference
-                    interval. Recommended discussion with your doctor regarding HbA1c
-                    testing and dietary lifestyle adjustments.
+                    Fasting glucose is mildly elevated above standard reference intervals.
+                    Recommends physician discussion for HbA1c screening and lifestyle guidance.
                   </p>
+                </div>
+
+                <div className="mockup-security-footer">
+                  <span className="mockup-sec-badge">
+                    <FiLock size={12} /> Azure Key Vault Encrypted • AES-256 GCM
+                  </span>
+                  <span className="mockup-sec-badge tag-teal">
+                    <FiShield size={12} /> Authorized Access Only
+                  </span>
                 </div>
               </div>
             </div>

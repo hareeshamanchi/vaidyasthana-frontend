@@ -317,24 +317,32 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
-  z-index: 1001;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(10, 25, 47, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99998;
   display: flex;
   justify-content: flex-end;
+  box-sizing: border-box;
 }
 
 .mobile-drawer {
-  width: 85%;
-  max-width: 320px;
-  height: 100%;
+  width: min(85vw, 340px);
+  height: 100vh;
+  max-height: 100vh;
   background: #ffffff;
   display: flex;
   flex-direction: column;
   padding: 1.25rem;
-  box-shadow: var(--shadow-xl);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.28);
+  border-left: 1px solid var(--border-subtle);
   animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+  overflow: hidden;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));
+  padding-top: max(1.25rem, env(safe-area-inset-top, 1.25rem));
 }
 
 @keyframes slideInRight {

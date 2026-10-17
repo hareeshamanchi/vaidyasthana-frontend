@@ -12,37 +12,54 @@
    Hero Section
    ========================================================================== */
 .home-hero-section {
-  background: linear-gradient(145deg, #061224 0%, #0b1f3d 50%, #0c2b50 100%);
-  color: #ffffff;
-  padding: 3.25rem 1.5rem 3.75rem;
   position: relative;
   overflow: hidden;
+  color: #ffffff;
+  padding: clamp(3.5rem, 6.5vw, 5.5rem) 1.5rem clamp(4rem, 7vw, 6rem);
+  background-color: #061122;
+  background-image:
+    /* Layer 1: Ambient focal glow behind hero headline */
+    radial-gradient(ellipse 650px 420px at 22% 38%, rgba(14, 165, 233, 0.18) 0%, transparent 65%),
+    /* Layer 2: Clinical teal ambient glow on top right */
+    radial-gradient(ellipse 550px 450px at 85% 15%, rgba(13, 148, 136, 0.16) 0%, transparent 60%),
+    /* Layer 3: Deep rich navy/blue bottom ambient glow */
+    radial-gradient(ellipse 750px 520px at 50% 100%, rgba(3, 105, 161, 0.15) 0%, transparent 70%),
+    /* Layer 4: Subtle geometric molecular / clinical node dot grid */
+    radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.09) 1.2px, transparent 0),
+    radial-gradient(circle at 17px 17px, rgba(45, 212, 191, 0.06) 1.2px, transparent 0),
+    /* Layer 5: Base rich gradient from deep midnight navy to rich healthcare blue */
+    linear-gradient(155deg, #050d1a 0%, #0a192f 35%, #0c2b50 70%, #071933 100%);
+  background-size:
+    auto,
+    auto,
+    auto,
+    32px 32px,
+    32px 32px,
+    100% 100%;
 }
 
 .home-hero-section::before {
   content: "";
   position: absolute;
-  top: -25%;
-  right: -10%;
-  width: 550px;
-  height: 550px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.16) 0%, rgba(13, 148, 136, 0.08) 45%, transparent 70%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.35), rgba(45, 212, 191, 0.35), transparent);
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .home-hero-section::after {
   content: "";
   position: absolute;
-  bottom: -20%;
-  left: -8%;
-  width: 450px;
-  height: 450px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(2, 132, 199, 0.12) 0%, transparent 60%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg-page));
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .hero-container {
@@ -50,10 +67,10 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  gap: 2.5rem;
+  gap: 3rem;
   align-items: center;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .hero-text-content {
@@ -64,41 +81,60 @@
 .hero-trust-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   background: rgba(14, 165, 233, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  padding: 0.35rem 0.95rem;
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  padding: 0.38rem 0.95rem;
   border-radius: var(--radius-full);
   font-size: 0.8rem;
   font-weight: 600;
   color: #7dd3fc;
   letter-spacing: 0.02em;
-  margin-bottom: 1.15rem;
+  margin-bottom: 1.25rem;
   width: fit-content;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.14);
 }
 
 .trust-icon {
   color: #2dd4bf;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
 .hero-main-title {
-  font-size: clamp(1.85rem, 2.7vw, 2.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: clamp(2rem, 3.6vw, 3rem);
   font-weight: 800;
   color: #ffffff;
-  line-height: 1.18;
-  letter-spacing: -0.025em;
-  margin-bottom: 1rem;
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.25rem;
+  text-shadow: 0 2px 24px rgba(14, 165, 233, 0.22);
+}
+
+.hero-title-lead {
+  font-size: clamp(1.35rem, 2.3vw, 1.95rem);
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: -0.02em;
+}
+
+.hero-gradient-text {
+  background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline;
 }
 
 .hero-description {
-  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  font-size: clamp(0.95rem, 1.15vw, 1.08rem);
   color: #cbd5e1;
-  line-height: 1.65;
-  margin-bottom: 1.75rem;
-  max-width: 520px;
+  line-height: 1.68;
+  margin-bottom: 1.85rem;
+  max-width: 540px;
 }
 
 .hero-cta-buttons {
@@ -106,29 +142,35 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.85rem;
 }
 
 .btn-hero-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
-  border: none;
-  padding: 0.75rem 1.6rem;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  padding: 0.85rem 1.8rem;
   border-radius: var(--radius-sm);
   font-weight: 700;
-  font-size: 0.95rem;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-  transition: all var(--transition-fast);
+  font-size: 0.98rem;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.45), 0 0 28px rgba(14, 165, 233, 0.28);
+  transition: all var(--transition-normal);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .btn-hero-primary:hover {
   background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+  box-shadow: 0 8px 26px rgba(2, 132, 199, 0.55), 0 0 38px rgba(14, 165, 233, 0.38);
+}
+
+.btn-hero-primary:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 3px;
 }
 
 .btn-hero-secondary {
@@ -137,11 +179,13 @@
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.24);
-  padding: 0.75rem 1.4rem;
+  padding: 0.85rem 1.65rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
-  font-size: 0.95rem;
-  transition: all var(--transition-fast);
+  font-size: 0.98rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition-normal);
   text-decoration: none;
 }
 
@@ -152,23 +196,41 @@
   transform: translateY(-2px);
 }
 
+.btn-hero-secondary:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 3px;
+}
+
 .hero-feature-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .pill-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.825rem;
-  color: #94a3b8;
+  gap: 0.45rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  color: #cbd5e1;
   font-weight: 500;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color var(--transition-fast);
+}
+
+.pill-item:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #ffffff;
 }
 
 .pill-icon {
   color: #2dd4bf;
+  font-size: 0.95rem;
 }
 
 /* ==========================================================================
@@ -182,11 +244,11 @@
 
 .clinical-mockup-window {
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   background: #ffffff;
   color: var(--text-main);
-  border-radius: 14px;
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15), 0 0 35px rgba(14, 165, 233, 0.18);
   overflow: hidden;
   animation: floatCard 6s ease-in-out infinite alternate;
 }
@@ -203,22 +265,22 @@
 }
 
 .mockup-header {
-  background: #0b1526;
-  padding: 0.75rem 1.15rem;
+  background: #0a192f;
+  padding: 0.85rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .window-dots {
   display: flex;
-  gap: 5px;
+  gap: 6px;
 }
 
 .window-dots span {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.25);
 }
@@ -228,24 +290,42 @@
 .window-dots span:nth-child(3) { background: #22c55e; }
 
 .mockup-header-title {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #cbd5e1;
+  letter-spacing: 0.01em;
 }
 
 .mockup-badge-live {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   background: rgba(13, 148, 136, 0.2);
   color: #2dd4bf;
   border: 1px solid rgba(20, 184, 166, 0.45);
-  padding: 0.15rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
   font-weight: 700;
   letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 8px #2dd4bf;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
 .mockup-body {
-  padding: 1.25rem;
+  padding: 1.35rem;
   background: #ffffff;
 }
 
@@ -256,7 +336,7 @@
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 1.1rem;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .mockup-patient-id strong {
@@ -266,18 +346,19 @@
 .mockup-status-tag {
   background: var(--teal-50);
   color: var(--teal-700);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-xs);
+  border: 1px solid var(--teal-100);
 }
 
 /* Biomarker Table */
 .mockup-biomarker-table {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  gap: 0.45rem;
+  margin-bottom: 1.15rem;
 }
 
 .biomarker-row {
@@ -286,14 +367,15 @@
   align-items: center;
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius-xs);
-  font-size: 0.875rem;
+  font-size: 0.86rem;
+  transition: background-color var(--transition-fast);
 }
 
 .biomarker-header {
   background: var(--bg-secondary);
   font-weight: 700;
   color: var(--text-secondary);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -309,7 +391,7 @@
 
 .bio-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.875rem;
+  font-size: 0.86rem;
   font-weight: 600;
 }
 
@@ -319,14 +401,14 @@
 
 .bio-ref {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
 }
 
 .bio-badge {
   display: inline-block;
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-align: center;
 }
@@ -346,26 +428,54 @@
   background: var(--blue-50);
   border: 1px solid var(--blue-100);
   border-radius: var(--radius-sm);
-  padding: 0.85rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
 }
 
 .insight-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   color: var(--blue-700);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 
 .mockup-ai-insight p {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--navy-800);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+/* Security Footer */
+.mockup-security-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 0.72rem;
+}
+
+.mockup-sec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.mockup-sec-badge.tag-teal {
+  color: var(--teal-700);
+  background: var(--teal-50);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
 }
 
 /* ==========================================================================
@@ -1162,7 +1272,7 @@
 
 @media (max-width: 640px) {
   .hero-main-title {
-    font-size: 2.2rem;
+    font-size: clamp(1.85rem, 6vw, 2.25rem);
   }
 
   .hero-cta-buttons {
@@ -1175,6 +1285,7 @@
   .btn-hero-secondary {
     width: 100%;
     justify-content: center;
+    box-sizing: border-box;
   }
 
   .features-grid {
@@ -1186,10 +1297,11 @@
   }
 
   .floating-bmi-btn {
-    bottom: 1rem;
-    right: 1rem;
-    padding: 0.65rem 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+    right: max(1rem, env(safe-area-inset-right, 1rem));
+    padding: 0.6rem 0.95rem;
     font-size: 0.8rem;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.35);
   }
 
   .biomarker-row {
@@ -1204,13 +1316,17 @@
 }
 
 @media (max-width: 480px) {
+  .home-hero-section {
+    padding: 3.25rem 1rem 3.75rem;
+  }
+
   .hero-main-title {
-    font-size: 1.95rem;
+    font-size: clamp(1.75rem, 5.5vw, 2rem);
   }
 
   .hero-description {
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.92rem;
+    line-height: 1.62;
   }
 
   .carousel-viewport {
@@ -1224,14 +1340,80 @@
   }
 
   .pill-item {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+    padding: 0.35rem 0.7rem;
   }
 
   .mockup-biomarker-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .biomarker-row {
+    grid-template-columns: 1.5fr 1.2fr 1fr;
+    font-size: 0.74rem;
+    padding: 0.35rem 0.45rem;
+  }
+
+  .biomarker-row .bio-ref {
+    display: none;
+  }
+
+  .biomarker-header span:nth-child(3) {
     display: none;
   }
 
   .mockup-header-title {
     font-size: 0.72rem;
+  }
+
+  .mockup-security-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-hero-section {
+    padding: 2.75rem 0.75rem 3.25rem;
+  }
+
+  .hero-trust-badge {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.7rem;
+    gap: 0.4rem;
+  }
+
+  .hero-main-title {
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-description {
+    font-size: 0.86rem;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    font-size: 0.88rem;
+    padding: 0.75rem 1.15rem;
+  }
+
+  .pill-item {
+    font-size: 0.7rem;
+    padding: 0.28rem 0.55rem;
+  }
+
+  .mockup-body {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .floating-bmi-btn {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.74rem;
   }
 }
