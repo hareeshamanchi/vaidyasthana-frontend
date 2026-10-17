@@ -25,6 +25,7 @@ import {
   FiMail,
   FiCheck,
   FiVideo,
+  FiActivity,
 } from "react-icons/fi";
 
 const CATEGORIES = [
@@ -654,6 +655,9 @@ const DoctorDashboard = () => {
           </div>
         ) : (
           <div className="consultations-table-wrapper">
+            <span className="table-scroll-hint mobile-only">
+              ← Swipe horizontally to review patient details & actions →
+            </span>
             <table className="consultations-table">
               <thead>
                 <tr>
@@ -795,17 +799,28 @@ const DoctorDashboard = () => {
                               )}
 
                               {targetPatientRefId && (
-                                <button
-                                  className="btn-vault-link"
-                                  onClick={() => {
-                                    setPatientId(targetPatientRefId);
-                                    handleFetchReports(targetPatientRefId);
-                                  }}
-                                  type="button"
-                                  title="Open Patient Vault"
-                                >
-                                  <FiEye size={12} /> Vault
-                                </button>
+                                <>
+                                  <button
+                                    className="btn-vault-link"
+                                    onClick={() => {
+                                      setPatientId(targetPatientRefId);
+                                      handleFetchReports(targetPatientRefId);
+                                    }}
+                                    type="button"
+                                    title="Open Patient Vault"
+                                  >
+                                    <FiEye size={12} /> Vault
+                                  </button>
+                                  <button
+                                    className="btn-vault-link"
+                                    style={{ borderColor: "#0d9488", color: "#0f766e" }}
+                                    onClick={() => navigate(`/timeline?patientId=${targetPatientRefId}`)}
+                                    type="button"
+                                    title="Open Unified Health Timeline"
+                                  >
+                                    <FiActivity size={12} /> Timeline
+                                  </button>
+                                </>
                               )}
                             </div>
                           );
@@ -1064,7 +1079,32 @@ const DoctorDashboard = () => {
               </span>
             )}
           </h2>
-          <span className="records-count">{reports.length} Document(s) Loaded</span>
+          <div className="vault-header-actions" style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <span className="records-count">{reports.length} Document(s) Loaded</span>
+            {currentTargetId && (
+              <button
+                className="btn-vault-link"
+                style={{
+                  background: "#0d9488",
+                  color: "#ffffff",
+                  borderColor: "#0d9488",
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.825rem",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+                onClick={() => navigate(`/timeline?patientId=${currentTargetId}`)}
+                type="button"
+                title="Open Complete Health Timeline for Patient"
+              >
+                <FiActivity size={13} /> Complete Health Timeline
+              </button>
+            )}
+          </div>
         </div>
 
         {reports.length === 0 ? (
@@ -1079,6 +1119,9 @@ const DoctorDashboard = () => {
           </div>
         ) : (
           <div className="table-responsive">
+            <span className="table-scroll-hint mobile-only">
+              ← Swipe horizontally to review format, date, & AI extractions →
+            </span>
             <table className="doctor-records-table">
               <thead>
                 <tr>

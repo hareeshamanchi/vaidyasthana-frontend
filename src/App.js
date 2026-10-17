@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VideoConsultation from "./pages/VideoConsultation";
+import HealthTimeline from "./pages/HealthTimeline";
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
           <Route path="/diet" element={<DietResultPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/insurance" element={<InsurancePage />} />
+          <Route path="/timeline" element={<HealthTimeline />} />
+          <Route path="/health-timeline" element={<HealthTimeline />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

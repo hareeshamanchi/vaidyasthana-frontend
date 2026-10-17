@@ -6,6 +6,8 @@
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -21,6 +23,9 @@
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-sm);
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .doctor-badge {
@@ -154,17 +159,20 @@
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1rem;
-  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .patient-search-input {
   flex: 1;
-  min-width: 260px;
+  min-width: 0;
+  width: 100%;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
   padding: 0.65rem 0.95rem;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
+  box-sizing: border-box;
 }
 
 .patient-search-input:focus {
@@ -183,6 +191,8 @@
   font-size: 0.88rem;
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-fetch-patient:hover:not(:disabled) {
@@ -202,6 +212,8 @@
   flex-wrap: wrap;
   padding-top: 0.75rem;
   border-top: 1px solid var(--border-subtle);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .associated-label {
@@ -215,6 +227,7 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .pat-pill {
@@ -230,6 +243,15 @@
   color: var(--navy-900);
   cursor: pointer;
   transition: all var(--transition-fast);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pat-pill span:not(.pat-id-mini) {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pat-pill:hover,
@@ -243,6 +265,10 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   color: var(--text-muted);
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .associated-patients-empty {
@@ -825,36 +851,7 @@
   font-style: italic;
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 992px) {
-  .doctor-header-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 
-  .doc-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .search-bar-row {
-    flex-direction: column;
-  }
-
-  .btn-fetch-patient {
-    width: 100%;
-  }
-
-  .doc-upload-header {
-    flex-direction: column;
-  }
-
-  .file-drop-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
 
 /* ==========================================================================
    Doctor Verification Status Banner & Modal
@@ -1008,11 +1005,30 @@
 }
 
 .consultations-table-wrapper {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  box-sizing: border-box;
+}
+
+.table-scroll-hint {
+  display: none;
+  font-size: 0.74rem;
+  color: var(--teal-700);
+  background: var(--teal-50);
+  border: 1px solid var(--teal-200);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
 }
 
 .consultations-table {
   width: 100%;
+  min-width: 820px;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -1025,6 +1041,7 @@
   font-weight: 700;
   font-size: 0.8rem;
   border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .consultations-table td {
@@ -1037,12 +1054,16 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .action-buttons-group {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  white-space: nowrap;
 }
 
 .btn-join-video-table {
@@ -1233,4 +1254,347 @@
 .verif-submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Comprehensive Responsive Breakpoints (320px - 1920px)
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .doctor-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .doctor-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .doc-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-scroll-hint.mobile-only {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .consultations-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .records-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .doc-upload-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .doctor-dashboard-container {
+    padding: 1rem 0.85rem 3rem;
+  }
+
+  .doctor-header-card {
+    padding: 1.15rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .doctor-header-content h1 {
+    font-size: 1.35rem;
+    word-break: break-word;
+  }
+
+  .doctor-subtitle {
+    font-size: 0.825rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .doctor-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .doctor-profile-box {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-start;
+  }
+
+  .btn-audit-reports {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  /* Verification Banner Mobile */
+  .doctor-verification-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .verif-banner-left {
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .verif-banner-icon {
+    margin-top: 2px;
+    font-size: 1.35rem;
+  }
+
+  .verif-banner-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .verif-banner-text h4 {
+    font-size: 0.9rem;
+    word-break: break-word;
+  }
+
+  .verif-banner-text p {
+    font-size: 0.8rem;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  .btn-open-verif-modal {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .verified-pill-tag {
+    width: 100%;
+    min-height: 40px;
+    justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  /* Assigned Consultations Mobile */
+  .assigned-consultations-section {
+    padding: 1.15rem 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-md);
+  }
+
+  .consultations-header-row h3 {
+    font-size: 1.15rem;
+  }
+
+  .realtime-pulse-badge {
+    align-self: flex-start;
+  }
+
+  /* Patient Search Mobile */
+  .patient-search-card {
+    padding: 1.15rem 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-md);
+  }
+
+  .search-header-row {
+    gap: 0.5rem;
+  }
+
+  .search-header-row h3 {
+    font-size: 1.1rem;
+  }
+
+  .search-bar-row {
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .patient-search-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .btn-fetch-patient {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .associated-patients-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .associated-pills {
+    width: 100%;
+  }
+
+  .search-feedback-banner {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.825rem;
+    word-break: break-word;
+  }
+
+  /* Upload Card Mobile */
+  .doctor-upload-card {
+    padding: 1.15rem 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-md);
+  }
+
+  .doc-upload-title h3 {
+    font-size: 1.15rem;
+  }
+
+  .target-patient-indicator {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.75rem;
+    word-break: break-all;
+  }
+
+  .file-drop-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .file-drop-label {
+    padding: 0.85rem;
+    font-size: 0.825rem;
+    justify-content: center;
+    text-align: center;
+    word-break: break-all;
+  }
+
+  .btn-clear-file {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .doc-upload-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .btn-submit-doc-upload {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Retrieved Records Mobile */
+  .retrieved-records-section {
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
+  }
+
+  .records-header-bar {
+    padding: 1rem;
+  }
+
+  .records-header-bar h2 {
+    font-size: 1.15rem;
+    word-break: break-word;
+  }
+
+  /* Modals Mobile */
+  .audit-modal-backdrop,
+  .verif-modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .audit-modal-card {
+    border-radius: var(--radius-md);
+    max-height: 90vh;
+  }
+
+  .audit-modal-header {
+    padding: 1rem 1.15rem;
+  }
+
+  .audit-title-wrap h3 {
+    font-size: 1.1rem;
+  }
+
+  .audit-modal-body {
+    padding: 1rem 1.15rem;
+    gap: 1.25rem;
+  }
+
+  .audit-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .verif-modal-card {
+    padding: 1.25rem 1rem;
+    border-radius: var(--radius-md);
+    max-height: 92vh;
+  }
+
+  .verif-modal-header h3 {
+    font-size: 1.15rem;
+  }
+
+  .verif-submit-btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .doctor-dashboard-container {
+    padding: 0.75rem 0.5rem 2.5rem;
+  }
+
+  .doctor-header-card,
+  .assigned-consultations-section,
+  .patient-search-card,
+  .doctor-upload-card,
+  .retrieved-records-section {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .doctor-header-content h1 {
+    font-size: 1.2rem;
+  }
+
+  .audit-modal-backdrop,
+  .verif-modal-backdrop {
+    padding: 0.35rem;
+  }
+
+  .audit-modal-body,
+  .verif-modal-card {
+    padding: 0.85rem 0.65rem;
+  }
 }

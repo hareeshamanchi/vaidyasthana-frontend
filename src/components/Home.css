@@ -794,13 +794,17 @@
   gap: 1.25rem;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .file-input-control {
   flex: 1;
-  min-width: 320px;
+  min-width: 0;
+  width: 100%;
   font-size: 0.95rem;
   padding: 0.8rem 1rem;
+  box-sizing: border-box;
 }
 
 .btn-quick-upload {

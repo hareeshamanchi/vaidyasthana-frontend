@@ -217,7 +217,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 300px;
+  min-width: min(100%, 300px);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .search-icon {

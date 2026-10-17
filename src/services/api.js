@@ -1,11 +1,38 @@
 import axios from "axios";
 
-const RAW_API_URL =
-  process.env.REACT_APP_API ||
-  process.env.REACT_APP_API_URL ||
-  "http://localhost:5000";
+const DEPLOYED_BACKEND_URL = "https://vaidyasthana-node-backend.onrender.com";
 
-const API_BASE_URL = RAW_API_URL.replace(/\/+$/, "");
+const resolveApiBaseUrl = () => {
+  const envUrl = (
+    process.env.REACT_APP_API ||
+    process.env.REACT_APP_API_URL ||
+    ""
+  ).trim();
+
+  // If running in browser on deployed production domain (not localhost)
+  if (typeof window !== "undefined" && window.location) {
+    const hostname = window.location.hostname || "";
+    const isLocalhost =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.");
+
+    if (!isLocalhost) {
+      if (!envUrl || envUrl.includes("localhost") || envUrl.includes("127.0.0.1")) {
+        return DEPLOYED_BACKEND_URL;
+      }
+    }
+  }
+
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, "");
+  }
+
+  return "http://localhost:5000";
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -162,6 +189,15 @@ export const notificationsAPI = {
   markAsRead: (id) => api.patch(`/api/notifications/${id}/read`),
   markAllAsRead: () => api.patch("/api/notifications/read-all"),
   deleteNotification: (id) => api.delete(`/api/notifications/${id}`),
+};
+
+// ==========================================
+// Unified Patient Health Timeline API
+// ==========================================
+export const timelineAPI = {
+  getTimeline: (params) => api.get("/api/timeline", { params }),
+  getPatientTimeline: (patientId, params) =>
+    api.get(`/api/timeline/${patientId}`, { params }),
 };
 
 export default api;

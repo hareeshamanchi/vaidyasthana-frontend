@@ -491,6 +491,18 @@ const PatientDashboard = () => {
             >
               <FiPlus /> Upload Medical Records
             </button>
+            <button
+              className="btn-open-upload"
+              style={{
+                background: "#0d9488",
+                borderColor: "#0d9488",
+                boxShadow: "0 2px 4px rgba(13, 148, 136, 0.2)",
+              }}
+              onClick={() => navigate("/timeline")}
+              type="button"
+            >
+              <FiActivity /> Health Timeline
+            </button>
           </div>
         </div>
       </header>

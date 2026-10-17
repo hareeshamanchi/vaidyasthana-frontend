@@ -153,12 +153,32 @@ function Navbar() {
                   <FiFileText className="nav-icon" /> Medical Vault
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/timeline"
+                  className={`nav-link ${
+                    isActive("/timeline") || isActive("/health-timeline") ? "active" : ""
+                  }`}
+                >
+                  <FiActivity className="nav-icon" /> Health Timeline
+                </Link>
+              </li>
             </>
           )}
 
           {/* Patient-specific links */}
           {isPatient && (
             <>
+              <li>
+                <Link
+                  to="/timeline"
+                  className={`nav-link ${
+                    isActive("/timeline") || isActive("/health-timeline") ? "active" : ""
+                  }`}
+                >
+                  <FiActivity className="nav-icon" /> Timeline
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/appointment"
@@ -323,15 +343,22 @@ function Navbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger Button */}
-        <button
-          className="mobile-toggle-btn mobile-only"
-          onClick={toggleMobileMenu}
-          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isMobileMenuOpen}
-        >
-          {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-        </button>
+        {/* Mobile Header Controls */}
+        <div className="mobile-header-controls mobile-only">
+          {user && (
+            <div className="mobile-header-notif">
+              <NotificationDropdown user={user} />
+            </div>
+          )}
+          <button
+            className="mobile-toggle-btn"
+            onClick={toggleMobileMenu}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer Menu */}
@@ -415,12 +442,30 @@ function Navbar() {
                       Medical Vault
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      to="/timeline"
+                      className={isActive("/timeline") || isActive("/health-timeline") ? "active" : ""}
+                      onClick={closeMobileMenu}
+                    >
+                      Patient Health Timeline
+                    </Link>
+                  </li>
                 </>
               )}
 
               {/* Patient-specific Mobile Links */}
               {isPatient && (
                 <>
+                  <li>
+                    <Link
+                      to="/timeline"
+                      className={isActive("/timeline") || isActive("/health-timeline") ? "active" : ""}
+                      onClick={closeMobileMenu}
+                    >
+                      Health Timeline
+                    </Link>
+                  </li>
                   <li>
                     <Link
                       to="/appointment"

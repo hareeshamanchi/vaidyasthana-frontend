@@ -6,6 +6,8 @@
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ==========================================================================
@@ -227,7 +229,7 @@
 
 .appointments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 1.5rem;
 }
 
@@ -940,56 +942,7 @@
   height: 14px;
 }
 
-/* ==========================================================================
-   Responsive Breakpoints
-   ========================================================================== */
-@media (max-width: 992px) {
-  .next-appointment-card {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
 
-  .appointment-meta-pills {
-    justify-content: center;
-  }
-
-  .live-countdown-clock {
-    justify-content: center;
-  }
-
-  .appointments-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .appointment-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .btn-book-new {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .appointments-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-row-2 {
-    grid-template-columns: 1fr;
-  }
-
-  .countdown-unit {
-    min-width: 50px;
-    padding: 0.5rem 0.65rem;
-  }
-
-  .unit-number {
-    font-size: 1.5rem;
-  }
-}
 
 /* ==========================================================================
    Doctor / Clinician Role Specific Appointments Styling
@@ -1277,18 +1230,213 @@
   box-shadow: 0 5px 14px rgba(2, 132, 199, 0.42);
 }
 
+/* ==========================================================================
+   Comprehensive Responsive Breakpoints (320px - 1920px)
+   ========================================================================== */
+
 @media (max-width: 1024px) {
   .doctor-consultations-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 640px) {
-  .doctor-consultations-grid {
+@media (max-width: 992px) {
+  .next-appointment-card {
     grid-template-columns: 1fr;
+    text-align: center;
   }
+
+  .appointment-meta-pills {
+    justify-content: center;
+  }
+
+  .live-countdown-clock {
+    justify-content: center;
+  }
+
+  .appointments-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .appointment-page-container {
+    padding: 1rem 0.85rem 3rem;
+  }
+
+  .appointment-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
   .btn-doctor-portal-link {
     width: 100%;
+    min-height: 44px;
     justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .btn-book-new {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* Countdown Card Mobile */
+  .next-appointment-card {
+    padding: 1.25rem 1rem;
+    gap: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .countdown-reason-text {
+    max-width: 100%;
+    word-break: break-word;
+  }
+
+  .live-countdown-clock {
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .countdown-unit {
+    min-width: 44px;
+    padding: 0.4rem 0.45rem;
+  }
+
+  .unit-number {
+    font-size: 1.25rem;
+  }
+
+  .unit-label {
+    font-size: 0.65rem;
+  }
+
+  .clock-divider {
+    font-size: 1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Appointments List Mobile */
+  .appointments-list-section {
+    padding: 1.15rem 1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .appointments-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .appointment-card {
+    padding: 1.15rem 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .doctor-consultations-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .doctor-view-card {
+    padding: 1.15rem 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .doctor-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-action-confirm,
+  .btn-action-reject,
+  .btn-action-start,
+  .btn-action-complete,
+  .btn-action-vault,
+  .btn-action-join-video {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .btn-action-vault {
+    margin-left: 0;
+  }
+
+  /* Modal Form Mobile */
+  .booking-dialog-card,
+  .enhanced-dialog {
+    padding: 1.25rem 1rem;
+    border-radius: var(--radius-md);
+    max-height: 92vh;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-quick-form {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-save-profile {
+    grid-column: 1 / -1;
+    min-height: 44px;
+  }
+
+  .dialog-buttons-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-dialog-cancel,
+  .btn-dialog-book {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .slots-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .appointment-page-container {
+    padding: 0.75rem 0.5rem 2.5rem;
+  }
+
+  .next-appointment-card,
+  .appointments-list-section {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .countdown-unit {
+    min-width: 38px;
+    padding: 0.35rem 0.25rem;
+  }
+
+  .unit-number {
+    font-size: 1.15rem;
+  }
+
+  .doctor-headline {
+    font-size: 1.15rem;
   }
 }
