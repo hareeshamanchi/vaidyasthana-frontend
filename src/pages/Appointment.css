@@ -1229,6 +1229,51 @@
   border-color: #94a3b8;
 }
 
+/* Real-Time Video Consultation Action Buttons */
+.btn-action-join-video {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--teal-600, #0d9488), var(--blue-600, #0284c7));
+  color: #ffffff !important;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+  transition: all 0.2s ease;
+}
+
+.btn-action-join-video:hover {
+  background: linear-gradient(135deg, var(--teal-700, #0f766e), var(--blue-700, #0369a1));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+}
+
+.btn-join-video-action.patient-video-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  background: linear-gradient(135deg, var(--blue-600, #0284c7), var(--teal-600, #0d9488));
+  color: #ffffff !important;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-join-video-action.patient-video-btn:hover {
+  background: linear-gradient(135deg, var(--blue-700, #0369a1), var(--teal-700, #0f766e));
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(2, 132, 199, 0.42);
+}
+
 @media (max-width: 1024px) {
   .doctor-consultations-grid {
     grid-template-columns: repeat(2, 1fr);

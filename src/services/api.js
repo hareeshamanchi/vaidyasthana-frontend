@@ -82,8 +82,10 @@ export const appointmentsAPI = {
   getSlots: (doctorId, date) =>
     api.get("/api/appointments/slots", { params: { doctorId, date } }),
   createAppointment: (data) => api.post("/api/appointments", data),
+  getAppointmentById: (id) => api.get(`/api/appointments/${id}`),
   updateAppointment: (id, data) => api.put(`/api/appointments/${id}`, data),
   deleteAppointment: (id) => api.delete(`/api/appointments/${id}`),
+  getVideoAccess: (id) => api.get(`/api/appointments/${id}/video-access`),
 };
 
 // ==========================================

@@ -1267,3 +1267,24 @@
   white-space: nowrap;
   max-width: 150px;
 }
+
+.btn-patient-join-video {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, var(--blue-600, #0284c7), var(--teal-600, #0d9488));
+  color: #ffffff !important;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-patient-join-video:hover {
+  background: linear-gradient(135deg, var(--blue-700, #0369a1), var(--teal-700, #0f766e));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.35);
+}

@@ -15,6 +15,7 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import VideoConsultation from "./pages/VideoConsultation";
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
           <Route path="/ai-analysis" element={<AIAnalysis />} />
           <Route path="/appointment" element={<Appointment />} />
           <Route path="/appointments" element={<Appointment />} />
+          <Route path="/consultation/:id" element={<VideoConsultation />} />
+          <Route path="/video-consultation/:id" element={<VideoConsultation />} />
           <Route path="/diet" element={<DietResultPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/insurance" element={<InsurancePage />} />

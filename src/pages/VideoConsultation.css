@@ -1,0 +1,818 @@
+/* ==========================================================================
+   Vaidyasthana Video Consultation Styles
+   Design Tokens, WebRTC Video Viewport & Responsive Telehealth Layout
+   ========================================================================== */
+
+/* 1. Fullscreen Consultation Screen Container */
+.video-consultation-fullscreen-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  background-color: var(--navy-950, #050d1a);
+  color: #ffffff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* 2. Top Bar */
+.consultation-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background-color: rgba(10, 25, 47, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-top-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-top-back:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-2px);
+}
+
+.consultation-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teal-400, #2dd4bf);
+}
+
+.room-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.top-bar-center {
+  display: flex;
+  align-items: center;
+}
+
+.call-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(15, 35, 66, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.status-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-circle.connected {
+  background-color: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+  animation: pulse-green 2s infinite;
+}
+
+.status-circle.connecting {
+  background-color: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+  animation: pulse-amber 1.5s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes pulse-amber {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.participant-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.btn-icon-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-top:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 3. Main Video Viewport */
+.consultation-video-viewport {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.jitsi-iframe-container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  border: none;
+  overflow: hidden;
+}
+
+.jitsi-iframe-container iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  display: block;
+}
+
+.viewport-connecting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 13, 26, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 2rem;
+  text-align: center;
+}
+
+.connecting-spinner {
+  width: 52px;
+  height: 52px;
+  border: 4px solid rgba(14, 165, 233, 0.2);
+  border-top-color: var(--teal-400, #2dd4bf);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.viewport-connecting-overlay h3 {
+  font-size: 1.35rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.viewport-connecting-overlay p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+/* 4. Bottom Floating Control Bar */
+.consultation-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.5rem;
+  background: rgba(10, 25, 47, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.control-buttons-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-control-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 68px;
+  height: 54px;
+  padding: 0.4rem 0.8rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-control-toggle:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.btn-control-toggle.muted {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.btn-control-toggle.muted:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.btn-control-hangup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 80px;
+  height: 54px;
+  padding: 0.4rem 1rem;
+  background: #dc2626;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-control-hangup:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.5);
+}
+
+/* 5. Lobby / Pre-Call Card */
+.video-consultation-lobby-wrap,
+.video-consultation-loading-wrap,
+.video-consultation-error-wrap,
+.video-consultation-ended-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 3rem 1.5rem;
+  background: var(--bg-page, #f8fafc);
+  color: var(--text-main, #0f172a);
+}
+
+.consult-lobby-card,
+.consult-loading-card,
+.consult-error-card,
+.consult-ended-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  padding: 2.75rem 2.5rem;
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+}
+
+.lobby-top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal-700, #0f766e);
+  background: var(--teal-50, #f0fdfa);
+  border: 1px solid var(--teal-100, #ccfbf1);
+  padding: 0.35rem 0.95rem;
+  border-radius: 9999px;
+  margin-bottom: 1.25rem;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--teal-600, #0d9488);
+}
+
+.consult-lobby-card h2,
+.consult-error-card h2,
+.consult-ended-card h2 {
+  font-size: 1.75rem;
+  color: var(--navy-900, #0a192f);
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+}
+
+.lobby-subtitle,
+.ended-subtitle {
+  color: var(--text-muted, #64748b);
+  font-size: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.lobby-details-box {
+  background: var(--navy-50, #f4f6fa);
+  border: 1px solid var(--navy-100, #e8edf5);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.75rem;
+  text-align: left;
+}
+
+.lobby-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lobby-detail-row.meta-row {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.detail-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.col-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy-900, #0a192f);
+}
+
+.col-value.doctor-name {
+  color: var(--blue-700, #0369a1);
+}
+
+.col-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navy-800, #142d54);
+}
+
+.meta-icon {
+  color: var(--blue-600, #0284c7);
+}
+
+.meta-icon.text-teal {
+  color: var(--teal-600, #0d9488);
+}
+
+.lobby-permission-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.lobby-permission-alert p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.82rem;
+  color: #b91c1c;
+}
+
+.lobby-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-join-call-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: var(--blue-600, #0284c7);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 1rem 1.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-join-call-primary:hover:not(:disabled) {
+  background: var(--blue-700, #0369a1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+}
+
+.btn-join-call-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-cancel-lobby {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-lobby:hover {
+  background: #f1f5f9;
+  color: var(--text-main, #0f172a);
+}
+
+.lobby-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted, #64748b);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* 6. Loading Spinner Card */
+.consult-spinner-ring {
+  width: 56px;
+  height: 56px;
+  border: 4px solid #e2e8f0;
+  border-top-color: var(--blue-600, #0284c7);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+/* 7. Error Card */
+.error-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.error-desc {
+  font-size: 1.05rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.error-guidance-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.guidance-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--navy-900, #0a192f);
+  margin-bottom: 0.6rem;
+}
+
+.error-guidance-box ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+.error-guidance-box li {
+  margin-bottom: 0.35rem;
+}
+
+.error-actions-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-retry-consult {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--blue-600, #0284c7);
+  color: #ffffff;
+  border: none;
+  padding: 0.8rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-retry-consult:hover {
+  background: var(--blue-700, #0369a1);
+}
+
+.btn-back-appts {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  color: var(--navy-900, #0a192f);
+  border: 1px solid #cbd5e1;
+  padding: 0.8rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back-appts:hover {
+  background: #e2e8f0;
+}
+
+/* 8. Ended Call Summary Card */
+.ended-icon-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.ended-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.stat-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy-900, #0a192f);
+}
+
+.ended-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-primary-ended {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--blue-600, #0284c7);
+  color: #ffffff;
+  padding: 0.85rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary-ended:hover {
+  background: var(--blue-700, #0369a1);
+}
+
+.btn-secondary-ended {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  color: var(--navy-900, #0a192f);
+  border: 1px solid #cbd5e1;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-ended:hover {
+  background: #e2e8f0;
+}
+
+.btn-rejoin-call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: transparent;
+  color: var(--teal-700, #0f766e);
+  border: none;
+  padding: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-rejoin-call:hover {
+  color: var(--teal-600, #0d9488);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Responsive Video Consultation Layout
+   ========================================================================== */
+@media (max-width: 768px) {
+  .consultation-top-bar {
+    padding: 0.6rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .top-bar-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.25rem;
+  }
+
+  .room-title {
+    font-size: 0.92rem;
+  }
+
+  .participant-chip {
+    display: none;
+  }
+
+  .consult-lobby-card,
+  .consult-loading-card,
+  .consult-error-card,
+  .consult-ended-card {
+    padding: 2rem 1.25rem;
+  }
+
+  .lobby-detail-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .ended-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-buttons-wrapper {
+    gap: 0.6rem;
+  }
+
+  .btn-control-toggle,
+  .btn-control-hangup {
+    min-width: 58px;
+    height: 48px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-control-toggle .control-label,
+  .btn-control-hangup .control-label {
+    display: none;
+  }
+
+  .btn-control-toggle,
+  .btn-control-hangup {
+    min-width: 44px;
+    height: 44px;
+    border-radius: 50%;
+  }
+}

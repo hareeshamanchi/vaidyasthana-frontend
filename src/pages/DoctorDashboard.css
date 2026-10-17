@@ -1042,6 +1042,29 @@
   gap: 0.4rem;
 }
 
+.btn-join-video-table {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, var(--teal-600, #0d9488), var(--blue-600, #0284c7));
+  color: #ffffff !important;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.btn-join-video-table:hover {
+  background: linear-gradient(135deg, var(--teal-700, #0f766e), var(--blue-700, #0369a1));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+}
+
 .btn-confirm-appt {
   background: #10b981;
   color: #ffffff;

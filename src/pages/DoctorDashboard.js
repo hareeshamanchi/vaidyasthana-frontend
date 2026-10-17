@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef, useCallback } from "rea
 import "./DoctorDashboard.css";
 import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getSocket } from "../services/socket";
 import { sortAppointmentsDesc } from "../utils/appointmentSorting";
 import UploadProgressCard from "../components/UploadProgressCard";
@@ -24,6 +24,7 @@ import {
   FiPhone,
   FiMail,
   FiCheck,
+  FiVideo,
 } from "react-icons/fi";
 
 const CATEGORIES = [
@@ -52,6 +53,16 @@ const DoctorDashboard = () => {
   // Doctor Assigned Appointments State
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  // Helper to determine if an appointment is eligible for live video consultation
+  const isVideoEligible = (app) => {
+    if (!app) return false;
+    const mode = String(app.consultationType || "").trim().toUpperCase();
+    const isVideo = mode.includes("VIDEO") || mode.includes("ONLINE");
+    if (!isVideo) return false;
+    const status = String(app.status || "").trim().toUpperCase();
+    return status !== "CANCELLED" && status !== "REJECTED" && status !== "COMPLETED";
+  };
 
   // Doctor Verification State
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
@@ -721,6 +732,15 @@ const DoctorDashboard = () => {
                           const statusNorm = String(app.status || "").trim().toUpperCase();
                           return (
                             <div className="action-buttons-group">
+                              {isVideoEligible(app) && (
+                                <Link
+                                  to={`/consultation/${app._id}`}
+                                  className="btn-join-video-table"
+                                  title="Join online video consultation"
+                                >
+                                  <FiVideo size={13} /> Join Call
+                                </Link>
+                              )}
                               {statusNorm === "SCHEDULED" && (
                                 <>
                                   <button

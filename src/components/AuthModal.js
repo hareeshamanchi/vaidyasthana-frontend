@@ -113,6 +113,21 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
 
     // Client-side validation for registration
     if (currentType === "register") {
+      if (!formData.name || !formData.name.trim()) {
+        setError("Please enter your full name.");
+        return;
+      }
+
+      if (!formData.email || !formData.email.trim()) {
+        setError("Please enter your email address.");
+        return;
+      }
+
+      if (!formData.password || formData.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
+
       const cleanPhone = (formData.phoneNumber || "").replace(/[\s-]/g, "");
       if (!cleanPhone || !/^\+?[0-9]{10,15}$/.test(cleanPhone)) {
         setError("Please enter a valid 10-15 digit mobile number (e.g. +91 9876543210).");
@@ -174,10 +189,39 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
       }
     } catch (err) {
       console.error("Auth error:", err);
-      const errMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Unable to authenticate. Please verify your credentials or server status.";
+      let errMsg = "";
+      if (err.response) {
+        const status = err.response.status;
+        const serverMsg = err.response.data?.message || err.response.data?.error;
+        if (serverMsg && typeof serverMsg === "string") {
+          errMsg = serverMsg;
+        } else if (status === 503 || status === 502 || status === 504) {
+          errMsg =
+            "The backend service is currently waking up (Render cold boot). Please wait 30 seconds and try again.";
+        } else if (status === 400 || status === 409) {
+          errMsg =
+            currentType === "register"
+              ? "Unable to complete registration. Please ensure your email is unique and all fields are valid."
+              : "Invalid request. Please check your entered credentials.";
+        } else if (status === 401) {
+          errMsg = "Invalid email or password. Please verify your credentials.";
+        } else if (status === 404) {
+          errMsg = "Account not found. Please verify your email or register.";
+        } else if (status >= 500) {
+          errMsg = "Server error occurred. Please try again in a few moments.";
+        } else {
+          errMsg =
+            currentType === "register"
+              ? "Registration failed. Please try again."
+              : "Unable to authenticate. Please verify your credentials or server status.";
+        }
+      } else if (err.code === "ECONNABORTED" || err.message?.toLowerCase().includes("timeout")) {
+        errMsg =
+          "The server took too long to respond (Render cold boot in progress). Please retry in 30 seconds.";
+      } else {
+        errMsg =
+          "Unable to reach the server. The backend may be starting up on Render — please wait a moment and retry.";
+      }
       setError(errMsg);
     } finally {
       setLoading(false);
