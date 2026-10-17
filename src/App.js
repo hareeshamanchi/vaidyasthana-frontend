@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./components/Home";
+import ScrollToTop from "./components/ScrollToTop";
 
 import AIAnalysis from "./pages/AIAnalysis";
 import Appointment from "./pages/Appointment";
@@ -21,29 +22,32 @@ import HealthTimeline from "./pages/HealthTimeline";
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="App">
         <Navbar />
 
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<PatientDashboard />} />
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/ai-analysis" element={<AIAnalysis />} />
-          <Route path="/appointment" element={<Appointment />} />
-          <Route path="/appointments" element={<Appointment />} />
-          <Route path="/consultation/:id" element={<VideoConsultation />} />
-          <Route path="/video-consultation/:id" element={<VideoConsultation />} />
-          <Route path="/diet" element={<DietResultPage />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/insurance" element={<InsurancePage />} />
-          <Route path="/timeline" element={<HealthTimeline />} />
-          <Route path="/health-timeline" element={<HealthTimeline />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-        </Routes>
+        <main className="main-content" id="main-content" role="main">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<PatientDashboard />} />
+            <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/ai-analysis" element={<AIAnalysis />} />
+            <Route path="/appointment" element={<Appointment />} />
+            <Route path="/appointments" element={<Appointment />} />
+            <Route path="/consultation/:id" element={<VideoConsultation />} />
+            <Route path="/video-consultation/:id" element={<VideoConsultation />} />
+            <Route path="/diet" element={<DietResultPage />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/insurance" element={<InsurancePage />} />
+            <Route path="/timeline" element={<HealthTimeline />} />
+            <Route path="/health-timeline" element={<HealthTimeline />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Routes>
+        </main>
 
         <Footer />
       </div>
