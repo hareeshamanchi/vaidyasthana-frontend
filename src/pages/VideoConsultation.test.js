@@ -7,12 +7,14 @@ import { appointmentsAPI } from "../services/api";
 jest.mock("../services/api", () => ({
   appointmentsAPI: {
     getVideoAccess: jest.fn(),
+    updateAppointment: jest.fn().mockResolvedValue({ data: { success: true } }),
   },
 }));
 
 describe("VideoConsultation Telehealth Component Suite", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    appointmentsAPI.updateAppointment.mockResolvedValue({ data: { success: true } });
   });
 
   test("Renders loading indicator while authorizing session", () => {

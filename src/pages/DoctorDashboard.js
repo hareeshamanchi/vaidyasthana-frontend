@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react";
 import "./DoctorDashboard.css";
 import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getSocket } from "../services/socket";
-import { sortAppointmentsDesc } from "../utils/appointmentSorting";
+import {
+  sortAppointmentsDesc,
+  partitionAppointments,
+} from "../utils/appointmentSorting";
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
@@ -55,7 +58,13 @@ const DoctorDashboard = () => {
   // Doctor Assigned Appointments State
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [appointmentTab, setAppointmentTab] = useState("all"); // 'all' | 'upcoming' | 'past'
   const currentTime = useConsultationTimer(15000);
+
+  // Partition doctor appointments into upcoming (nearest first) and past (most recent first)
+  const { upcoming: upcomingAppointments, past: pastAppointments } = useMemo(() => {
+    return partitionAppointments(doctorAppointments, currentTime);
+  }, [doctorAppointments, currentTime]);
 
   // Doctor Verification State
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
@@ -175,6 +184,15 @@ const DoctorDashboard = () => {
       socket.off("verification:update", handleVerifUpdate);
     };
   }, [fetchDoctorAppointments, fetchVerificationStatus, fetchPatients]);
+
+  // Periodic polling (30s) to keep appointments and statuses synchronized
+  useEffect(() => {
+    if (!user) return;
+    const pollTimer = setInterval(() => {
+      fetchDoctorAppointments();
+    }, 30000);
+    return () => clearInterval(pollTimer);
+  }, [user, fetchDoctorAppointments]);
 
   const handleUpdateAppointment = async (apptId, status, rejectionReason = "") => {
     try {
@@ -508,6 +526,196 @@ const DoctorDashboard = () => {
 
   const currentTargetId = selectedPatient?._id || "";
 
+  const renderConsultationsTable = (list, emptyMessage) => {
+    if (!list || list.length === 0) {
+      return (
+        <div className="empty-consultations-box sub-empty">
+          <FiCalendar size={32} />
+          <p>{emptyMessage || "No consultations in this category."}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="consultations-table-wrapper">
+        <span className="table-scroll-hint mobile-only">
+          ← Swipe horizontally to review patient details & actions →
+        </span>
+        <table className="consultations-table">
+          <thead>
+            <tr>
+              <th>Patient Name</th>
+              <th>Contact Info</th>
+              <th>Date & Time</th>
+              <th>Mode / Type</th>
+              <th>Clinical Notes / Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((app) => {
+              const patientObj = typeof app.patientId === "object" && app.patientId !== null ? app.patientId : null;
+              const patientDisplayName = patientObj?.name || app.patientName || "Patient";
+              const patientPhone = patientObj?.phoneNumber || app.patientPhone || "";
+              const patientEmail = patientObj?.email || app.patientEmail || "";
+              const targetPatientRefId =
+                patientObj?._id ||
+                (typeof app.patientId === "string" ? app.patientId : null);
+
+              return (
+                <tr key={app._id}>
+                  <td>
+                    <strong>{patientDisplayName}</strong>
+                  </td>
+                  <td>
+                    <div>
+                      {patientPhone && (
+                        <span className="patient-contact-sub">
+                          <FiPhone size={11} /> {patientPhone}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      {patientEmail && (
+                        <span className="patient-contact-sub">
+                          <FiMail size={11} /> {patientEmail}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div>
+                      <FiCalendar size={12} />{" "}
+                      {new Date(app.appointmentDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <div>
+                      <FiClock size={12} /> {app.timeSlot}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="file-pill doc">
+                      {app.consultationType || "In-Person"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="notes-text">
+                      {app.reason || app.notes || "Standard Consultation"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-pill ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}
+                    >
+                      {app.status || "Scheduled"}
+                    </span>
+                  </td>
+                  <td>
+                    {(() => {
+                      const statusNorm = String(app.status || "").trim().toUpperCase();
+                      return (
+                        <div className="action-buttons-group">
+                          <ConsultationJoinButton
+                            appointment={app}
+                            currentTime={currentTime}
+                            className="btn-join-video-table"
+                            customEnabledText="Join Video Consultation"
+                            iconSize={13}
+                          />
+                          {statusNorm === "SCHEDULED" && (
+                            <>
+                              <button
+                                className="btn-confirm-appt"
+                                onClick={() => handleUpdateAppointment(app._id, "Confirmed")}
+                                type="button"
+                                title="Confirm this appointment"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                className="btn-reject-appt"
+                                onClick={() => handlePromptReject(app._id)}
+                                type="button"
+                                title="Reject or reschedule"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+
+                          {statusNorm === "CONFIRMED" && (
+                            <>
+                              <button
+                                className="btn-progress-appt"
+                                onClick={() => handleUpdateAppointment(app._id, "In Progress")}
+                                type="button"
+                                title="Start Consultation"
+                              >
+                                Start
+                              </button>
+                              <button
+                                className="btn-reject-appt"
+                                onClick={() => handlePromptReject(app._id)}
+                                type="button"
+                                title="Reschedule or cancel visit"
+                              >
+                                Reschedule
+                              </button>
+                            </>
+                          )}
+
+                          {(statusNorm === "IN PROGRESS" || statusNorm === "IN-PROGRESS") && (
+                            <button
+                              className="btn-complete-appt"
+                              onClick={() => handleUpdateAppointment(app._id, "Completed")}
+                              type="button"
+                              title="Mark Completed"
+                            >
+                              Complete
+                            </button>
+                          )}
+
+                          {targetPatientRefId && (
+                            <>
+                              <button
+                                className="btn-vault-link"
+                                onClick={() => {
+                                  setPatientId(targetPatientRefId);
+                                  handleFetchReports(targetPatientRefId);
+                                }}
+                                type="button"
+                                title="Open Patient Vault"
+                              >
+                                <FiEye size={12} /> Vault
+                              </button>
+                              <button
+                                className="btn-vault-link"
+                                style={{ borderColor: "#0d9488", color: "#0f766e" }}
+                                onClick={() => navigate(`/timeline?patientId=${targetPatientRefId}`)}
+                                type="button"
+                                title="Open Unified Health Timeline"
+                              >
+                                <FiActivity size={12} /> Timeline
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="doctor-dashboard-container">
       {/* Header */}
@@ -630,9 +838,43 @@ const DoctorDashboard = () => {
             <h3>Assigned Clinical Consultations ({doctorAppointments.length})</h3>
             <p>Patients scheduled specifically for your clinical review</p>
           </div>
-          <span className="realtime-pulse-badge">
-            <span className="live-dot" /> Live Appointments Sync
-          </span>
+
+          <div className="consultations-header-right">
+            {doctorAppointments.length > 0 && (
+              <div className="appointment-view-tabs" role="tablist" aria-label="Consultation Filters">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appointmentTab === "all"}
+                  className={`view-tab-btn ${appointmentTab === "all" ? "active" : ""}`}
+                  onClick={() => setAppointmentTab("all")}
+                >
+                  All <span className="tab-count-pill">{doctorAppointments.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appointmentTab === "upcoming"}
+                  className={`view-tab-btn ${appointmentTab === "upcoming" ? "active" : ""}`}
+                  onClick={() => setAppointmentTab("upcoming")}
+                >
+                  Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appointmentTab === "past"}
+                  className={`view-tab-btn ${appointmentTab === "past" ? "active" : ""}`}
+                  onClick={() => setAppointmentTab("past")}
+                >
+                  Past <span className="tab-count-pill">{pastAppointments.length}</span>
+                </button>
+              </div>
+            )}
+            <span className="realtime-pulse-badge">
+              <span className="live-dot" /> Live Appointments Sync
+            </span>
+          </div>
         </div>
 
         {loadingAppointments ? (
@@ -646,181 +888,42 @@ const DoctorDashboard = () => {
             <p>No consultations currently scheduled for your profile.</p>
           </div>
         ) : (
-          <div className="consultations-table-wrapper">
-            <span className="table-scroll-hint mobile-only">
-              ← Swipe horizontally to review patient details & actions →
-            </span>
-            <table className="consultations-table">
-              <thead>
-                <tr>
-                  <th>Patient Name</th>
-                  <th>Contact Info</th>
-                  <th>Date & Time</th>
-                  <th>Mode / Type</th>
-                  <th>Clinical Notes / Reason</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doctorAppointments.map((app) => {
-                  const patientObj = typeof app.patientId === "object" && app.patientId !== null ? app.patientId : null;
-                  const patientDisplayName = patientObj?.name || app.patientName || "Patient";
-                  const patientPhone = patientObj?.phoneNumber || app.patientPhone || "";
-                  const patientEmail = patientObj?.email || app.patientEmail || "";
-                  const targetPatientRefId =
-                    patientObj?._id ||
-                    (typeof app.patientId === "string" ? app.patientId : null);
+          <div className="consultations-content-area">
+            {appointmentTab === "upcoming" &&
+              renderConsultationsTable(upcomingAppointments, "No upcoming patient consultations scheduled.")}
 
-                  return (
-                    <tr key={app._id}>
-                      <td>
-                        <strong>{patientDisplayName}</strong>
-                      </td>
-                      <td>
-                        <div>
-                          {patientPhone && (
-                            <span className="patient-contact-sub">
-                              <FiPhone size={11} /> {patientPhone}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          {patientEmail && (
-                            <span className="patient-contact-sub">
-                              <FiMail size={11} /> {patientEmail}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div>
-                          <FiCalendar size={12} />{" "}
-                          {new Date(app.appointmentDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </div>
-                        <div>
-                          <FiClock size={12} /> {app.timeSlot}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="file-pill doc">
-                          {app.consultationType || "In-Person"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="notes-text">
-                          {app.reason || app.notes || "Standard Consultation"}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-pill ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}
-                        >
-                          {app.status || "Scheduled"}
-                        </span>
-                      </td>
-                      <td>
-                        {(() => {
-                          const statusNorm = String(app.status || "").trim().toUpperCase();
-                          return (
-                            <div className="action-buttons-group">
-                              <ConsultationJoinButton
-                                appointment={app}
-                                currentTime={currentTime}
-                                className="btn-join-video-table"
-                                customEnabledText="Join Video Consultation"
-                                iconSize={13}
-                              />
-                              {statusNorm === "SCHEDULED" && (
-                                <>
-                                  <button
-                                    className="btn-confirm-appt"
-                                    onClick={() => handleUpdateAppointment(app._id, "Confirmed")}
-                                    type="button"
-                                    title="Confirm this appointment"
-                                  >
-                                    Confirm
-                                  </button>
-                                  <button
-                                    className="btn-reject-appt"
-                                    onClick={() => handlePromptReject(app._id)}
-                                    type="button"
-                                    title="Reject or reschedule"
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              )}
+            {appointmentTab === "past" &&
+              renderConsultationsTable(pastAppointments, "No past or concluded patient consultations.")}
 
-                              {statusNorm === "CONFIRMED" && (
-                                <>
-                                  <button
-                                    className="btn-progress-appt"
-                                    onClick={() => handleUpdateAppointment(app._id, "In Progress")}
-                                    type="button"
-                                    title="Start Consultation"
-                                  >
-                                    Start
-                                  </button>
-                                  <button
-                                    className="btn-complete-appt"
-                                    onClick={() => handleUpdateAppointment(app._id, "Completed")}
-                                    type="button"
-                                    title="Mark Completed"
-                                  >
-                                    Complete
-                                  </button>
-                                </>
-                              )}
+            {appointmentTab === "all" && (
+              <>
+                {upcomingAppointments.length > 0 && (
+                  <div className="appointment-subgroup upcoming-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge upcoming">Upcoming</span>
+                        <h4>Upcoming Consultations ({upcomingAppointments.length})</h4>
+                      </div>
+                      <span className="subgroup-hint">Chronological order • Nearest first</span>
+                    </div>
+                    {renderConsultationsTable(upcomingAppointments)}
+                  </div>
+                )}
 
-                              {(statusNorm === "IN PROGRESS" || statusNorm === "IN-PROGRESS") && (
-                                <button
-                                  className="btn-complete-appt"
-                                  onClick={() => handleUpdateAppointment(app._id, "Completed")}
-                                  type="button"
-                                  title="Mark Completed"
-                                >
-                                  Complete
-                                </button>
-                              )}
-
-                              {targetPatientRefId && (
-                                <>
-                                  <button
-                                    className="btn-vault-link"
-                                    onClick={() => {
-                                      setPatientId(targetPatientRefId);
-                                      handleFetchReports(targetPatientRefId);
-                                    }}
-                                    type="button"
-                                    title="Open Patient Vault"
-                                  >
-                                    <FiEye size={12} /> Vault
-                                  </button>
-                                  <button
-                                    className="btn-vault-link"
-                                    style={{ borderColor: "#0d9488", color: "#0f766e" }}
-                                    onClick={() => navigate(`/timeline?patientId=${targetPatientRefId}`)}
-                                    type="button"
-                                    title="Open Unified Health Timeline"
-                                  >
-                                    <FiActivity size={12} /> Timeline
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                {pastAppointments.length > 0 && (
+                  <div className="appointment-subgroup past-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge past">Past / Concluded</span>
+                        <h4>Past & Historical Consultations ({pastAppointments.length})</h4>
+                      </div>
+                      <span className="subgroup-hint">Reverse chronological • Most recent first</span>
+                    </div>
+                    {renderConsultationsTable(pastAppointments)}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </section>

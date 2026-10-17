@@ -1203,6 +1203,15 @@
   opacity: 0.8;
 }
 
+.patient-appt-card.expired {
+  border-left-color: #94a3b8;
+  opacity: 0.75;
+}
+
+.patient-appt-card.in-progress {
+  border-left-color: #2563eb;
+}
+
 .appt-card-top {
   display: flex;
   justify-content: space-between;

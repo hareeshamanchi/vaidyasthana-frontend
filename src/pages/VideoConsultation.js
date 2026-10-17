@@ -323,6 +323,20 @@ const VideoConsultation = () => {
             setCallDuration((prev) => prev + 1);
           }, 1000);
         }
+
+        // Transition appointment to 'In Progress' in MongoDB and notify doctor & patient
+        if (appointmentId && typeof appointmentsAPI?.updateAppointment === "function") {
+          try {
+            const res = appointmentsAPI.updateAppointment(appointmentId, { status: "In Progress" });
+            if (res && typeof res.catch === "function") {
+              res.catch((err) => {
+                console.warn("Could not transition appointment to In Progress:", err?.message);
+              });
+            }
+          } catch (err) {
+            console.warn("Could not transition appointment to In Progress:", err?.message);
+          }
+        }
       });
 
       api.addEventListener("participantJoined", (event) => {

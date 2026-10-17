@@ -328,4 +328,145 @@ th, td {
   font-weight: 600 !important;
 }
 
+/* ==========================================================================
+   Appointment Lifecycle & Status Badges
+   ========================================================================== */
+.badge-status.badge-expired {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.badge-status.badge-in-progress {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.status-pill.expired {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.status-pill.in-progress {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+/* Common tab styles for appointment partitioning across dashboards */
+.appointment-view-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: var(--radius-md, 8px);
+  gap: 0.25rem;
+  border: 1px solid #e2e8f0;
+}
+
+.view-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.view-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.view-tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.tab-count-pill {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(100, 116, 139, 0.12);
+  color: inherit;
+}
+
+.view-tab-btn.active .tab-count-pill {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Appointment Subgroups */
+.appointment-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.subgroup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.subgroup-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.subgroup-title-row h3,
+.subgroup-title-row h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy-900, #0f172a);
+}
+
+.subgroup-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.subgroup-badge.upcoming {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.subgroup-badge.past {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.subgroup-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
 

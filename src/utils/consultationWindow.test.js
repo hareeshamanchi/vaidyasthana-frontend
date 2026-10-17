@@ -113,12 +113,12 @@ describe("Consultation Window & 30-Minute Grace Period Suite", () => {
       expect(state.buttonText).toBe("Consultation Completed");
     });
 
-    test("5. Before start time: buttonText = 'Starts at [time]', disabled", () => {
+    test("5. Before start time: buttonText = 'Consultation starts at [time]', disabled", () => {
       const beforeTime = startTimeMs - 10 * 60 * 1000; // 10 mins before
       const state = getConsultationWindowState(baseAppointment, beforeTime);
       expect(state.canJoin).toBe(false);
       expect(state.status).toBe("BEFORE_START");
-      expect(state.buttonText).toBe("Starts at 03:00 PM");
+      expect(state.buttonText).toBe("Consultation starts at 03:00 PM");
     });
 
     test("6. During permitted window: buttonText = 'Join Video Consultation', enabled", () => {
@@ -152,6 +152,22 @@ describe("Consultation Window & 30-Minute Grace Period Suite", () => {
       expect(expiredLate.status).toBe("EXPIRED");
       expect(expiredLate.buttonText).toBe("Consultation Time Exceeded");
     });
+
+    test("8. Pre-marked Expired appointment in database is disabled immediately", () => {
+      const dbExpired = { ...baseAppointment, status: "Expired" };
+      const state = getConsultationWindowState(dbExpired, startTimeMs + 5000);
+      expect(state.canJoin).toBe(false);
+      expect(state.status).toBe("EXPIRED");
+      expect(state.buttonText).toBe("Consultation Time Exceeded");
+    });
+
+    test("9. In Progress appointment remains joinable even past 30-minute grace window", () => {
+      const inProgress = { ...baseAppointment, status: "In Progress" };
+      const state = getConsultationWindowState(inProgress, deadlineMs + 60 * 60 * 1000);
+      expect(state.canJoin).toBe(true);
+      expect(state.status).toBe("IN_PROGRESS");
+      expect(state.buttonText).toBe("Join Video Consultation");
+    });
   });
 
   describe("ConsultationJoinButton Component", () => {
@@ -176,7 +192,7 @@ describe("Consultation Window & 30-Minute Grace Period Suite", () => {
       expect(container.firstChild).toBeNull();
     });
 
-    test("renders disabled button with 'Starts at [time]' before start", () => {
+    test("renders disabled button with 'Consultation starts at [time]' before start", () => {
       const beforeTime = startTimeMs - 5 * 60 * 1000;
       render(
         <BrowserRouter>
@@ -184,7 +200,7 @@ describe("Consultation Window & 30-Minute Grace Period Suite", () => {
         </BrowserRouter>
       );
 
-      const btn = screen.getByRole("button", { name: /Starts at 03:00 PM/i });
+      const btn = screen.getByRole("button", { name: /Consultation starts at 03:00 PM/i });
       expect(btn).toBeInTheDocument();
       expect(btn).toBeDisabled();
       expect(btn).toHaveClass("btn-video-join-disabled");

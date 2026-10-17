@@ -197,7 +197,7 @@ export const getConsultationWindowState = (appointment, now = Date.now()) => {
     };
   }
 
-  // 2. Lifecycle Status checks (Never joinable if Cancelled, Rejected, or Completed)
+  // 2. Lifecycle Status checks (Never joinable if Cancelled, Rejected, Completed, or Expired)
   const statusNorm = normalizeStatus(appointment.status);
   if (statusNorm === "CANCELLED") {
     return {
@@ -241,6 +241,38 @@ export const getConsultationWindowState = (appointment, now = Date.now()) => {
     };
   }
 
+  if (statusNorm === "EXPIRED") {
+    return {
+      isEligibleMode: true,
+      status: "EXPIRED",
+      canJoin: false,
+      buttonText: "Consultation Time Exceeded",
+      badgeText: "Expired",
+      startTimeMs: null,
+      deadlineMs: null,
+      remainingMs: 0,
+      formattedTime: "",
+    };
+  }
+
+  // Active call in progress (never disconnect solely because joining grace period passed)
+  if (statusNorm === "IN PROGRESS" || statusNorm === "IN_PROGRESS") {
+    const dateValue = appointment.appointmentDate || appointment.date;
+    const timeSlotValue = appointment.timeSlot || appointment.startTime;
+    const timing = getAppointmentStartAndDeadline(dateValue, timeSlotValue);
+    return {
+      isEligibleMode: true,
+      status: "IN_PROGRESS",
+      canJoin: true,
+      buttonText: "Join Video Consultation",
+      badgeText: "In Progress",
+      startTimeMs: timing?.startTimeMs || null,
+      deadlineMs: timing?.deadlineMs || null,
+      remainingMs: timing?.deadlineMs ? Math.max(0, timing.deadlineMs - now) : 0,
+      formattedTime: timing?.formattedTime || "",
+    };
+  }
+
   // 3. Time Window calculation
   const dateValue = appointment.appointmentDate || appointment.date;
   const timeSlotValue = appointment.timeSlot || appointment.startTime;
@@ -268,7 +300,7 @@ export const getConsultationWindowState = (appointment, now = Date.now()) => {
       isEligibleMode: true,
       status: "BEFORE_START",
       canJoin: false,
-      buttonText: `Starts at ${formattedTime}`,
+      buttonText: `Consultation starts at ${formattedTime}`,
       badgeText: "Upcoming",
       startTimeMs,
       deadlineMs,
@@ -304,6 +336,27 @@ export const getConsultationWindowState = (appointment, now = Date.now()) => {
     remainingMs: 0,
     formattedTime,
   };
+};
+
+/**
+ * Checks whether an appointment is expired based on its timing and status.
+ */
+export const isAppointmentExpired = (appointment, now = Date.now()) => {
+  if (!appointment) return false;
+  const mode = appointment.consultationType || appointment.type;
+  if (!isVideoConsultationMode(mode)) return false;
+
+  const statusNorm = normalizeStatus(appointment.status);
+  if (statusNorm !== "SCHEDULED" && statusNorm !== "CONFIRMED") {
+    return false;
+  }
+
+  const dateValue = appointment.appointmentDate || appointment.date;
+  const timeSlotValue = appointment.timeSlot || appointment.startTime;
+  const timing = getAppointmentStartAndDeadline(dateValue, timeSlotValue);
+  if (!timing || !timing.deadlineMs) return false;
+
+  return now > timing.deadlineMs;
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useContext } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useContext } from "react";
 import { Link } from "react-router-dom";
 import "./Appointment.css";
 import { appointmentsAPI, authAPI } from "../services/api";
@@ -6,6 +6,8 @@ import { AuthContext } from "../context/AuthContext";
 import { getSocket } from "../services/socket";
 import {
   sortAppointmentsDesc,
+  sortUpcomingAppointments,
+  partitionAppointments,
   getAppointmentDateTimeMs,
 } from "../utils/appointmentSorting";
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
@@ -37,6 +39,13 @@ const Appointment = () => {
   const currentTime = useConsultationTimer(15000);
 
   const [appointments, setAppointments] = useState([]);
+  const [viewTab, setViewTab] = useState("all"); // 'all' | 'upcoming' | 'past'
+
+  // Partition appointments into upcoming (nearest first) and past (most recent first)
+  const { upcoming: upcomingAppointments, past: pastAppointments } = useMemo(() => {
+    return partitionAppointments(appointments, currentTime);
+  }, [appointments, currentTime]);
+
   const [timer, setTimer] = useState(null);
   const [nextAppointment, setNextAppointment] = useState(null);
   const [showBookModal, setShowBookModal] = useState(false);
@@ -204,25 +213,8 @@ const Appointment = () => {
 
       // Find the nearest upcoming future consultation for the countdown clock
       const now = new Date().getTime();
-      const upcomingAppointments = list
-        .filter((app) => {
-          const status = String(app.status || "").trim().toUpperCase();
-          if (status === "CANCELLED" || status === "REJECTED" || status === "COMPLETED") {
-            return false;
-          }
-          if (checkIsPast(app.appointmentDate, app.timeSlot)) {
-            return false;
-          }
-          const exactTimeMs = getAppointmentDateTimeMs(app.appointmentDate, app.timeSlot);
-          return exactTimeMs > now;
-        })
-        .sort((a, b) => {
-          const timeA = getAppointmentDateTimeMs(a.appointmentDate, a.timeSlot);
-          const timeB = getAppointmentDateTimeMs(b.appointmentDate, b.timeSlot);
-          return timeA - timeB; // ascending to find closest upcoming
-        });
-
-      const nextAppt = upcomingAppointments[0] || null;
+      const upcomingList = sortUpcomingAppointments(list, now);
+      const nextAppt = upcomingList[0] || null;
       if (nextAppt) {
         setNextAppointment(nextAppt);
         const exactTimeMs = getAppointmentDateTimeMs(nextAppt.appointmentDate, nextAppt.timeSlot);
@@ -292,6 +284,15 @@ const Appointment = () => {
       socket.off("appointment:update", handleRealtimeAppointment);
     };
   }, [fetchAppointments, fetchSlots, formData.doctorId, formData.appointmentDate]);
+
+  // Periodic polling (30s) to keep appointments and statuses synchronized in real time
+  useEffect(() => {
+    if (!user) return;
+    const pollTimer = setInterval(() => {
+      fetchAppointments();
+    }, 30000);
+    return () => clearInterval(pollTimer);
+  }, [user, fetchAppointments]);
 
   // Live countdown timer
   useEffect(() => {
@@ -533,6 +534,307 @@ const Appointment = () => {
     }
   };
 
+  const renderDoctorCard = (app) => {
+    const patObj =
+      typeof app.patientId === "object" && app.patientId !== null ? app.patientId : null;
+    const patientIdVal = patObj?._id || app.patientId;
+    const patientName = app.patientName || patObj?.name || "Patient";
+    const patientPhone = app.patientPhone || patObj?.phoneNumber || "";
+    const patientEmail = app.patientEmail || patObj?.email || "";
+    const statusClean = app.status || "Scheduled";
+    const statusNorm = String(statusClean).trim().toUpperCase();
+
+    return (
+      <div
+        key={app._id}
+        className={`appointment-card doctor-view-card ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
+      >
+        <div className="app-card-top">
+          <div className="patient-headline-wrap">
+            <div className="patient-avatar-mini" title={patientName}>
+              {patientName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <span className="app-dept-pill patient-pill">Patient</span>
+              <h3 className="app-doctor-name">{patientName}</h3>
+            </div>
+          </div>
+          <span
+            className={`app-status-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
+          >
+            {statusClean}
+          </span>
+        </div>
+
+        <div className="app-details-list">
+          <div className="detail-item">
+            <FiCalendar className="detail-icon" />
+            <span>
+              {new Date(app.appointmentDate).toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+          <div className="detail-item">
+            <FiClock className="detail-icon" />
+            <span>{app.timeSlot}</span>
+          </div>
+          <div className="detail-item">
+            <FiActivity className="detail-icon" />
+            <span>Mode: {app.consultationType || "In-Person"}</span>
+          </div>
+
+          {patientPhone && (
+            <div className="detail-item">
+              <FiPhone className="detail-icon" />
+              <span>
+                Phone:{" "}
+                <a href={`tel:${patientPhone}`} className="contact-link">
+                  {patientPhone}
+                </a>
+              </span>
+            </div>
+          )}
+
+          {patientEmail && (
+            <div className="detail-item">
+              <FiMail className="detail-icon" />
+              <span>
+                Email:{" "}
+                <a href={`mailto:${patientEmail}`} className="contact-link">
+                  {patientEmail}
+                </a>
+              </span>
+            </div>
+          )}
+
+          {(app.reason || app.notes) && (
+            <div className="detail-item reason-item">
+              <FiFileText className="detail-icon" />
+              <span>
+                <strong>Clinical Reason:</strong> {app.reason || app.notes}
+              </span>
+            </div>
+          )}
+
+          {app.rejectionReason && (
+            <div className="detail-item rejection-alert">
+              <FiAlertCircle className="detail-icon text-red" />
+              <span>Note: {app.rejectionReason}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Clinician Authorized Actions */}
+        <div className="app-card-actions doctor-card-actions">
+          <ConsultationJoinButton
+            appointment={app}
+            currentTime={currentTime}
+            className="btn-action-join-video"
+            customEnabledText="Join Video Consultation"
+          />
+          {statusNorm === "SCHEDULED" && (
+            <>
+              <button
+                className="btn-action-confirm"
+                onClick={() => handleUpdateAppointment(app._id, "Confirmed")}
+                type="button"
+                title="Confirm patient appointment"
+              >
+                <FiCheckCircle /> Confirm
+              </button>
+              <button
+                className="btn-action-reject"
+                onClick={() => handlePromptReject(app._id)}
+                type="button"
+                title="Reject or request reschedule"
+              >
+                <FiXCircle /> Reject
+              </button>
+            </>
+          )}
+
+          {statusNorm === "CONFIRMED" && (
+            <>
+              <button
+                className="btn-action-start"
+                onClick={() => handleUpdateAppointment(app._id, "In Progress")}
+                type="button"
+                title="Begin clinical consultation"
+              >
+                <FiActivity /> Start Visit
+              </button>
+              <button
+                className="btn-action-reject"
+                onClick={() => handlePromptReject(app._id)}
+                type="button"
+                title="Reschedule or cancel visit"
+              >
+                <FiXCircle /> Reschedule
+              </button>
+            </>
+          )}
+
+          {(statusNorm === "IN PROGRESS" || statusNorm === "IN-PROGRESS") && (
+            <button
+              className="btn-action-complete"
+              onClick={() => handleUpdateAppointment(app._id, "Completed")}
+              type="button"
+              title="Mark consultation as completed"
+            >
+              <FiCheckCircle /> Complete Visit
+            </button>
+          )}
+
+          {patientIdVal && (
+            <Link
+              to={`/doctor-dashboard?patientId=${patientIdVal}`}
+              className="btn-action-vault"
+              title="Open patient medical dossier and upload records"
+            >
+              <FiFileText /> Dossier & Vault
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPatientCard = (app) => {
+    const docObj =
+      typeof app.doctorId === "object" && app.doctorId !== null ? app.doctorId : null;
+    const docName = docObj?.name
+      ? (docObj.name.startsWith("Dr.") ? docObj.name : `Dr. ${docObj.name}`)
+      : (app.doctorName?.startsWith("Dr.") ? app.doctorName : `Dr. ${app.doctorName || "Doctor"}`);
+    const docDept = docObj?.specialization || app.department || "General Medicine";
+    const statusClean = app.status || "Scheduled";
+    const statusNorm = String(statusClean).trim().toUpperCase();
+    const isPast = checkIsPast(app.appointmentDate, app.timeSlot);
+    const isCancellable = isAppointmentCancellable(app);
+
+    return (
+      <div
+        key={app._id}
+        className={`appointment-card ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
+      >
+        <div className="app-card-top">
+          <div>
+            <span className="app-dept-pill">{docDept}</span>
+            <h3 className="app-doctor-name">{docName}</h3>
+          </div>
+          <span
+            className={`app-status-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
+          >
+            {statusClean}
+          </span>
+        </div>
+
+        <div className="app-details-list">
+          <div className="detail-item">
+            <FiCalendar className="detail-icon" />
+            <span>
+              {new Date(app.appointmentDate).toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+          <div className="detail-item">
+            <FiClock className="detail-icon" />
+            <span>{app.timeSlot}</span>
+          </div>
+          <div className="detail-item">
+            <FiActivity className="detail-icon" />
+            <span>Mode: {app.consultationType || "In-Person"}</span>
+          </div>
+          {(app.reason || app.notes) && (
+            <div className="detail-item reason-item">
+              <FiFileText className="detail-icon" />
+              <span><strong>Reason:</strong> {app.reason || app.notes}</span>
+            </div>
+          )}
+          {app.rejectionReason && (
+            <div className="detail-item rejection-alert">
+              <FiAlertCircle className="detail-icon text-red" />
+              <span>Note: {app.rejectionReason}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="app-card-actions patient-card-actions">
+          <ConsultationJoinButton
+            appointment={app}
+            currentTime={currentTime}
+            className="btn-join-video-action patient-video-btn"
+            customEnabledText="Join Video Consultation"
+          />
+          {isCancellable ? (
+            <button
+              className="btn-cancel-slot"
+              onClick={() => handleCancelAppointment(app._id)}
+              type="button"
+              title="Cancel scheduled consultation"
+            >
+              <FiXCircle /> Cancel Appointment
+            </button>
+          ) : (
+            <div className={`appt-terminal-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}>
+              {statusNorm === "COMPLETED" && (
+                <>
+                  <FiCheckCircle size={13} />
+                  <span>Consultation Completed</span>
+                </>
+              )}
+              {statusNorm === "CANCELLED" && (
+                <>
+                  <FiXCircle size={13} />
+                  <span>Consultation Cancelled</span>
+                </>
+              )}
+              {statusNorm === "REJECTED" && (
+                <>
+                  <FiAlertCircle size={13} />
+                  <span>Consultation Declined</span>
+                </>
+              )}
+              {statusNorm === "EXPIRED" && (
+                <>
+                  <FiAlertCircle size={13} />
+                  <span>Consultation Expired</span>
+                </>
+              )}
+              {isPast &&
+                statusNorm !== "COMPLETED" &&
+                statusNorm !== "CANCELLED" &&
+                statusNorm !== "REJECTED" &&
+                statusNorm !== "EXPIRED" && (
+                  <>
+                    <FiClock size={13} />
+                    <span>Past Consultation • Non-cancellable</span>
+                  </>
+              )}
+              {!isPast &&
+                statusNorm !== "COMPLETED" &&
+                statusNorm !== "CANCELLED" &&
+                statusNorm !== "REJECTED" &&
+                statusNorm !== "EXPIRED" && (
+                  <>
+                    <FiActivity size={13} />
+                    <span>Status: {statusClean}</span>
+                  </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const selectedDoctorObj = doctorsList.find((d) => d._id === formData.doctorId);
 
   if (loading) {
@@ -759,16 +1061,51 @@ const Appointment = () => {
       {/* Appointment List Section */}
       <section className="appointments-list-section">
         <div className="list-section-header">
-          <h2>
-            {isDoctor
-              ? `Assigned Consultations (${appointments.length})`
-              : `Your Clinical Records (${appointments.length})`}
-          </h2>
-          <span className="sub-tag">
-            {isDoctor
-              ? "All patient consultations scheduled with your physician account in MongoDB Atlas"
-              : "All real-time appointments synchronized with hospital servers"}
-          </span>
+          <div>
+            <h2>
+              {isDoctor
+                ? `Assigned Consultations (${appointments.length})`
+                : `Your Clinical Records (${appointments.length})`}
+            </h2>
+            <span className="sub-tag">
+              {isDoctor
+                ? "All patient consultations scheduled with your physician account in MongoDB Atlas"
+                : "All real-time appointments synchronized with hospital servers"}
+            </span>
+          </div>
+
+          {/* View Tab Filter Controls */}
+          {appointments.length > 0 && (
+            <div className="appointment-view-tabs" role="tablist" aria-label="Appointment Filters">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewTab === "all"}
+                className={`view-tab-btn ${viewTab === "all" ? "active" : ""}`}
+                onClick={() => setViewTab("all")}
+              >
+                All <span className="tab-count-pill">{appointments.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewTab === "upcoming"}
+                className={`view-tab-btn ${viewTab === "upcoming" ? "active" : ""}`}
+                onClick={() => setViewTab("upcoming")}
+              >
+                Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewTab === "past"}
+                className={`view-tab-btn ${viewTab === "past" ? "active" : ""}`}
+                onClick={() => setViewTab("past")}
+              >
+                Past <span className="tab-count-pill">{pastAppointments.length}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {appointments.length === 0 ? (
@@ -804,304 +1141,72 @@ const Appointment = () => {
               </button>
             )}
           </div>
-        ) : isDoctor ? (
-          /* Doctor's Assigned Consultations View */
-          <div className="doctor-consultations-grid">
-            {appointments.map((app) => {
-              const patObj =
-                typeof app.patientId === "object" && app.patientId !== null ? app.patientId : null;
-              const patientIdVal = patObj?._id || app.patientId;
-              const patientName = app.patientName || patObj?.name || "Patient";
-              const patientPhone = app.patientPhone || patObj?.phoneNumber || "";
-              const patientEmail = app.patientEmail || patObj?.email || "";
-              const statusClean = app.status || "Scheduled";
-              const statusNorm = String(statusClean).trim().toUpperCase();
-
-              return (
-                <div
-                  key={app._id}
-                  className={`appointment-card doctor-view-card ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <div className="app-card-top">
-                    <div className="patient-headline-wrap">
-                      <div className="patient-avatar-mini" title={patientName}>
-                        {patientName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <span className="app-dept-pill patient-pill">Patient</span>
-                        <h3 className="app-doctor-name">{patientName}</h3>
-                      </div>
-                    </div>
-                    <span
-                      className={`app-status-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      {statusClean}
-                    </span>
-                  </div>
-
-                  <div className="app-details-list">
-                    <div className="detail-item">
-                      <FiCalendar className="detail-icon" />
-                      <span>
-                        {new Date(app.appointmentDate).toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <FiClock className="detail-icon" />
-                      <span>{app.timeSlot}</span>
-                    </div>
-                    <div className="detail-item">
-                      <FiActivity className="detail-icon" />
-                      <span>Mode: {app.consultationType || "In-Person"}</span>
-                    </div>
-
-                    {patientPhone && (
-                      <div className="detail-item">
-                        <FiPhone className="detail-icon" />
-                        <span>
-                          Phone:{" "}
-                          <a href={`tel:${patientPhone}`} className="contact-link">
-                            {patientPhone}
-                          </a>
-                        </span>
-                      </div>
-                    )}
-
-                    {patientEmail && (
-                      <div className="detail-item">
-                        <FiMail className="detail-icon" />
-                        <span>
-                          Email:{" "}
-                          <a href={`mailto:${patientEmail}`} className="contact-link">
-                            {patientEmail}
-                          </a>
-                        </span>
-                      </div>
-                    )}
-
-                    {(app.reason || app.notes) && (
-                      <div className="detail-item reason-item">
-                        <FiFileText className="detail-icon" />
-                        <span>
-                          <strong>Clinical Reason:</strong> {app.reason || app.notes}
-                        </span>
-                      </div>
-                    )}
-
-                    {app.rejectionReason && (
-                      <div className="detail-item rejection-alert">
-                        <FiAlertCircle className="detail-icon text-red" />
-                        <span>Note: {app.rejectionReason}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Clinician Authorized Actions */}
-                  <div className="app-card-actions doctor-card-actions">
-                    <ConsultationJoinButton
-                      appointment={app}
-                      currentTime={currentTime}
-                      className="btn-action-join-video"
-                      customEnabledText="Join Video Consultation"
-                    />
-                    {statusNorm === "SCHEDULED" && (
-                      <>
-                        <button
-                          className="btn-action-confirm"
-                          onClick={() => handleUpdateAppointment(app._id, "Confirmed")}
-                          type="button"
-                          title="Confirm patient appointment"
-                        >
-                          <FiCheckCircle /> Confirm
-                        </button>
-                        <button
-                          className="btn-action-reject"
-                          onClick={() => handlePromptReject(app._id)}
-                          type="button"
-                          title="Reject or request reschedule"
-                        >
-                          <FiXCircle /> Reject
-                        </button>
-                      </>
-                    )}
-
-                    {statusNorm === "CONFIRMED" && (
-                      <>
-                        <button
-                          className="btn-action-start"
-                          onClick={() => handleUpdateAppointment(app._id, "In Progress")}
-                          type="button"
-                          title="Begin clinical consultation"
-                        >
-                          <FiActivity /> Start Visit
-                        </button>
-                        <button
-                          className="btn-action-reject"
-                          onClick={() => handlePromptReject(app._id)}
-                          type="button"
-                          title="Reschedule or cancel visit"
-                        >
-                          <FiXCircle /> Reschedule
-                        </button>
-                      </>
-                    )}
-
-                    {(statusNorm === "IN PROGRESS" || statusNorm === "IN-PROGRESS") && (
-                      <button
-                        className="btn-action-complete"
-                        onClick={() => handleUpdateAppointment(app._id, "Completed")}
-                        type="button"
-                        title="Mark consultation as completed"
-                      >
-                        <FiCheckCircle /> Complete Visit
-                      </button>
-                    )}
-
-                    {patientIdVal && (
-                      <Link
-                        to={`/doctor-dashboard?patientId=${patientIdVal}`}
-                        className="btn-action-vault"
-                        title="Open patient medical dossier and upload records"
-                      >
-                        <FiFileText /> Dossier & Vault
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         ) : (
-          /* Patient's Appointments Grid */
-          <div className="appointments-grid">
-            {appointments.map((app) => {
-              const docObj =
-                typeof app.doctorId === "object" && app.doctorId !== null ? app.doctorId : null;
-              const docName = docObj?.name
-                ? (docObj.name.startsWith("Dr.") ? docObj.name : `Dr. ${docObj.name}`)
-                : (app.doctorName?.startsWith("Dr.") ? app.doctorName : `Dr. ${app.doctorName || "Doctor"}`);
-              const docDept = docObj?.specialization || app.department || "General Medicine";
-              const statusClean = app.status || "Scheduled";
-              const statusNorm = String(statusClean).trim().toUpperCase();
-              const isPast = checkIsPast(app.appointmentDate, app.timeSlot);
-              const isCancellable = isAppointmentCancellable(app);
-
-              return (
-                <div
-                  key={app._id}
-                  className={`appointment-card ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <div className="app-card-top">
-                    <div>
-                      <span className="app-dept-pill">{docDept}</span>
-                      <h3 className="app-doctor-name">{docName}</h3>
-                    </div>
-                    <span
-                      className={`app-status-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      {statusClean}
-                    </span>
-                  </div>
-
-                  <div className="app-details-list">
-                    <div className="detail-item">
-                      <FiCalendar className="detail-icon" />
-                      <span>
-                        {new Date(app.appointmentDate).toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <FiClock className="detail-icon" />
-                      <span>{app.timeSlot}</span>
-                    </div>
-                    <div className="detail-item">
-                      <FiActivity className="detail-icon" />
-                      <span>Mode: {app.consultationType || "In-Person"}</span>
-                    </div>
-                    {(app.reason || app.notes) && (
-                      <div className="detail-item reason-item">
-                        <FiFileText className="detail-icon" />
-                        <span><strong>Reason:</strong> {app.reason || app.notes}</span>
-                      </div>
-                    )}
-                    {app.rejectionReason && (
-                      <div className="detail-item rejection-alert">
-                        <FiAlertCircle className="detail-icon text-red" />
-                        <span>Note: {app.rejectionReason}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="app-card-actions patient-card-actions">
-                    <ConsultationJoinButton
-                      appointment={app}
-                      currentTime={currentTime}
-                      className="btn-join-video-action patient-video-btn"
-                      customEnabledText="Join Video Consultation"
-                    />
-                    {isCancellable ? (
-                      <button
-                        className="btn-cancel-slot"
-                        onClick={() => handleCancelAppointment(app._id)}
-                        type="button"
-                        title="Cancel scheduled consultation"
-                      >
-                        <FiXCircle /> Cancel Appointment
-                      </button>
-                    ) : (
-                      <div className={`appt-terminal-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}>
-                        {statusNorm === "COMPLETED" && (
-                          <>
-                            <FiCheckCircle size={13} />
-                            <span>Consultation Completed</span>
-                          </>
-                        )}
-                        {statusNorm === "CANCELLED" && (
-                          <>
-                            <FiXCircle size={13} />
-                            <span>Consultation Cancelled</span>
-                          </>
-                        )}
-                        {statusNorm === "REJECTED" && (
-                          <>
-                            <FiAlertCircle size={13} />
-                            <span>Consultation Declined</span>
-                          </>
-                        )}
-                        {isPast &&
-                          statusNorm !== "COMPLETED" &&
-                          statusNorm !== "CANCELLED" &&
-                          statusNorm !== "REJECTED" && (
-                            <>
-                              <FiClock size={13} />
-                              <span>Past Consultation • Non-cancellable</span>
-                            </>
-                        )}
-                        {!isPast &&
-                          statusNorm !== "COMPLETED" &&
-                          statusNorm !== "CANCELLED" &&
-                          statusNorm !== "REJECTED" && (
-                            <>
-                              <FiActivity size={13} />
-                              <span>Status: {statusClean}</span>
-                            </>
-                        )}
-                      </div>
-                    )}
-                  </div>
+          <div className="appointment-sections-container">
+            {/* UPCOMING VIEW TAB */}
+            {viewTab === "upcoming" && (
+              upcomingAppointments.length === 0 ? (
+                <div className="empty-appointments-box sub-empty">
+                  <FiClock size={40} className="empty-cal-icon" />
+                  <h3>No Upcoming Consultations</h3>
+                  <p>You have no active or upcoming consultations scheduled. Any confirmed visits will appear here sorted nearest first.</p>
                 </div>
-              );
-            })}
+              ) : (
+                <div className={isDoctor ? "doctor-consultations-grid" : "appointments-grid"}>
+                  {upcomingAppointments.map((app) => isDoctor ? renderDoctorCard(app) : renderPatientCard(app))}
+                </div>
+              )
+            )}
+
+            {/* PAST VIEW TAB */}
+            {viewTab === "past" && (
+              pastAppointments.length === 0 ? (
+                <div className="empty-appointments-box sub-empty">
+                  <FiCheckCircle size={40} className="empty-cal-icon" />
+                  <h3>No Past Consultations</h3>
+                  <p>You have no past or concluded consultations on record.</p>
+                </div>
+              ) : (
+                <div className={isDoctor ? "doctor-consultations-grid" : "appointments-grid"}>
+                  {pastAppointments.map((app) => isDoctor ? renderDoctorCard(app) : renderPatientCard(app))}
+                </div>
+              )
+            )}
+
+            {/* ALL VIEW TAB (SEPARATED INTO UPCOMING & PAST SUBGROUPS) */}
+            {viewTab === "all" && (
+              <>
+                {upcomingAppointments.length > 0 && (
+                  <div className="appointment-subgroup upcoming-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge upcoming">Upcoming</span>
+                        <h3>Upcoming Consultations ({upcomingAppointments.length})</h3>
+                      </div>
+                      <span className="subgroup-hint">Ordered chronologically • Nearest upcoming first</span>
+                    </div>
+                    <div className={isDoctor ? "doctor-consultations-grid" : "appointments-grid"}>
+                      {upcomingAppointments.map((app) => isDoctor ? renderDoctorCard(app) : renderPatientCard(app))}
+                    </div>
+                  </div>
+                )}
+
+                {pastAppointments.length > 0 && (
+                  <div className="appointment-subgroup past-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge past">Past / Concluded</span>
+                        <h3>Past & Historical Records ({pastAppointments.length})</h3>
+                      </div>
+                      <span className="subgroup-hint">Reverse chronological • Most recent first</span>
+                    </div>
+                    <div className={isDoctor ? "doctor-consultations-grid" : "appointments-grid"}>
+                      {pastAppointments.map((app) => isDoctor ? renderDoctorCard(app) : renderPatientCard(app))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </section>

@@ -1,10 +1,13 @@
-import React, { useEffect, useState, useContext, useCallback, useRef } from "react";
+import React, { useEffect, useState, useContext, useCallback, useRef, useMemo } from "react";
 import "./PatientDashboard.css";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { reportsAPI, appointmentsAPI, insuranceAPI, authAPI } from "../services/api";
 import { getSocket } from "../services/socket";
-import { sortAppointmentsDesc } from "../utils/appointmentSorting";
+import {
+  sortAppointmentsDesc,
+  partitionAppointments,
+} from "../utils/appointmentSorting";
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
@@ -54,7 +57,13 @@ const PatientDashboard = () => {
 
   const [appointmentsCount, setAppointmentsCount] = useState(0);
   const [patientAppointments, setPatientAppointments] = useState([]);
+  const [patientApptTab, setPatientApptTab] = useState("all"); // 'all' | 'upcoming' | 'past'
   const currentTime = useConsultationTimer(15000);
+
+  // Partition patient appointments into upcoming (nearest first) and past (most recent first)
+  const { upcoming: upcomingAppointments, past: pastAppointments } = useMemo(() => {
+    return partitionAppointments(patientAppointments, currentTime);
+  }, [patientAppointments, currentTime]);
 
   const [insuranceCount, setInsuranceCount] = useState(0);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -194,6 +203,15 @@ const PatientDashboard = () => {
       socket.off("appointment:update", handleRealtimeUpdate);
     };
   }, [fetchOverviewCounts]);
+
+  // Periodic polling (30s) to keep appointments and statuses synchronized
+  useEffect(() => {
+    if (!user) return;
+    const pollTimer = setInterval(() => {
+      fetchOverviewCounts();
+    }, 30000);
+    return () => clearInterval(pollTimer);
+  }, [user, fetchOverviewCounts]);
 
   useEffect(() => {
     if (isUploadModalOpen || deleteConfirmId) {
@@ -457,6 +475,58 @@ const PatientDashboard = () => {
   const completedAiCount = reports.filter(
     (r) => r.analysisStatus === "Completed"
   ).length;
+
+  const renderPatientApptCard = (app) => {
+    const docObj = typeof app.doctorId === "object" && app.doctorId !== null ? app.doctorId : null;
+    const docName = docObj?.name
+      ? (docObj.name.startsWith("Dr.") ? docObj.name : `Dr. ${docObj.name}`)
+      : (app.doctorName?.startsWith("Dr.") ? app.doctorName : `Dr. ${app.doctorName || "Doctor"}`);
+    const docDept = docObj?.specialization || app.department || "General Medicine";
+
+    return (
+      <div
+        key={app._id}
+        className={`patient-appt-card ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}
+      >
+        <div className="appt-card-top">
+          <span className="appt-dept">{docDept}</span>
+          <span className={`status-pill ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}>
+            {app.status || "Scheduled"}
+          </span>
+        </div>
+        <h4 className="appt-doctor-name">{docName}</h4>
+        <div className="appt-card-meta">
+          <span>
+            <FiCalendar size={13} />{" "}
+            {new Date(app.appointmentDate).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+          <span>
+            <FiClock size={13} /> {app.timeSlot}
+          </span>
+        </div>
+        <div className="appt-card-footer">
+          <span className="appt-mode">{app.consultationType || "In-Person"}</span>
+          <ConsultationJoinButton
+            appointment={app}
+            currentTime={currentTime}
+            className="btn-patient-join-video"
+            customEnabledText="Join Video Consultation"
+            iconSize={13}
+          />
+          {(app.reason || app.notes) && (
+            <span className="appt-reason" title={app.reason || app.notes}>
+              <strong>Reason:</strong> {app.reason || app.notes}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="patient-dashboard-container">
@@ -748,9 +818,43 @@ const PatientDashboard = () => {
             <h3>Your Scheduled Consultations ({patientAppointments.length})</h3>
             <p>Upcoming and completed clinical appointments with verified hospital specialists</p>
           </div>
-          <Link to="/appointment" className="btn-manage-appts">
-            <FiPlus size={14} /> Schedule / Manage
-          </Link>
+
+          <div className="consultations-header-right">
+            {patientAppointments.length > 0 && (
+              <div className="appointment-view-tabs" role="tablist" aria-label="Appointment Filters">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={patientApptTab === "all"}
+                  className={`view-tab-btn ${patientApptTab === "all" ? "active" : ""}`}
+                  onClick={() => setPatientApptTab("all")}
+                >
+                  All <span className="tab-count-pill">{patientAppointments.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={patientApptTab === "upcoming"}
+                  className={`view-tab-btn ${patientApptTab === "upcoming" ? "active" : ""}`}
+                  onClick={() => setPatientApptTab("upcoming")}
+                >
+                  Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={patientApptTab === "past"}
+                  className={`view-tab-btn ${patientApptTab === "past" ? "active" : ""}`}
+                  onClick={() => setPatientApptTab("past")}
+                >
+                  Past <span className="tab-count-pill">{pastAppointments.length}</span>
+                </button>
+              </div>
+            )}
+            <Link to="/appointment" className="btn-manage-appts">
+              <FiPlus size={14} /> Schedule / Manage
+            </Link>
+          </div>
         </div>
 
         {patientAppointments.length === 0 ? (
@@ -763,58 +867,68 @@ const PatientDashboard = () => {
             </Link>
           </div>
         ) : (
-          <div className="patient-appts-grid">
-            {patientAppointments.map((app) => {
-              const docObj = typeof app.doctorId === "object" && app.doctorId !== null ? app.doctorId : null;
-              const docName = docObj?.name
-                ? (docObj.name.startsWith("Dr.") ? docObj.name : `Dr. ${docObj.name}`)
-                : (app.doctorName?.startsWith("Dr.") ? app.doctorName : `Dr. ${app.doctorName || "Doctor"}`);
-              const docDept = docObj?.specialization || app.department || "General Medicine";
-
-              return (
-                <div
-                  key={app._id}
-                  className={`patient-appt-card ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}
-                >
-                  <div className="appt-card-top">
-                    <span className="appt-dept">{docDept}</span>
-                    <span className={`status-pill ${app.status?.toLowerCase().replace(/\s+/g, "-") || "scheduled"}`}>
-                      {app.status || "Scheduled"}
-                    </span>
-                  </div>
-                  <h4 className="appt-doctor-name">{docName}</h4>
-                  <div className="appt-card-meta">
-                    <span>
-                      <FiCalendar size={13} />{" "}
-                      {new Date(app.appointmentDate).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                    <span>
-                      <FiClock size={13} /> {app.timeSlot}
-                    </span>
-                  </div>
-                  <div className="appt-card-footer">
-                    <span className="appt-mode">{app.consultationType || "In-Person"}</span>
-                    <ConsultationJoinButton
-                      appointment={app}
-                      currentTime={currentTime}
-                      className="btn-patient-join-video"
-                      customEnabledText="Join Video Consultation"
-                      iconSize={13}
-                    />
-                    {(app.reason || app.notes) && (
-                      <span className="appt-reason" title={app.reason || app.notes}>
-                        <strong>Reason:</strong> {app.reason || app.notes}
-                      </span>
-                    )}
-                  </div>
+          <div className="patient-appts-content">
+            {patientApptTab === "upcoming" && (
+              upcomingAppointments.length === 0 ? (
+                <div className="empty-appts-card sub-empty">
+                  <FiClock size={28} />
+                  <h4>No Upcoming Consultations</h4>
+                  <p>You have no active upcoming consultations scheduled.</p>
                 </div>
-              );
-            })}
+              ) : (
+                <div className="patient-appts-grid">
+                  {upcomingAppointments.map((app) => renderPatientApptCard(app))}
+                </div>
+              )
+            )}
+
+            {patientApptTab === "past" && (
+              pastAppointments.length === 0 ? (
+                <div className="empty-appts-card sub-empty">
+                  <FiCheckCircle size={28} />
+                  <h4>No Past Consultations</h4>
+                  <p>You have no past or concluded consultations on record.</p>
+                </div>
+              ) : (
+                <div className="patient-appts-grid">
+                  {pastAppointments.map((app) => renderPatientApptCard(app))}
+                </div>
+              )
+            )}
+
+            {patientApptTab === "all" && (
+              <>
+                {upcomingAppointments.length > 0 && (
+                  <div className="appointment-subgroup upcoming-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge upcoming">Upcoming</span>
+                        <h4>Upcoming Consultations ({upcomingAppointments.length})</h4>
+                      </div>
+                      <span className="subgroup-hint">Chronological order • Nearest first</span>
+                    </div>
+                    <div className="patient-appts-grid">
+                      {upcomingAppointments.map((app) => renderPatientApptCard(app))}
+                    </div>
+                  </div>
+                )}
+
+                {pastAppointments.length > 0 && (
+                  <div className="appointment-subgroup past-subgroup">
+                    <div className="subgroup-header">
+                      <div className="subgroup-title-row">
+                        <span className="subgroup-badge past">Past / Concluded</span>
+                        <h4>Past & Historical Consultations ({pastAppointments.length})</h4>
+                      </div>
+                      <span className="subgroup-hint">Reverse chronological • Most recent first</span>
+                    </div>
+                    <div className="patient-appts-grid">
+                      {pastAppointments.map((app) => renderPatientApptCard(app))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </section>
