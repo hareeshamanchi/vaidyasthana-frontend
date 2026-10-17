@@ -8,6 +8,8 @@ import {
   sortAppointmentsDesc,
   getAppointmentDateTimeMs,
 } from "../utils/appointmentSorting";
+import ConsultationJoinButton from "../components/ConsultationJoinButton";
+import { useConsultationTimer } from "../utils/consultationWindow";
 import {
   FiCalendar,
   FiClock,
@@ -26,13 +28,13 @@ import {
   FiDollarSign,
   FiAward,
   FiMail,
-  FiVideo,
 } from "react-icons/fi";
 
 const Appointment = () => {
   const { user } = useContext(AuthContext);
 
   const isDoctor = user?.role === "doctor";
+  const currentTime = useConsultationTimer(15000);
 
   const [appointments, setAppointments] = useState([]);
   const [timer, setTimer] = useState(null);
@@ -113,17 +115,6 @@ const Appointment = () => {
       return false;
     }
     return true;
-  };
-
-  // Helper to determine if an appointment is eligible for real-time video consultation
-  const isVideoEligible = (app) => {
-    if (!app) return false;
-    const mode = String(app.consultationType || "").trim().toUpperCase();
-    const isVideo = mode.includes("VIDEO") || mode.includes("ONLINE");
-    if (!isVideo) return false;
-    const status = String(app.status || "").trim().toUpperCase();
-    // Active consultations can join; cancelled, rejected, or completed cannot
-    return status !== "CANCELLED" && status !== "REJECTED" && status !== "COMPLETED";
   };
 
   // Booking Form State
@@ -912,15 +903,12 @@ const Appointment = () => {
 
                   {/* Clinician Authorized Actions */}
                   <div className="app-card-actions doctor-card-actions">
-                    {isVideoEligible(app) && (
-                      <Link
-                        to={`/consultation/${app._id}`}
-                        className="btn-action-join-video"
-                        title="Join real-time video consultation room"
-                      >
-                        <FiVideo /> Join Consultation
-                      </Link>
-                    )}
+                    <ConsultationJoinButton
+                      appointment={app}
+                      currentTime={currentTime}
+                      className="btn-action-join-video"
+                      customEnabledText="Join Video Consultation"
+                    />
                     {statusNorm === "SCHEDULED" && (
                       <>
                         <button
@@ -1055,15 +1043,12 @@ const Appointment = () => {
                   </div>
 
                   <div className="app-card-actions patient-card-actions">
-                    {isVideoEligible(app) && (
-                      <Link
-                        to={`/consultation/${app._id}`}
-                        className="btn-join-video-action patient-video-btn"
-                        title="Join your scheduled online video consultation"
-                      >
-                        <FiVideo /> Join Video Consultation
-                      </Link>
-                    )}
+                    <ConsultationJoinButton
+                      appointment={app}
+                      currentTime={currentTime}
+                      className="btn-join-video-action patient-video-btn"
+                      customEnabledText="Join Video Consultation"
+                    />
                     {isCancellable ? (
                       <button
                         className="btn-cancel-slot"

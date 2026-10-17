@@ -5,6 +5,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { reportsAPI, appointmentsAPI, insuranceAPI, authAPI } from "../services/api";
 import { getSocket } from "../services/socket";
 import { sortAppointmentsDesc } from "../utils/appointmentSorting";
+import ConsultationJoinButton from "../components/ConsultationJoinButton";
+import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
 import {
   FiFileText,
@@ -28,7 +30,6 @@ import {
   FiMapPin,
   FiPhone,
   FiClock,
-  FiVideo,
 } from "react-icons/fi";
 
 const PatientDashboard = () => {
@@ -53,16 +54,8 @@ const PatientDashboard = () => {
 
   const [appointmentsCount, setAppointmentsCount] = useState(0);
   const [patientAppointments, setPatientAppointments] = useState([]);
+  const currentTime = useConsultationTimer(15000);
 
-  // Helper to determine if an appointment is eligible for live video consultation
-  const isVideoEligible = (app) => {
-    if (!app) return false;
-    const mode = String(app.consultationType || "").trim().toUpperCase();
-    const isVideo = mode.includes("VIDEO") || mode.includes("ONLINE");
-    if (!isVideo) return false;
-    const status = String(app.status || "").trim().toUpperCase();
-    return status !== "CANCELLED" && status !== "REJECTED" && status !== "COMPLETED";
-  };
   const [insuranceCount, setInsuranceCount] = useState(0);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -806,15 +799,13 @@ const PatientDashboard = () => {
                   </div>
                   <div className="appt-card-footer">
                     <span className="appt-mode">{app.consultationType || "In-Person"}</span>
-                    {isVideoEligible(app) && (
-                      <Link
-                        to={`/consultation/${app._id}`}
-                        className="btn-patient-join-video"
-                        title="Join scheduled video consultation"
-                      >
-                        <FiVideo size={13} /> Join Call
-                      </Link>
-                    )}
+                    <ConsultationJoinButton
+                      appointment={app}
+                      currentTime={currentTime}
+                      className="btn-patient-join-video"
+                      customEnabledText="Join Video Consultation"
+                      iconSize={13}
+                    />
                     {(app.reason || app.notes) && (
                       <span className="appt-reason" title={app.reason || app.notes}>
                         <strong>Reason:</strong> {app.reason || app.notes}

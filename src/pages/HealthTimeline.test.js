@@ -18,6 +18,16 @@ jest.mock("../services/api", () => ({
   },
 }));
 
+const testNow = new Date();
+const testCurMin = testNow.getHours() * 60 + testNow.getMinutes();
+const testActiveMin = Math.max(0, testCurMin - 5);
+const testH24 = Math.floor(testActiveMin / 60);
+const testM = testActiveMin % 60;
+const testMod = testH24 >= 12 ? "PM" : "AM";
+let testH12 = testH24 % 12;
+if (testH12 === 0) testH12 = 12;
+const testActiveSlot = `${String(testH12).padStart(2, "0")}:${String(testM).padStart(2, "0")} ${testMod}`;
+
 const mockPatient = {
   _id: "60c72b2f9b1d8b2bad0000a1",
   id: "60c72b2f9b1d8b2bad0000a1",
@@ -103,14 +113,14 @@ const mockTimelineData = {
     {
       id: "appt-201",
       recordType: "appointment",
-      date: new Date("2026-10-25T11:00:00Z"),
+      date: testNow,
       title: "Cardiology Consultation",
       doctorName: "Dr. Sharma",
       doctorId: "60c72b2f9b1d8b2bad0000d1",
       patientName: "Ramesh Kumar",
       patientId: "60c72b2f9b1d8b2bad0000a1",
       department: "Cardiology",
-      timeSlot: "11:00 AM",
+      timeSlot: testActiveSlot,
       status: "Scheduled",
       consultationType: "Video / Online",
       reason: "Follow-up review of lipid profile results",
@@ -187,14 +197,14 @@ const mockTimelineData = {
         {
           id: "appt-201",
           recordType: "appointment",
-          date: new Date("2026-10-25T11:00:00Z"),
+          date: testNow,
           title: "Cardiology Consultation",
           doctorName: "Dr. Sharma",
           doctorId: "60c72b2f9b1d8b2bad0000d1",
           patientName: "Ramesh Kumar",
           patientId: "60c72b2f9b1d8b2bad0000a1",
           department: "Cardiology",
-          timeSlot: "11:00 AM",
+          timeSlot: testActiveSlot,
           status: "Scheduled",
           consultationType: "Video / Online",
           reason: "Follow-up review of lipid profile results",

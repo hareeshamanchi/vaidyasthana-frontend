@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useContext, useMemo } from "re
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { timelineAPI, doctorAPI, reportsAPI } from "../services/api";
+import ConsultationJoinButton from "../components/ConsultationJoinButton";
+import { useConsultationTimer } from "../utils/consultationWindow";
 import "./HealthTimeline.css";
 import {
   FiActivity,
@@ -28,6 +30,7 @@ const HealthTimeline = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const currentTime = useConsultationTimer(15000);
 
   const queryPatientId = searchParams.get("patientId") || "";
 
@@ -1046,17 +1049,13 @@ const HealthTimeline = () => {
 
                               {/* Card Actions */}
                               <div className="card-actions-bar">
-                                {isVideoConsultation &&
-                                  (event.status === "Scheduled" ||
-                                    event.status === "Confirmed" ||
-                                    event.status === "In Progress") && (
-                                    <Link
-                                      to={`/video-consultation/${event.id}`}
-                                      className="btn-join-video-call"
-                                    >
-                                      <FiVideo /> Join Video Consultation
-                                    </Link>
-                                  )}
+                                <ConsultationJoinButton
+                                  appointment={event}
+                                  currentTime={currentTime}
+                                  className="btn-join-video-call"
+                                  customEnabledText="Join Video Consultation"
+                                  useVideoPrefixRoute={true}
+                                />
                               </div>
                             </article>
                           )}

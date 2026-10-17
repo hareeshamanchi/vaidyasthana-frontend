@@ -30,6 +30,7 @@ const VideoConsultation = () => {
   // Consultation Session State
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
+  const [authErrorCode, setAuthErrorCode] = useState("");
   const [meetingData, setMeetingData] = useState(null);
   const [connectionState, setConnectionState] = useState("authorizing"); // authorizing | ready | initializing | connecting | waiting_for_peer | connected | reconnecting | failed | ended | error
   const [serviceError, setServiceError] = useState("");
@@ -63,6 +64,7 @@ const VideoConsultation = () => {
   const authorizeSession = useCallback(async () => {
     setLoading(true);
     setAuthError("");
+    setAuthErrorCode("");
     setServiceError("");
     setConnectionState("authorizing");
 
@@ -73,11 +75,14 @@ const VideoConsultation = () => {
         setConnectionState("ready");
       } else {
         setAuthError(res.data?.message || "Unable to authorize video consultation session.");
+        setAuthErrorCode(res.data?.error || "");
         setConnectionState("error");
       }
     } catch (err) {
       console.error("Video consultation authorization error:", err);
       const status = err.response?.status;
+      const code = err.response?.data?.error || "";
+      setAuthErrorCode(code);
       const errMsg =
         err.response?.data?.message ||
         (status === 403
@@ -499,14 +504,34 @@ const VideoConsultation = () => {
           <div className="error-icon-circle">
             <FiAlertTriangle size={36} />
           </div>
-          <h2>{authError ? "Consultation Access Restricted" : "Connection Failed"}</h2>
+          <h2>
+            {authErrorCode === "CONSULTATION_TIME_EXCEEDED"
+              ? "Consultation Time Exceeded"
+              : authErrorCode === "CONSULTATION_NOT_STARTED"
+              ? "Consultation Has Not Started Yet"
+              : authError
+              ? "Consultation Access Restricted"
+              : "Connection Failed"}
+          </h2>
           <p className="error-desc">{authError || serviceError || "Unable to establish video consultation session."}</p>
 
           <div className="error-guidance-box">
             <div className="guidance-title">
               <FiShield size={16} /> {authError ? "Clinical Security & Policy" : "WebRTC Troubleshooting & Guidance"}
             </div>
-            {authError ? (
+            {authErrorCode === "CONSULTATION_TIME_EXCEEDED" ? (
+              <ul>
+                <li>Video consultations can only be joined from the scheduled start time until 30 minutes after start.</li>
+                <li>The 30-minute grace period has passed for this appointment.</li>
+                <li>Please book a new consultation or contact your clinician if you need assistance.</li>
+              </ul>
+            ) : authErrorCode === "CONSULTATION_NOT_STARTED" ? (
+              <ul>
+                <li>This video consultation room opens promptly at the scheduled appointment time.</li>
+                <li>You can join once the start time is reached, and access remains available for 30 minutes.</li>
+                <li>Please return to this page at your scheduled appointment time.</li>
+              </ul>
+            ) : authError ? (
               <ul>
                 <li>Video consultations are strictly reserved for the assigned patient and clinician.</li>
                 <li>Cancelled, rejected, or already completed visits cannot initiate active calls.</li>

@@ -2,9 +2,11 @@ import React, { useState, useEffect, useContext, useRef, useCallback } from "rea
 import "./DoctorDashboard.css";
 import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getSocket } from "../services/socket";
 import { sortAppointmentsDesc } from "../utils/appointmentSorting";
+import ConsultationJoinButton from "../components/ConsultationJoinButton";
+import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
 import {
   FiShield,
@@ -24,7 +26,6 @@ import {
   FiPhone,
   FiMail,
   FiCheck,
-  FiVideo,
   FiActivity,
 } from "react-icons/fi";
 
@@ -54,16 +55,7 @@ const DoctorDashboard = () => {
   // Doctor Assigned Appointments State
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
-
-  // Helper to determine if an appointment is eligible for live video consultation
-  const isVideoEligible = (app) => {
-    if (!app) return false;
-    const mode = String(app.consultationType || "").trim().toUpperCase();
-    const isVideo = mode.includes("VIDEO") || mode.includes("ONLINE");
-    if (!isVideo) return false;
-    const status = String(app.status || "").trim().toUpperCase();
-    return status !== "CANCELLED" && status !== "REJECTED" && status !== "COMPLETED";
-  };
+  const currentTime = useConsultationTimer(15000);
 
   // Doctor Verification State
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
@@ -736,15 +728,13 @@ const DoctorDashboard = () => {
                           const statusNorm = String(app.status || "").trim().toUpperCase();
                           return (
                             <div className="action-buttons-group">
-                              {isVideoEligible(app) && (
-                                <Link
-                                  to={`/consultation/${app._id}`}
-                                  className="btn-join-video-table"
-                                  title="Join online video consultation"
-                                >
-                                  <FiVideo size={13} /> Join Call
-                                </Link>
-                              )}
+                              <ConsultationJoinButton
+                                appointment={app}
+                                currentTime={currentTime}
+                                className="btn-join-video-table"
+                                customEnabledText="Join Video Consultation"
+                                iconSize={13}
+                              />
                               {statusNorm === "SCHEDULED" && (
                                 <>
                                   <button
