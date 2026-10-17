@@ -1,137 +1,425 @@
-.insurance-container {
-    min-height: 100vh;
-    padding: 4rem 2rem;
-    background: linear-gradient(to bottom right, #e0f7fa, #e1bee7);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-    display: flex;
+/* ==========================================================================
+   Vaidyasthana Insurance Styles
+   ========================================================================== */
+
+.insurance-page-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2.5rem 2rem 5rem;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+.insurance-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.header-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal-700);
+  background: var(--teal-50);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.5rem;
+}
+
+.header-info h1 {
+  font-size: 2.25rem;
+  color: var(--navy-900);
+  margin-bottom: 0.4rem;
+}
+
+.header-info p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0;
+}
+
+.btn-add-policy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--blue-600);
+  color: #ffffff;
+  border: none;
+  padding: 0.85rem 1.6rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-add-policy:hover {
+  background: var(--blue-700);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+}
+
+.insurance-banner {
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  color: var(--status-success);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+/* ==========================================================================
+   Emergency TPA Card
+   ========================================================================== */
+.emergency-tpa-card {
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  margin-bottom: 3rem;
+  box-shadow: var(--shadow-md);
+}
+
+.tpa-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tpa-content h3 {
+  font-size: 1.3rem;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.tpa-content p {
+  color: #ccfbf1;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.tpa-helpline-numbers {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.helpline-pill {
+  display: inline-block;
+  background: #ffffff;
+  color: #0f766e;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.helpline-pill:hover {
+  background: #f0fdfa;
+  transform: translateY(-2px);
+}
+
+.helpline-subtext {
+  font-size: 0.8rem;
+  color: #ccfbf1;
+}
+
+/* ==========================================================================
+   Policies Grid
+   ========================================================================== */
+.policies-grid-section {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.section-title-wrap {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-title-wrap h2 {
+  font-size: 1.4rem;
+  color: var(--navy-900);
+  margin-bottom: 0.25rem;
+}
+
+.policies-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Smart Card Aesthetic */
+.policy-smart-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.policy-smart-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-xl);
+}
+
+.policy-smart-card::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-chip-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.chip-icon {
+  color: #94a3b8;
+  font-size: 1.6rem;
+}
+
+.policy-type-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+}
+
+.policy-status-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.policy-status-pill.active {
+  background: rgba(22, 163, 74, 0.25);
+  color: #86efac;
+  border: 1px solid rgba(22, 163, 74, 0.4);
+}
+
+.provider-name-row h3 {
+  font-size: 1.15rem;
+  color: #ffffff;
+  margin: 0 0 0.85rem 0;
+}
+
+.policy-number-block {
+  margin-bottom: 1rem;
+}
+
+.policy-number-block .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.number-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f1f5f9;
+}
+
+.policy-financials-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.fin-item .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  display: block;
+}
+
+.fin-item .value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.policy-footer-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.holder-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.btn-delete-policy {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-xs);
+  transition: all var(--transition-fast);
+}
+
+.btn-delete-policy:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Empty State */
+.empty-policies-box {
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.empty-shield-icon {
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+
+.empty-policies-box h3 {
+  font-size: 1.3rem;
+  color: var(--navy-900);
+  margin-bottom: 0.5rem;
+}
+
+.empty-policies-box p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-link-first {
+  background: var(--blue-600);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.6rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+/* Modal */
+.insurance-dialog-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-subtle);
+  width: 100%;
+  max-width: 560px;
+  padding: 2.5rem;
+}
+
+.insurance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.btn-dialog-save {
+  background: var(--blue-600);
+  color: #ffffff;
+  border: none;
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 992px) {
+  .emergency-tpa-card {
     flex-direction: column;
-    align-items: center;
-    gap: 2rem;
+    align-items: flex-start;
   }
-  
-  .insurance-header h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    background: linear-gradient(to right, #6a11cb, #2575fc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
-    text-align: center;
+
+  .policies-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  
-  .insurance-header p {
-    font-size: 1.2rem;
-    text-align: center;
-    max-width: 600px;
-    margin: auto;
-    color: #555;
+}
+
+@media (max-width: 640px) {
+  .insurance-page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .sub-heading {
-    font-size: 1.1rem;
-    text-align: center;
-    color: #333;
-    margin-top: 1rem;
-  }
-  
-  .insurance-card {
-    background: #fff;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    text-align: center;
+
+  .btn-add-policy {
     width: 100%;
-    max-width: 600px;
+    justify-content: center;
   }
-  
-  .insurance-card h2 {
-    font-size: 2rem;
-    color: #3b3b98;
-    margin-bottom: 1rem;
+
+  .policies-cards-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .ai-text {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #0077cc;
-    margin-top: 1rem;
-    text-align: center;
-  }
-  
-  .features-list {
-    list-style-type: none;
-    padding: 0;
-    margin-top: 1.5rem;
-  }
-  
-  .features-list li {
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-  }
-  
-  .features-list li::before {
-    content: "✔";
-    margin-right: 10px;
-    color: #2575fc;
-  }
-  
-  .enroll-btn {
-    background: #6a11cb;
-    color: white;
-    padding: 14px 32px;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    margin-top: 2rem;
-    box-shadow: 0 6px 18px rgba(106, 17, 203, 0.3);
-  }
-  
-  .enroll-btn:hover {
-    background: #2575fc;
-    box-shadow: 0 8px 24px rgba(37, 117, 252, 0.35);
-  }
-  
-  .time-bar {
-    width: 80%;
-    height: 10px;
-    background: #eee;
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 2rem auto;
-  }
-  
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(to right, #6a11cb, #2575fc);
-    animation: progressAnim 5s ease-in-out infinite;
-  }
-  
-  @keyframes progressAnim {
-    0% {
-      width: 0%;
-    }
-    50% {
-      width: 60%;
-    }
-    100% {
-      width: 100%;
-    }
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
+}

@@ -1,60 +1,167 @@
-import React from 'react';
-import './Footer.css';
-import { Link } from 'react-router-dom';
-import { FaWhatsapp, FaInstagram, FaTwitter } from 'react-icons/fa';
+import React from "react";
+import "./Footer.css";
+import { Link } from "react-router-dom";
+import {
+  FiShield,
+  FiFileText,
+  FiActivity,
+  FiPhoneCall,
+  FiMail,
+  FiMapPin,
+} from "react-icons/fi";
+import { FaWhatsapp, FaInstagram, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
   return (
-    <footer className="footer-container">
-      <div className="footer-top">
-        {/* Vaidyasthana Portal Name */}
-        <div className="footer-section">
-          <h2>Vaidyasthana</h2>
-          <p>Your AI-powered healthcare partner.</p>
+    <footer className="vaidya-footer" role="contentinfo">
+      <div className="footer-top-container">
+        {/* Column 1: Brand & Security */}
+        <div className="footer-col brand-col">
+          <div className="footer-brand-title">
+            <FiActivity className="footer-brand-icon" />
+            <span>Vaidyasthana</span>
+          </div>
+          <p className="footer-mission">
+            A secure cloud-based medical document platform designed for patients and
+            clinicians. Built on private Azure cloud infrastructure with automated AI
+            document extraction and medical record intelligence.
+          </p>
+          <div className="security-badges-row">
+            <span className="sec-badge">
+              <FiShield className="sec-icon" /> Private Azure Vault
+            </span>
+            <span className="sec-badge">
+              <FiFileText className="sec-icon" /> SAS-Signed Tokens
+            </span>
+          </div>
         </div>
 
-        {/* Google Map Embed for MITS College */}
-        <div className="footer-section">
-          <h3>Our Location</h3>
-          <iframe
-            title="MITS College Location"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3870.037027927531!2d79.53944741431642!3d14.823682076090315!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bb2b9467f3e4b07%3A0xc69bb24691b67843!2sMadanapalle%20Institute%20of%20Technology%20%26%20Science%20(MITS)!5e0!3m2!1sen!2sin!4v1682913249373!5m2!1sen!2sin"
-            width="250"
-            height="180"
-            style={{ border: '0' }}
-            allowFullScreen=""
-            loading="lazy"
-          />
-        </div>
-
-        {/* Navigation Links */}
-        <div className="footer-section">
-          <h3>Quick Links</h3>
-          <ul>
-            {['Home', 'AI Analysis', 'Diet Plan', 'Appointments', 'Insurance', 'Contact'].map((link, index) => (
-              <li key={index}>
-                <Link to={`/${link.toLowerCase().replace(/\s/g, '-')}`}>{link}</Link>
-              </li>
-            ))}
+        {/* Column 2: Platform Navigation */}
+        <div className="footer-col">
+          <h4 className="footer-heading">Platform</h4>
+          <ul className="footer-links-list">
+            <li>
+              <Link to="/">Home Overview</Link>
+            </li>
+            <li>
+              <Link to="/dashboard">Medical Records Vault</Link>
+            </li>
+            <li>
+              <Link to="/ai-analysis">AI Clinical Insights</Link>
+            </li>
+            <li>
+              <Link to="/appointment">Appointment Booking</Link>
+            </li>
+            <li>
+              <Link to="/insurance">Health Insurance Plans</Link>
+            </li>
+            <li>
+              <Link to="/diet">Nutrition & Diet Advisor</Link>
+            </li>
           </ul>
         </div>
+
+        {/* Column 3: Capabilities */}
+        <div className="footer-col">
+          <h4 className="footer-heading">Clinical Tech</h4>
+          <ul className="footer-links-list">
+            <li>
+              <span className="capability-item">Azure Document Intelligence</span>
+            </li>
+            <li>
+              <span className="capability-item">Azure OpenAI Analysis</span>
+            </li>
+            <li>
+              <span className="capability-item">Biomarker Extraction</span>
+            </li>
+            <li>
+              <span className="capability-item">Physician Diagnostic Portal</span>
+            </li>
+            <li>
+              <span className="capability-item">Encrypted Health Storage</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 4: Contact & Emergency */}
+        <div className="footer-col contact-col">
+          <h4 className="footer-heading">Contact & Helpline</h4>
+          <ul className="footer-contact-list">
+            <li>
+              <FiPhoneCall className="contact-icon" />
+              <div>
+                <strong>Support Desk:</strong>
+                <div>+91 72070 97501</div>
+              </div>
+            </li>
+            <li>
+              <FiMail className="contact-icon" />
+              <div>
+                <strong>Clinical Inquiries:</strong>
+                <div>support@vaidyasthana.org</div>
+              </div>
+            </li>
+            <li>
+              <FiMapPin className="contact-icon" />
+              <div>
+                <strong>Location:</strong>
+                <div>MITS Campus, Madanapalle, AP, India</div>
+              </div>
+            </li>
+          </ul>
+
+          <div className="footer-social-links">
+            <a
+              href="https://wa.me/7207097501"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp Support"
+              className="social-btn whatsapp"
+            >
+              <FaWhatsapp size={16} />
+            </a>
+            <a
+              href="https://www.instagram.com/vaidyasthana_30?igsh=cGpta3NzMzY2bGdq"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="social-btn instagram"
+            >
+              <FaInstagram size={16} />
+            </a>
+            <a
+              href="https://twitter.com/vaidhyasthana"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter / X"
+              className="social-btn twitter"
+            >
+              <FaTwitter size={16} />
+            </a>
+          </div>
+        </div>
       </div>
 
-      {/* Social Media Icons */}
-      <div className="footer-socials">
-        {[
-          { href: 'https://wa.me/7207097501', icon: <FaWhatsapp color="#25D366" /> },
-          { href: 'https://www.instagram.com/vaidyasthana_30?igsh=cGpta3NzMzY2bGdq', icon: <FaInstagram color="#E1306C" /> },
-          { href: 'https://twitter.com/vaidhyasthana', icon: <FaTwitter color="#1DA1F2" /> },
-        ].map((social, index) => (
-          <a key={index} href={social.href} target="_blank" rel="noopener noreferrer">
-            <span className="social-icon">{social.icon}</span>
-          </a>
-        ))}
-      </div>
-
-      <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Vaidyasthana. All rights reserved.</p>
+      {/* Footer Bottom / Clinical Disclaimer */}
+      <div className="footer-bottom-container">
+        <div className="disclaimer-strip">
+          <p>
+            <strong>Medical Notice:</strong> Vaidyasthana is an informational health
+            records management platform. AI-generated summaries and biomarker
+            interpretations are educational aids and do not constitute formal medical
+            advice or diagnostic evaluations. Always consult licensed medical professionals.
+          </p>
+        </div>
+        <div className="footer-copyright-row">
+          <span>&copy; {new Date().getFullYear()} Vaidyasthana Healthcare Platform. All rights reserved.</span>
+          <div className="footer-legal-links">
+            <Link to="/contact">Support</Link>
+            <span>•</span>
+            <Link to="/">Terms of Service</Link>
+            <span>•</span>
+            <Link to="/">Privacy Policy</Link>
+          </div>
+        </div>
       </div>
     </footer>
   );

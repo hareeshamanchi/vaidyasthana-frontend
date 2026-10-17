@@ -1,82 +1,59 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-} from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
+import { authAPI } from "../services/api";
+import { disconnectSocket } from "../services/socket";
 
-import axios from "axios";
+export const AuthContext = createContext();
 
-const API = process.env.REACT_APP_API;
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-export const AuthContext =
-  createContext();
+  const checkLoggedIn = useCallback(async () => {
+    const token = localStorage.getItem("token");
 
-export const AuthProvider = ({
-  children,
-}) => {
-  const [user, setUser] =
-    useState(null);
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
-  const [loading, setLoading] =
-    useState(true);
-
-  useEffect(() => {
-    const checkLoggedIn =
-      async () => {
-        const token =
-          localStorage.getItem(
-            "token"
-          );
-
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        try {
-          const response =
-            await axios.get(
-              `${API}/api/auth/profile`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-          setUser(response.data);
-        } catch (error) {
-          localStorage.removeItem(
-            "token"
-          );
-
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-    checkLoggedIn();
+    try {
+      const response = await authAPI.getProfile();
+      const userData = response.data?.user || response.data;
+      setUser(userData);
+    } catch (error) {
+      console.warn("Session check failed or token expired:", error.message);
+      localStorage.removeItem("token");
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = (
-    userData,
-    token
-  ) => {
-    localStorage.setItem(
-      "token",
-      token
-    );
+  useEffect(() => {
+    checkLoggedIn();
+  }, [checkLoggedIn]);
 
-    setUser(userData);
+  const login = (userData, token) => {
+    disconnectSocket();
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+    const cleanUser = userData?.user || userData;
+    setUser(cleanUser);
   };
 
   const logout = () => {
-    localStorage.removeItem(
-      "token"
-    );
-
+    disconnectSocket();
+    localStorage.removeItem("token");
     setUser(null);
+  };
+
+  const updateUserProfile = (updatedData) => {
+    setUser((prev) => ({
+      ...prev,
+      ...updatedData,
+    }));
   };
 
   return (
@@ -86,6 +63,8 @@ export const AuthProvider = ({
         login,
         logout,
         loading,
+        checkLoggedIn,
+        updateUserProfile,
       }}
     >
       {!loading && children}

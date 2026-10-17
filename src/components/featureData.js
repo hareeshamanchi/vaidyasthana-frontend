@@ -7,7 +7,7 @@ export const featureData = [
     {
         title: "Unique Patient ID System",
         description: "Quick and accurate access to complete medical history via unique ID.",
-        image: "/assets/UPID.png"
+        image: "/assets/UP.png"
     },
     {
         title: "Predictive Analytics",

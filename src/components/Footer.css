@@ -1,86 +1,230 @@
-.footer-container {
-    background-color: #1d1d1d;
-    color: white;
-    padding: 20px 10px; /* Compact padding */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: left;
-    width: 100%; /* Ensures full width */
-    margin: 0; /* Removes auto margin to stretch edge-to-edge */
-    border-top: 1px solid #444;
-    height: auto; /* Optional: Adjust height as needed */
+/* ==========================================================================
+   Vaidyasthana Footer Styles
+   ========================================================================== */
+
+.vaidya-footer {
+  background-color: var(--navy-950);
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 4rem;
+  padding-bottom: 2rem;
+  width: 100%;
+  margin-top: auto;
 }
 
-
-.footer-top {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 20px; /* Reduced gap for a more compact look */
-    animation: fadeInUp 0.6s ease-in-out;
+.footer-top-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
+  gap: clamp(1.75rem, 2.5vw, 3rem);
 }
 
-.footer-section {
-    flex: 1;
-    min-width: 200px; /* Adjusted to fit better with reduced spacing */
+/* Column Elements */
+.footer-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
 }
 
-.footer-section h2,
-.footer-section h3 {
-    font-size: 16px; /* Slightly smaller font for premium minimalism */
-    margin-bottom: 8px;
-    color: white;
+.footer-brand-icon {
+  color: var(--teal-400);
+  font-size: 1.6rem;
 }
 
-.footer-section p {
-    color: #ccc;
-    font-size: 13px; /* Slightly smaller font for compactness */
-    margin-bottom: 10px;
+.footer-mission {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
-.footer-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.security-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
-.footer-section ul li {
-    margin-bottom: 5px; /* Reduced spacing for a neat alignment */
+.sec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #cbd5e1;
 }
 
-.footer-section ul li a {
-    color: #ccc;
-    text-decoration: none;
-    font-size: 13px; /* Adjusted font size */
-    transition: color 0.3s ease;
+.sec-icon {
+  color: var(--teal-400);
+  font-size: 0.85rem;
 }
 
-.footer-section ul li a:hover {
-    color: #ffffff;
+.footer-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1.25rem;
 }
 
-.footer-socials {
-    display: flex;
-    justify-content: center;
-    gap: 15px; /* Compact social icons spacing */
-    margin-top: 10px; /* Reduced top margin */
-    animation: fadeIn 1s ease-in-out;
+.footer-links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
 }
 
-.social-icon {
-    font-size: 24px; /* Slightly smaller icons */
-    cursor: pointer;
-    transition: transform 0.3s, color 0.3s;
+.footer-links-list li a {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
-.social-icon:hover {
-    transform: scale(1.1); /* Subtle hover effect */
-    color: #00ffae;
+.footer-links-list li a:hover {
+  color: var(--teal-400);
 }
 
-.footer-bottom {
-    text-align: center;
-    margin-top: 10px; /* Reduced margin for a tighter layout */
-    font-size: 11px; /* Compact font size */
-    color: #888;
-    animation: fadeIn 1.2s ease-in-out;
+.capability-item {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Contact Column */
+.footer-contact-list {
+  list-style: none;
+  margin: 0 0 1.25rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.footer-contact-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}
+
+.contact-icon {
+  color: var(--blue-400);
+  font-size: 1.1rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.footer-social-links {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  transition: all var(--transition-fast);
+}
+
+.social-btn:hover {
+  background: var(--blue-600);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.social-btn.whatsapp:hover { background: #25d366; }
+.social-btn.instagram:hover { background: #e1306c; }
+.social-btn.twitter:hover { background: #1da1f2; }
+
+/* Footer Bottom Strip */
+.footer-bottom-container {
+  max-width: var(--max-width);
+  margin: 3rem auto 0;
+  padding: 2rem 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.disclaimer-strip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.disclaimer-strip p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.disclaimer-strip strong {
+  color: var(--teal-400);
+}
+
+.footer-copyright-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.825rem;
+  color: #64748b;
+}
+
+.footer-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer-legal-links a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-legal-links a:hover {
+  color: #94a3b8;
+}
+
+/* Responsive Footer */
+@media (max-width: 992px) {
+  .footer-top-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .footer-top-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .footer-copyright-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

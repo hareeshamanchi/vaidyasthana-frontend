@@ -1,8 +1,16 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { render, screen } from "@testing-library/react";
+import App from "./App";
+import { AuthProvider } from "./context/AuthContext";
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test("renders Vaidyasthana portal brand and navigation", () => {
+  render(
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+  const brandElements = screen.getAllByText(/Vaidyasthana/i);
+  expect(brandElements.length).toBeGreaterThan(0);
+
+  const homeElement = screen.getByText(/Welcome to Vaidyasthana/i);
+  expect(homeElement).toBeInTheDocument();
 });

@@ -1,135 +1,258 @@
-/* Modal overlay styling */
+/* ==========================================================================
+   Vaidyasthana BMI Calculator Modal Styles
+   ========================================================================== */
+
 .bmi-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(10, 25, 47, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
+  justify-content: center;
+  z-index: 99999;
+  padding: 1.25rem;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
-/* Modal styling */
-.bmi-modal {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 350px;
+.bmi-modal-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);
+  border: 1px solid var(--border-subtle);
+  width: 100%;
+  max-width: 480px;
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
   position: relative;
+  padding: 2.25rem;
+  margin: auto;
+  box-sizing: border-box;
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bmi-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bmi-close-btn:hover {
+  color: var(--navy-900);
+  background: var(--bg-secondary);
+}
+
+.bmi-card-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.bmi-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--blue-50);
+  color: var(--blue-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+}
+
+.bmi-card-header h2 {
+  font-size: 1.4rem;
+  color: var(--navy-900);
+  margin-bottom: 0.35rem;
+}
+
+.bmi-subtitle {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Form */
+.bmi-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bmi-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bmi-input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.btn-calc-bmi {
+  background: var(--blue-600);
+  color: #ffffff;
+  border: none;
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  transition: all var(--transition-fast);
+  margin-top: 0.5rem;
+}
+
+.btn-calc-bmi:hover {
+  background: var(--blue-700);
+}
+
+/* Result Dossier */
+.bmi-result-dossier {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   text-align: center;
 }
 
-/* Close button styling */
-.close-modal-btn {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
+.result-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.4rem;
 }
 
-/* Input fields styling */
-.bmi-modal input {
-  width: 100%;
-  margin: 10px 0;
-  padding: 10px;
-  font-size: 16px;
+.bmi-number-callout {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--navy-900);
+  line-height: 1;
+  margin-bottom: 0.5rem;
 }
 
-/* Calculate button styling */
-.calculate-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+.bmi-category-badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.calculate-btn:hover {
-  transform: scale(1.05) rotate(3deg);
+.bmi-category-badge.normal-weight {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+  border: 1px solid var(--status-success-border);
 }
 
-/* Back button styling */
-.back-btn {
-  margin-top: 20px;
-  padding: 10px 15px;
-  border: none;
-  background: #555;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
+.bmi-category-badge.underweight {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
-/* BMI category styling */
-.bmi-category {
-  font-size: 1.3rem;
-  margin-top: 10px;
-  font-weight: bold;
+.bmi-category-badge.overweight {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
 }
 
-.bmi-category.underweight {
-  color: #f39c12; /* Orange for underweight */
+.bmi-category-badge.obese {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger-border);
 }
 
-.bmi-category.normal-weight {
-  color: #27ae60; /* Green for normal weight */
+/* WHO Scale Bar */
+.who-scale-bar-wrap {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
 }
 
-.bmi-category.overweight {
-  color: #e67e22; /* Bright orange for overweight */
+.scale-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 
-.bmi-category.obese {
-  color: #c0392b; /* Red for obesity */
+.scale-segment {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.35rem 0.2rem;
+  border-radius: var(--radius-xs);
+  color: #64748b;
+  background: #e2e8f0;
 }
 
+.scale-segment.active {
+  color: #ffffff;
+}
 
-.bmi-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(45deg, #ff5722, #2196f3); /* Gradient color */
-  color: white;
-  border: none;
-  border-radius: 50%; /* Circular shape */
-  width: 70px;
-  height: 70px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+.scale-segment.under.active { background: #d97706; }
+.scale-segment.normal.active { background: var(--status-success); }
+.scale-segment.over.active { background: #ea580c; }
+.scale-segment.obese.active { background: var(--status-danger); }
+
+/* Disclaimer Box */
+.bmi-disclaimer-box {
+  background: var(--navy-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
   display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.bmi-disclaimer-box .info-icon {
+  color: var(--blue-600);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.btn-recalculate-bmi {
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  color: var(--navy-900);
+  padding: 0.65rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  animation: pop-animation 0.6s ease-out; /* Popping animation */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth interactions */
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-/* Hover effect */
-.bmi-button:hover {
-  transform: scale(1.1); /* Slightly enlarge the button */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Enhance the shadow */
-}
-
-/* Popping animation */
-@keyframes pop-animation {
-  0% {
-    transform: scale(0.5) rotate(-20deg); /* Start small and rotated */
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2) rotate(10deg); /* Scale up larger briefly */
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) rotate(0deg); /* Final size and rotation */
-  }
+.btn-recalculate-bmi:hover {
+  background: var(--bg-secondary);
 }

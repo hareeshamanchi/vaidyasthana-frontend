@@ -1,17 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import "./BMIPopup.css";
+import {
+  FiX,
+  FiActivity,
+  FiRefreshCw,
+  FiInfo,
+} from "react-icons/fi";
 
 const BMIPopup = ({ onClose }) => {
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [bmi, setBmi] = useState(null);
   const [category, setCategory] = useState("");
 
   const calculateBMI = () => {
-    if (!height || !weight) return;
+    const hNum = parseFloat(height);
+    const wNum = parseFloat(weight);
 
-    const h = height / 100;
-    const result = (weight / (h * h)).toFixed(1);
+    if (!hNum || !wNum || hNum <= 0 || wNum <= 0) {
+      alert("Please enter valid positive numbers for height and weight.");
+      return;
+    }
+
+    const hInMeters = hNum / 100;
+    const result = (wNum / (hInMeters * hInMeters)).toFixed(1);
     setBmi(result);
 
     let cat = "";
@@ -30,45 +60,144 @@ const BMIPopup = ({ onClose }) => {
     setCategory("");
   };
 
-  return (
-    <div className="bmi-modal-overlay">
-      <div className="bmi-modal">
-        <button className="close-modal-btn" onClick={onClose}>
-          &times;
+  const modalContent = (
+    <div
+      className="bmi-modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bmi-modal-card" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="bmi-close-btn"
+          onClick={onClose}
+          type="button"
+          title="Close BMI Modal"
+          aria-label="Close"
+        >
+          <FiX size={20} />
         </button>
+
+        <div className="bmi-card-header">
+          <div className="bmi-icon-badge">
+            <FiActivity size={20} />
+          </div>
+          <h2>Body Mass Index (BMI) Calculator</h2>
+          <p className="bmi-subtitle">
+            World Health Organization (WHO) adult anthropometric weight classification
+          </p>
+        </div>
+
         {!bmi ? (
-          <>
-            <h2>Check Your BMI</h2>
-            <input
-              type="number"
-              placeholder="Height (cm)"
-              value={height}
-              onChange={(e) => setHeight(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Weight (kg)"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-            />
-            <button className="calculate-btn" onClick={calculateBMI}>
-              Calculate
+          <div className="bmi-form-body">
+            <div className="bmi-input-group">
+              <label>Height (in cm) *</label>
+              <input
+                type="number"
+                placeholder="e.g. 175"
+                min="50"
+                max="250"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+              />
+            </div>
+
+            <div className="bmi-input-group">
+              <label>Weight (in kg) *</label>
+              <input
+                type="number"
+                placeholder="e.g. 70"
+                min="20"
+                max="300"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-calc-bmi"
+              onClick={calculateBMI}
+              type="button"
+            >
+              Calculate BMI
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <h2>Your BMI is: {bmi}</h2>
-            <h3 className={`bmi-category ${category.toLowerCase().replace(" ", "-")}`}>
-              {category}
-            </h3>
-            <button className="back-btn" onClick={resetForm}>
-              Back
+          <div className="bmi-result-dossier">
+            <div className="result-metric-display">
+              <span className="result-label">Calculated Body Mass Index</span>
+              <div className="bmi-number-callout">{bmi}</div>
+              <div
+                className={`bmi-category-badge ${category
+                  .toLowerCase()
+                  .replace(" ", "-")}`}
+              >
+                Category: {category}
+              </div>
+            </div>
+
+            {/* WHO Scale Visual Bar */}
+            <div className="who-scale-bar-wrap">
+              <div className="scale-bar">
+                <div
+                  className={`scale-segment under ${
+                    category === "Underweight" ? "active" : ""
+                  }`}
+                >
+                  &lt;18.5
+                </div>
+                <div
+                  className={`scale-segment normal ${
+                    category === "Normal weight" ? "active" : ""
+                  }`}
+                >
+                  18.5 - 24.9
+                </div>
+                <div
+                  className={`scale-segment over ${
+                    category === "Overweight" ? "active" : ""
+                  }`}
+                >
+                  25 - 29.9
+                </div>
+                <div
+                  className={`scale-segment obese ${
+                    category === "Obese" ? "active" : ""
+                  }`}
+                >
+                  &ge;30
+                </div>
+              </div>
+            </div>
+
+            {/* Screening Disclaimer */}
+            <div className="bmi-disclaimer-box">
+              <FiInfo className="info-icon" />
+              <div>
+                <strong>Screening Disclaimer:</strong> BMI is a general screening
+                metric and does not differentiate between adipose tissue and lean muscle
+                mass, nor does it assess bone density or visceral fat distribution.
+                Consult a physician or dietitian for comprehensive body composition
+                analysis.
+              </div>
+            </div>
+
+            <button
+              className="btn-recalculate-bmi"
+              onClick={resetForm}
+              type="button"
+            >
+              <FiRefreshCw /> Recalculate Another Value
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? ReactDOM.createPortal(modalContent, document.body)
+    : modalContent;
 };
 
 export default BMIPopup;
