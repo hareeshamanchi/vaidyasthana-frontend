@@ -3,9 +3,9 @@
    ========================================================================== */
 
 .admin-dashboard-container {
-  max-width: 1360px;
+  max-width: var(--max-width, 1240px);
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2rem 1.5rem 4rem;
   font-family: inherit;
   color: #1a202c;
 }
@@ -15,38 +15,38 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
 }
 
 .admin-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   background: #e6fffa;
   color: #0d9488;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.35rem 0.85rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   border: 1px solid #b2f5ea;
 }
 
 .admin-header h1 {
-  font-size: 2rem;
+  font-size: 1.65rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 0.5rem;
-  line-height: 1.25;
+  margin: 0 0 0.35rem;
+  line-height: 1.2;
 }
 
 .admin-header p {
   color: #64748b;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   max-width: 680px;
   margin: 0;
   line-height: 1.5;

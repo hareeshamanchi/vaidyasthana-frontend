@@ -5,34 +5,34 @@
 .diet-page-container {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 2.5rem 2rem 5rem;
+  padding: 2rem 1.5rem 4rem;
 }
 
 /* Banner */
 .diet-safety-banner {
   background: #fffbeb;
   border: 1px solid #fde68a;
-  border-left: 5px solid #d97706;
-  border-radius: var(--radius-md);
-  padding: 1.25rem 1.5rem;
+  border-left: 4px solid #d97706;
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
   box-shadow: var(--shadow-xs);
 }
 
 .safety-icon {
   color: #d97706;
-  font-size: 1.3rem;
-  margin-top: 0.15rem;
+  font-size: 1.2rem;
+  margin-top: 0.1rem;
   flex-shrink: 0;
 }
 
 .safety-text {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #92400e;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .safety-text strong {
@@ -41,35 +41,36 @@
 
 /* Header */
 .diet-page-header {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .diet-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.75rem;
+  gap: 0.35rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #ea580c;
   background: #fff7ed;
-  padding: 0.25rem 0.75rem;
+  padding: 0.2rem 0.65rem;
   border-radius: var(--radius-full);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .diet-page-header h1 {
-  font-size: 2.25rem;
+  font-size: 1.65rem;
   color: var(--navy-900);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
 }
 
 .diet-subtitle {
-  font-size: 1rem;
+  font-size: 0.925rem;
   color: var(--text-muted);
-  max-width: 720px;
-  line-height: 1.6;
+  max-width: 680px;
+  line-height: 1.55;
   margin: 0;
 }
 

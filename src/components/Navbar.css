@@ -17,8 +17,8 @@
 .navbar-inner {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0 2rem;
-  height: 76px;
+  padding: 0 1.5rem;
+  height: var(--header-height, 68px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -28,19 +28,20 @@
 .navbar-brand {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   text-decoration: none;
 }
 
 .brand-logo-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
   background: var(--blue-50);
   border: 1px solid var(--blue-100);
   display: flex;
@@ -68,26 +69,26 @@
 }
 
 .navbar-title {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--navy-900);
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .brand-tagline {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   color: var(--teal-600);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 /* Desktop Links */
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -96,18 +97,19 @@
 .nav-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.95rem;
-  font-size: 0.95rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .nav-link .nav-icon {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   transition: color var(--transition-fast);
 }
@@ -144,30 +146,32 @@
 .navbar-auth {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  flex-shrink: 0;
 }
 
 .navbar-user-section {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.65rem;
 }
 
 .auth-buttons-group {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .btn-nav-login {
   background: transparent;
   color: var(--navy-800);
   border: 1px solid var(--border-medium);
-  padding: 0.5rem 1.1rem;
+  padding: 0.45rem 0.95rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-nav-login:hover {
@@ -180,17 +184,18 @@
   background: var(--blue-600);
   color: #ffffff;
   border: none;
-  padding: 0.5rem 1.2rem;
+  padding: 0.45rem 1.05rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   box-shadow: 0 1px 2px rgba(2, 132, 199, 0.2);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-nav-signup:hover {
   background: var(--blue-700);
-  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25);
   transform: translateY(-1px);
 }
 
@@ -198,33 +203,33 @@
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.35rem 0.75rem 0.35rem 0.5rem;
+  gap: 0.5rem;
+  padding: 0.25rem 0.65rem 0.25rem 0.35rem;
   background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: all var(--transition-fast);
 }
 
 .user-profile-badge:hover {
   border-color: var(--border-medium);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.07);
 }
 
 .user-avatar-circle {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--blue-600), var(--teal-600));
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.2);
 }
 
 .user-details {
@@ -233,24 +238,24 @@
 }
 
 .user-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--navy-900);
   line-height: 1.2;
-  max-width: 160px;
+  max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-role-pill {
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 700;
   color: var(--teal-700);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--teal-50);
-  padding: 0.1rem 0.45rem;
+  padding: 0.08rem 0.4rem;
   border-radius: var(--radius-full);
   display: inline-block;
   width: fit-content;
@@ -259,7 +264,7 @@
 .btn-nav-logout {
   background: transparent;
   color: var(--text-muted);
-  padding: 0.35rem;
+  padding: 0.3rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
