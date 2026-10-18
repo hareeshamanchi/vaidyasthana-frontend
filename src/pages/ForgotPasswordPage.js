@@ -90,7 +90,7 @@ const ForgotPasswordPage = () => {
           <div className="dev-mode-callout">
             <FiShield size={16} />
             <div>
-              <strong>Local Development Mode:</strong> Live SMTP email transport is unconfigured in <code>.env</code>. You can open the generated password reset link directly:
+              <strong>Local Development Mode:</strong> Outbound email delivery is unconfigured in <code>.env</code>. You can open the generated password reset link directly:
               <br />
               <a href={devResetUrl} className="dev-link">
                 Proceed to Reset Password &rarr;

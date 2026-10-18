@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "./api";
 
 let socketInstance = null;
 
@@ -26,9 +27,7 @@ export const getSocket = () => {
     }
   }
 
-  const SOCKET_URL =
-    process.env.REACT_APP_API_URL ||
-    (window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin);
+  const SOCKET_URL = API_BASE_URL;
 
   socketInstance = io(SOCKET_URL, {
     auth: { token },
