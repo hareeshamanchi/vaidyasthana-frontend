@@ -1,0 +1,1227 @@
+/* ==========================================================================
+   Vaidyasthana Medication Reminders & Dose Tracking Styles
+   Enterprise Healthcare Clinical Management System
+   ========================================================================== */
+
+.medication-reminders-page {
+  min-height: calc(100vh - 72px);
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: 4rem;
+}
+
+/* ==========================================================================
+   Top Header & Navigation
+   ========================================================================== */
+
+.med-header-section {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  padding: 1.75rem 1rem;
+}
+
+.med-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.med-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-med-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-med-back:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.med-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.med-header-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.med-header-title-wrap h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.med-header-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #64748b;
+  max-width: 650px;
+  line-height: 1.45;
+}
+
+.med-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-med-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 1.15rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+}
+
+.btn-med-primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.btn-med-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.55rem 0.95rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-med-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Notice Banners (Browser Notification & Clinical Disclaimers)
+   ========================================================================== */
+
+.med-main-container {
+  max-width: 1200px;
+  margin: 1.5rem auto 0;
+  padding: 0 1rem;
+}
+
+.med-notification-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.med-notification-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  color: #1e3a8a;
+}
+
+.med-notification-banner-icon {
+  font-size: 1.25rem;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.btn-enable-notifications {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-enable-notifications:hover {
+  background: #1d4ed8;
+}
+
+.med-clinical-disclaimer-banner {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #92400e;
+}
+
+.disclaimer-icon {
+  color: #d97706;
+  font-size: 1.2rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Navigation Tabs
+   ========================================================================== */
+
+.med-view-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.med-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 1.15rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.med-tab-btn:hover {
+  color: #0f172a;
+}
+
+.med-tab-btn.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+}
+
+.med-tab-badge {
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.med-tab-btn.active .med-tab-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* ==========================================================================
+   Date Navigator & Daily Metrics Bar
+   ========================================================================== */
+
+.date-navigator-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.date-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-date-step {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-date-step:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-date-step.active {
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+}
+
+.date-picker-input {
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  outline: none;
+  font-family: inherit;
+}
+
+.date-picker-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.daily-metrics-summary {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.metric-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.metric-pill-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.metric-pill-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.metric-pill-value.taken {
+  color: #059669;
+}
+.metric-pill-value.missed {
+  color: #dc2626;
+}
+.metric-pill-value.pending {
+  color: #d97706;
+}
+
+/* ==========================================================================
+   Dose Cards
+   ========================================================================== */
+
+.doses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dose-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  transition: all 0.15s ease-in-out;
+  border-left: 5px solid #cbd5e1;
+}
+
+.dose-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+}
+
+.dose-card.status-taken {
+  border-left-color: #10b981;
+}
+
+.dose-card.status-missed {
+  border-left-color: #ef4444;
+  background: #fffafa;
+}
+
+.dose-card.status-skipped {
+  border-left-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.dose-card.status-scheduled {
+  border-left-color: #3b82f6;
+}
+
+.dose-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+}
+
+.dose-time-box {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  text-align: center;
+  min-width: 85px;
+  flex-shrink: 0;
+}
+
+.dose-card.status-taken .dose-time-box {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.dose-time-slot {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dose-time-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.dose-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.dose-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.dose-med-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dose-amount-pill {
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.dose-source-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.dose-source-pill.patient {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.dose-source-pill.doctor {
+  background: #ccfbf1;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.dose-instructions {
+  font-size: 0.86rem;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.food-timing-tag {
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.dose-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.status-badge.taken {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.missed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.skipped {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-badge.scheduled {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.snooze-indicator {
+  color: #d97706;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dose-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-action-take {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-action-take:hover {
+  background: #059669;
+}
+
+.btn-action-skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-skip:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-action-snooze {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-snooze:hover {
+  background: #fef3c7;
+}
+
+.btn-action-undo {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-action-undo:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.empty-doses-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.empty-doses-state h3 {
+  margin: 0 0 0.5rem;
+  color: #1e293b;
+  font-size: 1.15rem;
+}
+
+.empty-doses-state p {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Schedules Grid & Table
+   ========================================================================== */
+
+.schedules-filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.schedules-filter-buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.btn-filter-status {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-filter-status.active {
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+}
+
+.schedules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+}
+
+.schedule-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.schedule-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.schedule-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.schedule-dosage-sub {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+.schedule-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.schedule-status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.schedule-status-badge.paused {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.schedule-status-badge.ended {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.schedule-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  color: #334155;
+}
+
+.schedule-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.schedule-info-item-icon {
+  color: #64748b;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.reminder-times-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.time-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.schedule-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.schedule-actions-left {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.btn-card-action {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-card-action:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btn-card-action.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.btn-card-action.danger:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+/* ==========================================================================
+   Adherence Analytics Tab
+   ========================================================================== */
+
+.adherence-analytics-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.adherence-window-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  width: fit-content;
+}
+
+.adherence-window-selector span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.btn-window-option {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-window-option.active {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.adherence-cards-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .adherence-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adherence-score-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.adherence-gauge-wrap {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: conic-gradient(
+    #10b981 var(--adherence-deg, 0deg),
+    #e2e8f0 0deg
+  );
+}
+
+.adherence-gauge-inner {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.adherence-percent-text {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.adherence-percent-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.adherence-breakdown-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.breakdown-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .breakdown-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.breakdown-stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem;
+  text-align: center;
+}
+
+.breakdown-stat-box.taken {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.breakdown-stat-box.missed {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.breakdown-stat-num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.breakdown-stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.adherence-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.adherence-table-card h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.adherence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.adherence-table th {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.adherence-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+/* ==========================================================================
+   Modal (Add / Edit Schedule)
+   ========================================================================== */
+
+.med-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.med-modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+}
+
+.med-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.med-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.med-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .form-group-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.reminder-times-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-remove-time {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-add-time {
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.btn-add-time:hover {
+  background: #f1f5f9;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.med-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: #f8fafc;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .med-header-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dose-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dose-actions {
+    justify-content: flex-end;
+  }
+}

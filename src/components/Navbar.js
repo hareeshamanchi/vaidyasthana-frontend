@@ -16,6 +16,7 @@ import {
   FiMail,
   FiCpu,
   FiHeart,
+  FiClock,
 } from "react-icons/fi";
 
 function Navbar() {
@@ -188,6 +189,16 @@ function Navbar() {
                   }`}
                 >
                   <FiCalendar className="nav-icon" /> Appointments
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/medications"
+                  className={`nav-link ${
+                    isActive("/medications") || isActive("/medication-reminders") ? "active" : ""
+                  }`}
+                >
+                  <FiClock className="nav-icon" /> Medications
                 </Link>
               </li>
               <li>
@@ -476,6 +487,15 @@ function Navbar() {
                       onClick={closeMobileMenu}
                     >
                       Appointments
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/medications"
+                      className={isActive("/medications") || isActive("/medication-reminders") ? "active" : ""}
+                      onClick={closeMobileMenu}
+                    >
+                      Medications & Reminders
                     </Link>
                   </li>
                   <li>

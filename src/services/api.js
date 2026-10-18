@@ -213,4 +213,20 @@ export const timelineAPI = {
     api.get(`/api/timeline/${patientId}`, { params }),
 };
 
+// ==========================================
+// Medication Reminders & Dose Tracking API
+// ==========================================
+export const medicationsAPI = {
+  getMedications: (params) => api.get("/api/medications", { params }),
+  getMedicationById: (id) => api.get(`/api/medications/${id}`),
+  createMedication: (data) => api.post("/api/medications", data),
+  updateMedication: (id, data) => api.put(`/api/medications/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/api/medications/${id}/status`, { status }),
+  deleteMedication: (id) => api.delete(`/api/medications/${id}`),
+  getDoses: (params) => api.get("/api/medications/doses", { params }),
+  updateDoseStatus: (id, data) => api.patch(`/api/medications/doses/${id}`, data),
+  getAdherenceStats: (params) => api.get("/api/medications/adherence", { params }),
+  getPrescriptions: () => api.get("/api/medications/prescriptions"),
+};
+
 export default api;

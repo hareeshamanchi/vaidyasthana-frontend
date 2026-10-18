@@ -566,6 +566,18 @@ const PatientDashboard = () => {
             >
               <FiActivity /> Health Timeline
             </button>
+            <button
+              className="btn-open-upload"
+              style={{
+                background: "#4f46e5",
+                borderColor: "#4f46e5",
+                boxShadow: "0 2px 4px rgba(79, 70, 229, 0.2)",
+              }}
+              onClick={() => navigate("/medications")}
+              type="button"
+            >
+              <FiClock /> Medication Reminders
+            </button>
           </div>
         </div>
       </header>

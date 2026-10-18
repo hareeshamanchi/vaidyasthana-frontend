@@ -18,6 +18,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VideoConsultation from "./pages/VideoConsultation";
 import HealthTimeline from "./pages/HealthTimeline";
+import MedicationReminders from "./pages/MedicationReminders";
 
 function App() {
   return (
@@ -43,6 +44,8 @@ function App() {
             <Route path="/insurance" element={<InsurancePage />} />
             <Route path="/timeline" element={<HealthTimeline />} />
             <Route path="/health-timeline" element={<HealthTimeline />} />
+            <Route path="/medications" element={<MedicationReminders />} />
+            <Route path="/medication-reminders" element={<MedicationReminders />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
