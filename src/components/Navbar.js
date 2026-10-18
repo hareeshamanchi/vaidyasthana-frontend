@@ -322,7 +322,7 @@ function Navbar() {
                   {getUserInitials(user.name)}
                 </div>
                 <div className="user-details">
-                  <span className="user-name">{user.name}</span>
+                  <span className="user-name" title={user.name}>{user.name}</span>
                   <span className="user-role-pill">{user.role || "patient"}</span>
                 </div>
                 <button
