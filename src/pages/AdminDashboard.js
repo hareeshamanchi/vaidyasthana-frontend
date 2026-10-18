@@ -27,6 +27,7 @@ import {
   FiChevronRight,
   FiEye,
   FiMenu,
+  FiCopy,
 } from "react-icons/fi";
 import "./AdminDashboard.css";
 
@@ -83,8 +84,57 @@ const AdminDashboard = () => {
   const [userRoleFilter, setUserRoleFilter] = useState("all");
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+  const [copiedUserId, setCopiedUserId] = useState(false);
   const [suspensionModalUser, setSuspensionModalUser] = useState(null);
   const [suspensionReason, setSuspensionReason] = useState("");
+
+  const handleOpenUserDetails = async (targetUser) => {
+    if (!targetUser) return;
+    // Set immediate loading state with target user data to avoid stale flashes
+    setSelectedUserDetails({
+      loading: true,
+      error: null,
+      user: targetUser,
+      stats: null,
+    });
+    setCopiedUserId(false);
+
+    try {
+      const res = await adminAPI.getUserDetails(targetUser._id);
+      if (res.data?.success) {
+        setSelectedUserDetails({
+          loading: false,
+          error: null,
+          user: res.data.user || targetUser,
+          stats: res.data.stats || { appointments: { total: 0, upcoming: 0, completed: 0 }, reports: 0 },
+        });
+      } else {
+        setSelectedUserDetails({
+          loading: false,
+          error: res.data?.message || "Failed to retrieve account details.",
+          user: targetUser,
+          stats: null,
+        });
+      }
+    } catch (err) {
+      setSelectedUserDetails({
+        loading: false,
+        error: err.response?.data?.message || "Could not retrieve user telemetry.",
+        user: targetUser,
+        stats: null,
+      });
+    }
+  };
+
+  const handleCopyUserId = (id) => {
+    if (!id) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(id).then(() => {
+        setCopiedUserId(true);
+        setTimeout(() => setCopiedUserId(false), 2000);
+      }).catch(() => {});
+    }
+  };
 
   const fetchUsers = useCallback(async (page = 1) => {
     try {
@@ -131,7 +181,7 @@ const AdminDashboard = () => {
         setStatusMessage(res.data.message);
         setSuspensionModalUser(null);
         fetchUsers(userPagination.page);
-        if (selectedUserDetails?._id === suspensionModalUser._id) {
+        if (selectedUserDetails?._id === suspensionModalUser._id || selectedUserDetails?.user?._id === suspensionModalUser._id) {
           setSelectedUserDetails(null);
         }
       }
@@ -467,6 +517,27 @@ const AdminDashboard = () => {
       socket.off("appointment_status_changed");
     };
   }, [activeSection, fetchDoctors, fetchOverview, fetchAppointments, appointmentPagination.page]);
+
+  // Dismiss open modals with ESC key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (selectedUserDetails) setSelectedUserDetails(null);
+        if (suspensionModalUser) setSuspensionModalUser(null);
+        if (selectedDoctorForReview) setSelectedDoctorForReview(null);
+        if (selectedApptForUpdate) setSelectedApptForUpdate(null);
+        if (selectedSupportQuery) setSelectedSupportQuery(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    selectedUserDetails,
+    suspensionModalUser,
+    selectedDoctorForReview,
+    selectedApptForUpdate,
+    selectedSupportQuery,
+  ]);
 
   const handleRefreshCurrentSection = () => {
     if (activeSection === "overview") fetchOverview();
@@ -1037,17 +1108,9 @@ const AdminDashboard = () => {
                             <div className="action-buttons-group">
                               <button
                                 className="action-btn view-btn"
-                                onClick={async () => {
-                                  try {
-                                    const res = await adminAPI.getUserDetails(u._id);
-                                    if (res.data?.success) {
-                                      setSelectedUserDetails(res.data);
-                                    }
-                                  } catch (err) {
-                                    alert(err.response?.data?.message || "Failed to load user details.");
-                                  }
-                                }}
+                                onClick={() => handleOpenUserDetails(u)}
                                 title="View User Account Details"
+                                type="button"
                               >
                                 <FiEye size={14} /> Details
                               </button>
@@ -1104,129 +1167,380 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* User Details Drawer Modal */}
-        {selectedUserDetails && (
-          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
-            <div className="admin-modal-card details-drawer">
-              <div className="modal-header">
-                <h3>Account Metadata: {selectedUserDetails.user.name}</h3>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setSelectedUserDetails(null)}
-                  aria-label="Close details"
-                >
-                  <FiX size={18} />
-                </button>
-              </div>
+        {/* User Details Modal */}
+        {selectedUserDetails && (() => {
+          const u = selectedUserDetails.user || selectedUserDetails;
+          const stats = selectedUserDetails.stats;
+          const isLoading = !!selectedUserDetails.loading;
+          const errorMsg = selectedUserDetails.error;
 
-              <div className="modal-body-content">
-                <div className="meta-grid">
-                  <div className="meta-item">
-                    <span className="meta-lbl">User ID:</span>
-                    <span className="meta-val code-text">{selectedUserDetails.user._id}</span>
+          const addressParts = [u.address, u.city, u.state, u.postalCode].filter(Boolean);
+          const formattedAddress = addressParts.length > 0 ? addressParts.join(", ") : (u.address || "Not provided");
+
+          const totalConsultations = typeof stats?.appointments?.total === "number"
+            ? stats.appointments.total
+            : (isLoading ? "…" : "—");
+          const upcomingConsultations = typeof stats?.appointments?.upcoming === "number"
+            ? stats.appointments.upcoming
+            : (isLoading ? "…" : "—");
+          const medicalReports = typeof stats?.reports === "number"
+            ? stats.reports
+            : (isLoading ? "…" : "—");
+
+          const roleDisplay = u.role === "superadmin"
+            ? "Super Admin"
+            : u.role === "admin"
+            ? "Admin"
+            : u.role === "doctor"
+            ? "Doctor"
+            : "Patient";
+
+          const isSuspended = u.status === "suspended";
+
+          return (
+            <div
+              className="admin-modal-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="user-details-title"
+              onClick={() => setSelectedUserDetails(null)}
+            >
+              <div
+                className="admin-modal-card user-details-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="user-details-modal-header">
+                  <div className="modal-title-group">
+                    <div className="modal-icon-badge">
+                      <FiUsers size={20} color="#38bdf8" />
+                    </div>
+                    <div>
+                      <h3 id="user-details-title" className="modal-title-text">
+                        User Details
+                      </h3>
+                      <p className="modal-subtitle-text">
+                        Account profile and activity
+                      </p>
+                    </div>
                   </div>
-                  <div className="meta-item">
-                    <span className="meta-lbl">Role:</span>
-                    <span className="meta-val">
-                      <span className={`role-badge role-${selectedUserDetails.user.role}`}>
-                        {selectedUserDetails.user.role}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-lbl">Account Status:</span>
-                    <span className="meta-val">
-                      <span className={`status-pill pill-${selectedUserDetails.user.status || "active"}`}>
-                        {selectedUserDetails.user.status || "active"}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-lbl">Email Address:</span>
-                    <span className="meta-val">{selectedUserDetails.user.email}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-lbl">Mobile Phone:</span>
-                    <span className="meta-val">{selectedUserDetails.user.phoneNumber || "Not provided"}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-lbl">Address / Location:</span>
-                    <span className="meta-val">{selectedUserDetails.user.address || "Not provided"}</span>
-                  </div>
+                  <button
+                    className="modal-close-icon-btn"
+                    onClick={() => setSelectedUserDetails(null)}
+                    aria-label="Close user details modal"
+                    type="button"
+                  >
+                    <FiX size={20} />
+                  </button>
                 </div>
 
-                {selectedUserDetails.user.role === "doctor" && (
-                  <div className="clinical-profile-section">
-                    <h4 className="section-subtitle">Doctor Credentials</h4>
-                    <div className="meta-grid">
-                      <div className="meta-item">
-                        <span className="meta-lbl">Specialization:</span>
-                        <span className="meta-val">{selectedUserDetails.user.specialization}</span>
+                {/* Modal Body with internal scrolling */}
+                <div className="user-details-modal-body">
+                  {isLoading && (
+                    <div className="modal-loading-bar" role="status" aria-live="polite">
+                      <div className="modal-loading-spinner" />
+                      <span>Loading real-time account telemetry...</span>
+                    </div>
+                  )}
+
+                  {errorMsg && (
+                    <div className="modal-error-banner" role="alert">
+                      <FiAlertTriangle size={18} />
+                      <span>{errorMsg}</span>
+                    </div>
+                  )}
+
+                  {/* Profile Summary Card */}
+                  <div className="user-profile-hero-card">
+                    <div className="user-hero-left">
+                      <div className="user-hero-avatar">
+                        {u.name ? u.name.charAt(0).toUpperCase() : "U"}
                       </div>
-                      <div className="meta-item">
-                        <span className="meta-lbl">Qualifications:</span>
-                        <span className="meta-val">{selectedUserDetails.user.qualifications}</span>
+                      <div className="user-hero-info">
+                        <h4 className="user-hero-name">{u.name || "Unnamed User"}</h4>
+                        <div className="user-hero-badges">
+                          <span className={`role-badge-tag role-${u.role || "patient"}`}>
+                            {roleDisplay}
+                          </span>
+                          <span
+                            className={`status-badge-tag status-${isSuspended ? "suspended" : "active"}`}
+                          >
+                            {isSuspended ? "Suspended" : "Active"}
+                          </span>
+                          {u.role === "doctor" && (
+                            <span
+                              className={`verification-badge-tag verif-${u.verificationStatus || "pending"}`}
+                            >
+                              {u.verificationStatus === "verified"
+                                ? "Verified Clinician"
+                                : u.verificationStatus === "rejected"
+                                ? "Declined"
+                                : "Pending Verification"}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="meta-item">
-                        <span className="meta-lbl">Council Reg #:</span>
-                        <span className="meta-val">{selectedUserDetails.user.medicalRegistrationNumber || "N/A"}</span>
-                      </div>
-                      <div className="meta-item">
-                        <span className="meta-lbl">Verification State:</span>
-                        <span className="meta-val">{selectedUserDetails.user.verificationStatus}</span>
+                    </div>
+
+                    {/* User ID in a readable, selectable field with copy button */}
+                    <div className="user-id-box">
+                      <span className="user-id-label">User ID</span>
+                      <div className="user-id-interactive-pill">
+                        <span className="user-id-code">{u._id || "—"}</span>
+                        {u._id && (
+                          <button
+                            type="button"
+                            className="user-id-copy-btn"
+                            onClick={() => handleCopyUserId(u._id)}
+                            title="Copy User ID to clipboard"
+                            aria-label="Copy User ID"
+                          >
+                            {copiedUserId ? (
+                              <span className="copied-tag">
+                                <FiCheck size={12} /> Copied
+                              </span>
+                            ) : (
+                              <FiCopy size={13} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                )}
 
-                <div className="operational-counts-section">
-                  <h4 className="section-subtitle">Operational Volume</h4>
-                  <div className="stats-badges-row">
-                    <div className="badge-stat">
-                      <span className="badge-stat-num">{selectedUserDetails.stats.appointments.total}</span>
-                      <span className="badge-stat-lbl">Total Consultations</span>
+                  {/* Section 1: Account Information */}
+                  <div className="details-section-block">
+                    <h5 className="details-section-heading">
+                      <FiMail size={14} /> Account Information
+                    </h5>
+                    <div className="details-fields-grid">
+                      <div className="field-card">
+                        <span className="field-card-label">Email Address</span>
+                        <span className="field-card-value selectable">
+                          {u.email || "Not provided"}
+                        </span>
+                      </div>
+
+                      <div className="field-card">
+                        <span className="field-card-label">Mobile Number</span>
+                        <span className="field-card-value selectable">
+                          {u.phoneNumber || "Not provided"}
+                        </span>
+                      </div>
+
+                      <div className="field-card field-card-full">
+                        <span className="field-card-label">Address / Location</span>
+                        <span className="field-card-value">{formattedAddress}</span>
+                      </div>
+
+                      <div className="field-card">
+                        <span className="field-card-label">Registered On</span>
+                        <span className="field-card-value">
+                          {u.createdAt
+                            ? new Date(u.createdAt).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "Not recorded"}
+                        </span>
+                      </div>
+
+                      <div className="field-card">
+                        <span className="field-card-label">Last Modified</span>
+                        <span className="field-card-value">
+                          {u.updatedAt
+                            ? new Date(u.updatedAt).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "—"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="badge-stat">
-                      <span className="badge-stat-num">{selectedUserDetails.stats.appointments.upcoming}</span>
-                      <span className="badge-stat-lbl">Upcoming Consultations</span>
+                  </div>
+
+                  {/* Section 2: Professional Information — Doctors Only */}
+                  {u.role === "doctor" && (
+                    <div className="details-section-block">
+                      <h5 className="details-section-heading">
+                        <FiShield size={14} /> Professional Credentials & Practice
+                      </h5>
+                      <div className="details-fields-grid">
+                        <div className="field-card">
+                          <span className="field-card-label">Specialization</span>
+                          <span className="field-card-value">
+                            {u.specialization || "Not provided"}
+                          </span>
+                        </div>
+
+                        <div className="field-card">
+                          <span className="field-card-label">Qualifications</span>
+                          <span className="field-card-value">
+                            {u.qualifications || "Not provided"}
+                          </span>
+                        </div>
+
+                        <div className="field-card">
+                          <span className="field-card-label">Medical Council Reg #</span>
+                          <span className="field-card-value selectable">
+                            {u.medicalRegistrationNumber || "Not registered"}
+                          </span>
+                        </div>
+
+                        <div className="field-card">
+                          <span className="field-card-label">Verification State</span>
+                          <span className="field-card-value">
+                            {u.verificationStatus
+                              ? u.verificationStatus.toUpperCase()
+                              : "PENDING"}
+                          </span>
+                        </div>
+
+                        {u.verificationReview?.reviewedAt && (
+                          <div className="field-card field-card-full">
+                            <span className="field-card-label">Review Date & Notes</span>
+                            <span className="field-card-value">
+                              Reviewed on{" "}
+                              {new Date(
+                                u.verificationReview.reviewedAt
+                              ).toLocaleDateString()}{" "}
+                              {u.verificationReview.rejectionReason && (
+                                <span className="review-rejection-inline">
+                                  • Reason: {u.verificationReview.rejectionReason}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {selectedUserDetails.user.role === "patient" && (
-                      <div className="badge-stat">
-                        <span className="badge-stat-num">{selectedUserDetails.stats.reports}</span>
-                        <span className="badge-stat-lbl">Medical Reports</span>
+                  )}
+
+                  {/* Section 3: Consultation Statistics */}
+                  <div className="details-section-block">
+                    <h5 className="details-section-heading">
+                      <FiCalendar size={14} /> Consultation Statistics
+                    </h5>
+                    <div className="stat-cards-cluster">
+                      <div className="stat-cluster-card">
+                        <div className="stat-card-icon-wrap teal">
+                          <FiCalendar size={18} />
+                        </div>
+                        <div className="stat-card-data">
+                          <span className="stat-card-number">{totalConsultations}</span>
+                          <span className="stat-card-caption">Total Consultations</span>
+                        </div>
+                      </div>
+
+                      <div className="stat-cluster-card">
+                        <div className="stat-card-icon-wrap blue">
+                          <FiClock size={18} />
+                        </div>
+                        <div className="stat-card-data">
+                          <span className="stat-card-number">{upcomingConsultations}</span>
+                          <span className="stat-card-caption">Upcoming Consultations</span>
+                        </div>
+                      </div>
+
+                      {u.role === "patient" && (
+                        <div className="stat-cluster-card">
+                          <div className="stat-card-icon-wrap amber">
+                            <FiFileText size={18} />
+                          </div>
+                          <div className="stat-card-data">
+                            <span className="stat-card-number">{medicalReports}</span>
+                            <span className="stat-card-caption">Medical Reports</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Section 4: Account Activity & Governance History */}
+                  <div className="details-section-block">
+                    <h5 className="details-section-heading">
+                      <FiLock size={14} /> Account Activity
+                    </h5>
+
+                    {u.suspensionHistory && u.suspensionHistory.length > 0 ? (
+                      <div className="governance-timeline-stack">
+                        {u.suspensionHistory.map((h, i) => {
+                          const isSusp = (h.action || h.status || "").toLowerCase().startsWith("suspend");
+                          const adminWho =
+                            h.performedByEmail ||
+                            h.changedBy?.email ||
+                            h.changedBy?.name ||
+                            h.performedBy ||
+                            "Administrator";
+                          const formattedTime = h.timestamp || h.changedAt
+                            ? new Date(h.timestamp || h.changedAt).toLocaleString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "Date not recorded";
+
+                          return (
+                            <div
+                              key={i}
+                              className={`timeline-event-card ${isSusp ? "ev-suspended" : "ev-active"}`}
+                            >
+                              <div className="event-card-header">
+                                <span
+                                  className={`event-action-tag ${isSusp ? "tag-danger" : "tag-success"}`}
+                                >
+                                  {isSusp ? "ACCOUNT SUSPENDED" : "ACCOUNT REACTIVATED"}
+                                </span>
+                                <span className="event-timestamp">{formattedTime}</span>
+                              </div>
+
+                              <div className="event-admin-meta">
+                                <span>Action recorded by:</span>{" "}
+                                <strong>{adminWho}</strong>
+                              </div>
+
+                              {h.reason && (
+                                <div className="event-reason-box">
+                                  <span className="reason-label">Reason:</span>
+                                  <p className="reason-text">{h.reason}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="governance-empty-state">
+                        <FiCheckCircle size={22} color="#10b981" />
+                        <div>
+                          <h6>Account in Good Standing</h6>
+                          <p>
+                            No suspension, restriction, or governance actions recorded for this account.
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Suspension History */}
-                {selectedUserDetails.user.suspensionHistory?.length > 0 && (
-                  <div className="history-section">
-                    <h4 className="section-subtitle">Account Governance History</h4>
-                    <ul className="history-list">
-                      {selectedUserDetails.user.suspensionHistory.map((h, i) => (
-                        <li key={i} className={`history-item action-${h.action}`}>
-                          <div className="history-meta">
-                            <strong>{h.action.toUpperCase()}</strong> on{" "}
-                            {new Date(h.timestamp).toLocaleString()} by{" "}
-                            <em>{h.performedByEmail || "Administrator"}</em>
-                          </div>
-                          <div className="history-reason">Reason: {h.reason}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-footer">
-                <button className="secondary-btn" onClick={() => setSelectedUserDetails(null)}>
-                  Close
-                </button>
+                {/* Footer */}
+                <div className="user-details-modal-footer">
+                  <button
+                    type="button"
+                    className="modal-footer-close-btn"
+                    onClick={() => setSelectedUserDetails(null)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Account Suspension / Reactivation Modal */}
         {suspensionModalUser && (
