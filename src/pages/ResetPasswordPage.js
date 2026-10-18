@@ -18,7 +18,7 @@ const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const queryToken = searchParams.get("token");
 
-  const token = routeToken || queryToken || "";
+  const token = (routeToken || queryToken || "").trim();
 
   const [checkingToken, setCheckingToken] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
@@ -187,7 +187,7 @@ const ResetPasswordPage = () => {
                 You can now log in to access your encrypted medical reports, appointments, and AI clinical summaries with your new credentials.
               </span>
             </div>
-            <Link to="/" className="btn-proceed-login">
+            <Link to="/?auth=login" className="btn-proceed-login">
               Return to Homepage & Sign In <FiArrowRight size={16} />
             </Link>
           </div>
@@ -299,7 +299,7 @@ const ResetPasswordPage = () => {
               <button
                 type="submit"
                 className="btn-submit-reset"
-                disabled={submitting || !password || !confirmPassword || password.length < 6}
+                disabled={submitting || !password || !confirmPassword || password.length < 6 || password !== confirmPassword}
               >
                 {submitting ? (
                   <span className="spinner-text">Updating Password...</span>

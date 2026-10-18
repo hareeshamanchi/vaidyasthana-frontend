@@ -48,6 +48,14 @@ function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
+  // Support deep links to open the login modal (e.g. from password reset success)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("auth") === "login" || params.get("login") === "true") {
+      setAuthModalType("login");
+    }
+  }, [location.search]);
+
   const toggleMobileMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 

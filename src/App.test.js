@@ -14,3 +14,16 @@ test("renders Vaidyasthana portal brand and navigation", () => {
   const homeElement = screen.getByText(/Welcome to Vaidyasthana/i);
   expect(homeElement).toBeInTheDocument();
 });
+
+test("renders ResetPasswordPage when directly opening /reset-password/:token path", async () => {
+  window.history.pushState({}, "Reset Password", "/reset-password/token-abc-1234567890abcdef");
+
+  render(
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+
+  // Directly renders ResetPasswordPage loading / validating view
+  expect(screen.getByText("Validating Security Token")).toBeInTheDocument();
+});
