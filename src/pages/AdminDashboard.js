@@ -28,8 +28,96 @@ import {
   FiEye,
   FiMenu,
   FiCopy,
+  FiRotateCcw,
 } from "react-icons/fi";
 import "./AdminDashboard.css";
+
+const REPORT_CATEGORIES = [
+  "Laboratory Report",
+  "Radiology & Imaging",
+  "Prescription",
+  "Discharge Summary",
+  "Cardiology",
+  "Pathology",
+  "Medical Report",
+];
+
+const formatFileSize = (bytes) => {
+  if (bytes === undefined || bytes === null || isNaN(bytes)) return "—";
+  if (bytes === 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(2)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)} GB`;
+};
+
+const getFileTypeMeta = (fileName, fileType) => {
+  let ext = "";
+  if (fileName && fileName.includes(".")) {
+    ext = fileName.split(".").pop().toUpperCase();
+  }
+  if (!ext && fileType) {
+    if (fileType.includes("pdf")) ext = "PDF";
+    else if (fileType.includes("png")) ext = "PNG";
+    else if (fileType.includes("jpeg") || fileType.includes("jpg")) ext = "JPG";
+    else if (fileType.includes("dicom")) ext = "DICOM";
+    else if (fileType.includes("word") || fileType.includes("docx")) ext = "DOCX";
+    else ext = fileType.split("/").pop().toUpperCase();
+  }
+  return ext || "FILE";
+};
+
+const getCategoryBadgeClass = (category) => {
+  const cat = (category || "").toLowerCase();
+  if (cat.includes("lab")) return "cat-lab";
+  if (cat.includes("radio") || cat.includes("imag")) return "cat-radiology";
+  if (cat.includes("prescrip")) return "cat-prescription";
+  if (cat.includes("discharge")) return "cat-discharge";
+  if (cat.includes("cardio")) return "cat-cardiology";
+  if (cat.includes("patho")) return "cat-pathology";
+  return "cat-general";
+};
+
+const getUploaderRoleBadgeClass = (role) => {
+  const r = (role || "").toLowerCase();
+  if (r === "superadmin") return "role-superadmin";
+  if (r === "admin") return "role-admin";
+  if (r === "doctor") return "role-doctor";
+  return "role-patient";
+};
+
+const getReportStatusMeta = (status) => {
+  const s = (status || "").toLowerCase();
+  if (s === "completed") return { label: "Completed", className: "status-completed" };
+  if (s === "processing") return { label: "Processing", className: "status-processing" };
+  if (s === "pending") return { label: "Pending", className: "status-pending" };
+  if (s === "failed") return { label: "Failed", className: "status-failed" };
+  return { label: status || "Completed", className: "status-default" };
+};
+
+const getPipelineStageMeta = (stage, status) => {
+  const stg = stage || (status === "Completed" ? "Completed" : "Queued");
+  const s = (status || "").toLowerCase();
+  let dotClass = "dot-neutral";
+  if (s === "completed") dotClass = "dot-success";
+  else if (s === "processing") dotClass = "dot-pulse-blue";
+  else if (s === "pending") dotClass = "dot-warning";
+  else if (s === "failed") dotClass = "dot-danger";
+  return { stage: stg, dotClass };
+};
+
+const formatReportDateTime = (dateStr) => {
+  if (!dateStr) return { date: "—", time: "" };
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return { date: String(dateStr), time: "" };
+  return {
+    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+  };
+};
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -337,15 +425,20 @@ const AdminDashboard = () => {
   const [reports, setReports] = useState([]);
   const [reportPagination, setReportPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [reportSearch, setReportSearch] = useState("");
+  const [reportCategoryFilter, setReportCategoryFilter] = useState("all");
   const [reportStatusFilter, setReportStatusFilter] = useState("all");
 
-  const fetchReports = useCallback(async (page = 1) => {
+  const fetchReports = useCallback(async (page = 1, searchOverride, categoryOverride, statusOverride) => {
     try {
       setLoading(true);
       setErrorMessage("");
+      const searchVal = searchOverride !== undefined ? searchOverride : reportSearch;
+      const catVal = categoryOverride !== undefined ? categoryOverride : reportCategoryFilter;
+      const statusVal = statusOverride !== undefined ? statusOverride : reportStatusFilter;
       const res = await adminAPI.getReports({
-        search: reportSearch,
-        analysisStatus: reportStatusFilter,
+        search: searchVal,
+        category: catVal,
+        analysisStatus: statusVal,
         page,
         limit: 10,
       });
@@ -358,7 +451,31 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [reportSearch, reportStatusFilter]);
+  }, [reportSearch, reportCategoryFilter, reportStatusFilter]);
+
+  const handleReportSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    fetchReports(1);
+  };
+
+  const handleReportCategoryChange = (e) => {
+    const newCat = e.target.value;
+    setReportCategoryFilter(newCat);
+    fetchReports(1, reportSearch, newCat, reportStatusFilter);
+  };
+
+  const handleReportStatusChange = (e) => {
+    const newStatus = e.target.value;
+    setReportStatusFilter(newStatus);
+    fetchReports(1, reportSearch, reportCategoryFilter, newStatus);
+  };
+
+  const handleResetReportFilters = () => {
+    setReportSearch("");
+    setReportCategoryFilter("all");
+    setReportStatusFilter("all");
+    fetchReports(1, "", "all", "all");
+  };
 
   // ==========================================
   // SECTION 6: SECURITY & AUDIT LOGS STATE
@@ -479,7 +596,10 @@ const AdminDashboard = () => {
     else if (activeSection === "users") fetchUsers(1);
     else if (activeSection === "doctors") fetchDoctors();
     else if (activeSection === "appointments") fetchAppointments(1);
-    else if (activeSection === "reports") fetchReports(1);
+    else if (activeSection === "reports") {
+      fetchReports(1);
+      fetchOverview();
+    }
     else if (activeSection === "security") fetchAuditLogs(1);
     else if (activeSection === "health") fetchSystemHealth();
     else if (activeSection === "support") fetchSupportQueries(1);
@@ -544,7 +664,10 @@ const AdminDashboard = () => {
     else if (activeSection === "users") fetchUsers(userPagination.page);
     else if (activeSection === "doctors") fetchDoctors();
     else if (activeSection === "appointments") fetchAppointments(appointmentPagination.page);
-    else if (activeSection === "reports") fetchReports(reportPagination.page);
+    else if (activeSection === "reports") {
+      fetchReports(reportPagination.page);
+      fetchOverview();
+    }
     else if (activeSection === "security") fetchAuditLogs(auditPagination.page);
     else if (activeSection === "health") fetchSystemHealth();
     else if (activeSection === "support") fetchSupportQueries(supportPagination.page);
@@ -2039,135 +2162,316 @@ const AdminDashboard = () => {
         {/* ======================================================== */}
         {/* SECTION 5: REPORT STORAGE ADMINISTRATION                 */}
         {/* ======================================================== */}
-        {activeSection === "reports" && (
-          <div className="admin-content-section">
-            <div className="filter-controls-bar">
-              <div className="search-input-wrap">
-                <FiSearch className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search reports by filename or category..."
-                  value={reportSearch}
-                  onChange={(e) => setReportSearch(e.target.value)}
-                  className="filter-search-input"
-                />
+        {activeSection === "reports" && (() => {
+          const totalReportsStat = overviewData?.stats?.reports?.total ?? reportPagination.total;
+          const completedReportsStat = overviewData?.stats?.reports?.completed ?? reports.filter((r) => r.analysisStatus === "Completed").length;
+          const pipelineReportsStat = overviewData?.stats?.reports?.pendingOrProcessing ?? reports.filter((r) => r.analysisStatus === "Processing" || r.analysisStatus === "Pending").length;
+          const failedReportsStat = overviewData?.stats?.reports?.failed ?? reports.filter((r) => r.analysisStatus === "Failed").length;
+
+          return (
+            <div className="admin-content-section reports-storage-section">
+              {/* Summary Metrics Cards */}
+              <div className="report-metrics-grid">
+                <div className="report-metric-card">
+                  <div className="report-metric-icon-wrap metric-icon-total">
+                    <FiDatabase size={22} />
+                  </div>
+                  <div className="report-metric-info">
+                    <span className="report-metric-label">Total Reports</span>
+                    <span className="report-metric-number">{totalReportsStat}</span>
+                    <span className="report-metric-subtext">Managed in cloud storage</span>
+                  </div>
+                </div>
+
+                <div className="report-metric-card">
+                  <div className="report-metric-icon-wrap metric-icon-completed">
+                    <FiCheckCircle size={22} />
+                  </div>
+                  <div className="report-metric-info">
+                    <span className="report-metric-label">Analysis Completed</span>
+                    <span className="report-metric-number">{completedReportsStat}</span>
+                    <span className="report-metric-subtext">OCR & synthesized</span>
+                  </div>
+                </div>
+
+                <div className="report-metric-card">
+                  <div className="report-metric-icon-wrap metric-icon-pipeline">
+                    <FiActivity size={22} />
+                  </div>
+                  <div className="report-metric-info">
+                    <span className="report-metric-label">In Pipeline</span>
+                    <span className="report-metric-number">{pipelineReportsStat}</span>
+                    <span className="report-metric-subtext">Active processing & queued</span>
+                  </div>
+                </div>
+
+                <div className="report-metric-card">
+                  <div className="report-metric-icon-wrap metric-icon-failed">
+                    <FiAlertTriangle size={22} />
+                  </div>
+                  <div className="report-metric-info">
+                    <span className="report-metric-label">Action Required</span>
+                    <span className="report-metric-number">{failedReportsStat}</span>
+                    <span className="report-metric-subtext">Processing failures & retries</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="dropdown-filter-group">
-                <select
-                  value={reportStatusFilter}
-                  onChange={(e) => setReportStatusFilter(e.target.value)}
-                  className="filter-select"
-                  aria-label="Filter by Analysis Status"
-                >
-                  <option value="all">All Analysis States</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Failed">Failed</option>
-                </select>
+              {/* Filter Toolbar */}
+              <div className="report-toolbar-card">
+                <form className="report-search-form" onSubmit={handleReportSearchSubmit}>
+                  <div className="report-search-input-wrap">
+                    <FiSearch className="report-search-icon" size={17} />
+                    <input
+                      type="text"
+                      placeholder="Search reports by filename, category, or uploader..."
+                      value={reportSearch}
+                      onChange={(e) => setReportSearch(e.target.value)}
+                      className="report-search-input"
+                      aria-label="Search reports"
+                    />
+                    {reportSearch && (
+                      <button
+                        type="button"
+                        className="report-search-clear-btn"
+                        onClick={() => {
+                          setReportSearch("");
+                          fetchReports(1, "", reportCategoryFilter, reportStatusFilter);
+                        }}
+                        title="Clear search"
+                        aria-label="Clear search"
+                      >
+                        <FiX size={15} />
+                      </button>
+                    )}
+                  </div>
+                </form>
 
-                <button className="apply-filter-btn" onClick={() => fetchReports(1)}>
-                  Search
-                </button>
+                <div className="report-filter-controls">
+                  <div className="report-dropdown-wrap">
+                    <select
+                      value={reportCategoryFilter}
+                      onChange={handleReportCategoryChange}
+                      className="report-filter-select"
+                      aria-label="Filter by Report Category"
+                    >
+                      <option value="all">All Categories</option>
+                      {REPORT_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="report-dropdown-wrap">
+                    <select
+                      value={reportStatusFilter}
+                      onChange={handleReportStatusChange}
+                      className="report-filter-select"
+                      aria-label="Filter by Analysis Status"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Failed">Failed</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="report-search-btn"
+                    onClick={() => fetchReports(1)}
+                    disabled={loading}
+                    aria-label="Apply report search"
+                  >
+                    <FiSearch size={15} /> Search
+                  </button>
+
+                  {(reportSearch || reportCategoryFilter !== "all" || reportStatusFilter !== "all") && (
+                    <button
+                      type="button"
+                      className="report-reset-btn"
+                      onClick={handleResetReportFilters}
+                      title="Reset all filters"
+                      aria-label="Reset all filters"
+                    >
+                      <FiRotateCcw size={14} /> Reset
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="table-responsive-card">
-              <table className="admin-data-table full-width">
-                <thead>
-                  <tr>
-                    <th>Report File</th>
-                    <th>Patient Owner</th>
-                    <th>Uploader</th>
-                    <th>Category & Size</th>
-                    <th>Pipeline Stage</th>
-                    <th>Status</th>
-                    <th>Uploaded At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="empty-table-row">
-                        No medical reports found in current filter.
-                      </td>
-                    </tr>
-                  ) : (
-                    reports.map((r) => {
-                      const sizeKb = Math.round((r.fileSize || 0) / 1024);
-                      return (
-                        <tr key={r._id}>
-                          <td>
-                            <div className="file-cell-meta">
-                              <span className="file-name-bold">{r.originalName || r.fileName}</span>
-                              <span className="file-type-sub">{r.fileType}</span>
+              {/* Table Card */}
+              <div className="reports-table-card">
+                <div className="reports-table-scroll">
+                  <table className="admin-reports-table">
+                    <thead>
+                      <tr>
+                        <th className="th-file">Report File</th>
+                        <th className="th-patient">Patient Owner</th>
+                        <th className="th-uploader">Uploaded By</th>
+                        <th className="th-category">Category & Size</th>
+                        <th className="th-stage">Pipeline Stage</th>
+                        <th className="th-status">Status</th>
+                        <th className="th-date">Uploaded At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan="7" className="report-loading-row">
+                            <div className="report-loading-container">
+                              <FiRefreshCw className="spin" size={24} />
+                              <span>Loading report storage telemetry...</span>
                             </div>
-                          </td>
-                          <td>
-                            <div className="user-cell-meta">
-                              <span className="user-name-bold">{r.userId?.name || "Patient"}</span>
-                              <span className="user-email-sub">{r.userId?.email || "Unknown"}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="user-cell-meta">
-                              <span className="user-name-bold">
-                                {r.uploaderName || r.uploadedBy?.name || "Self"}
-                              </span>
-                              <span className="role-badge role-patient">
-                                {r.uploadedByRole || "patient"}
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="category-pill">{r.category}</span>
-                            <span className="size-label">{sizeKb} KB</span>
-                          </td>
-                          <td>
-                            <span className="stage-text">{r.processingStage || "Completed"}</span>
-                          </td>
-                          <td>
-                            <span
-                              className={`status-pill pill-${(r.analysisStatus || "completed").toLowerCase()}`}
-                            >
-                              {r.analysisStatus || "Completed"}
-                            </span>
-                          </td>
-                          <td className="date-cell">
-                            {new Date(r.uploadedAt || r.createdAt).toLocaleDateString()}
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                      ) : reports.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="report-empty-row">
+                            <div className="report-empty-container">
+                              <FiFileText className="empty-report-icon" size={38} />
+                              <h4 className="empty-report-title">No Medical Reports Found</h4>
+                              <p className="empty-report-desc">
+                                {reportSearch || reportCategoryFilter !== "all" || reportStatusFilter !== "all"
+                                  ? "No reports match your active search or filter criteria. Try resetting your filters."
+                                  : "No medical documents have been uploaded to storage yet."}
+                              </p>
+                              {(reportSearch || reportCategoryFilter !== "all" || reportStatusFilter !== "all") && (
+                                <button
+                                  type="button"
+                                  className="empty-reset-filter-btn"
+                                  onClick={handleResetReportFilters}
+                                >
+                                  <FiRotateCcw size={14} /> Reset Filters
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        reports.map((r) => {
+                          const fileExt = getFileTypeMeta(r.originalName || r.fileName, r.fileType);
+                          const statusMeta = getReportStatusMeta(r.analysisStatus);
+                          const stageMeta = getPipelineStageMeta(r.processingStage, r.analysisStatus);
+                          const dateMeta = formatReportDateTime(r.uploadedAt || r.createdAt);
+                          const patientName = r.userId?.name || "Patient";
+                          const patientEmail = r.userId?.email || "Unknown";
+                          const uploaderName =
+                            r.uploaderName ||
+                            r.uploadedBy?.name ||
+                            (r.uploadedByRole === "doctor" ? "Doctor" : "Self");
+                          const uploaderRole = r.uploadedByRole || r.uploadedBy?.role || "patient";
 
-              <div className="pagination-bar">
-                <span className="pagination-info">
-                  Showing page {reportPagination.page} of {reportPagination.pages} ({reportPagination.total} reports)
-                </span>
-                <div className="pagination-buttons">
-                  <button
-                    className="pager-btn"
-                    disabled={reportPagination.page <= 1 || loading}
-                    onClick={() => fetchReports(reportPagination.page - 1)}
-                  >
-                    <FiChevronLeft size={16} /> Previous
-                  </button>
-                  <button
-                    className="pager-btn"
-                    disabled={reportPagination.page >= reportPagination.pages || loading}
-                    onClick={() => fetchReports(reportPagination.page + 1)}
-                  >
-                    Next <FiChevronRight size={16} />
-                  </button>
+                          return (
+                            <tr key={r._id} className="report-table-row">
+                              <td>
+                                <div className="report-file-meta">
+                                  <div className="report-file-header">
+                                    <FiFileText className="report-file-icon" size={16} />
+                                    <span
+                                      className="report-file-name"
+                                      title={r.originalName || r.fileName}
+                                    >
+                                      {r.originalName || r.fileName || "Medical-Document"}
+                                    </span>
+                                  </div>
+                                  <div className="report-file-sub">
+                                    <span className="file-ext-badge">{fileExt}</span>
+                                    {r._id && (
+                                      <span className="file-id-sub" title={`Report ID: ${r._id}`}>
+                                        ID: {r._id.slice(0, 6)}...{r._id.slice(-4)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="patient-owner-cell">
+                                  <span className="patient-name-bold">{patientName}</span>
+                                  <span className="patient-email-sub" title={patientEmail}>
+                                    {patientEmail}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="uploader-cell">
+                                  <span className="uploader-name-bold">{uploaderName}</span>
+                                  <span className={`uploader-role-badge ${getUploaderRoleBadgeClass(uploaderRole)}`}>
+                                    {uploaderRole}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="category-size-cell">
+                                  <span className={`report-category-badge ${getCategoryBadgeClass(r.category)}`}>
+                                    {r.category || "Medical Report"}
+                                  </span>
+                                  <span className="report-file-size">
+                                    {formatFileSize(r.fileSize)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="pipeline-stage-cell">
+                                  <span className={`stage-status-dot ${stageMeta.dotClass}`}></span>
+                                  <span className="stage-status-text">{stageMeta.stage}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span
+                                  className={`report-status-badge ${statusMeta.className}`}
+                                  title={
+                                    r.analysisStatus === "Failed" && r.errorMessage
+                                      ? r.errorMessage
+                                      : `Status: ${statusMeta.label}`
+                                  }
+                                >
+                                  {statusMeta.label}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="uploaded-date-cell">
+                                  <span className="upload-date-primary">{dateMeta.date}</span>
+                                  <span className="upload-time-secondary">{dateMeta.time}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Bar */}
+                <div className="report-pagination-bar">
+                  <span className="pagination-info">
+                    Showing page <strong>{reportPagination.page}</strong> of <strong>{reportPagination.pages || 1}</strong> ({reportPagination.total} total reports)
+                  </span>
+                  <div className="pagination-buttons">
+                    <button
+                      className="pager-btn"
+                      disabled={reportPagination.page <= 1 || loading}
+                      onClick={() => fetchReports(reportPagination.page - 1)}
+                    >
+                      <FiChevronLeft size={16} /> Previous
+                    </button>
+                    <button
+                      className="pager-btn"
+                      disabled={reportPagination.page >= (reportPagination.pages || 1) || loading}
+                      onClick={() => fetchReports(reportPagination.page + 1)}
+                    >
+                      Next <FiChevronRight size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ======================================================== */}
         {/* SECTION 6: SECURITY & AUDIT LOGS                         */}
