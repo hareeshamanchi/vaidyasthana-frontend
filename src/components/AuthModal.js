@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import "./AuthModal.css";
 import { AuthContext } from "../context/AuthContext";
@@ -55,6 +55,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [devResetUrl, setDevResetUrl] = useState("");
+  const isSubmittingRef = useRef(false);
 
   const logo = process.env.PUBLIC_URL + "/assets/logo.png";
 
@@ -75,6 +76,8 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
     setError("");
     setMessage("");
     setDevResetUrl("");
@@ -84,6 +87,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
       const cleanEmail = (formData.email || "").trim();
       if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
         setError("Please enter a valid email address.");
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -107,6 +111,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         setError(errMsg);
       } finally {
         setLoading(false);
+        isSubmittingRef.current = false;
       }
       return;
     }
@@ -115,32 +120,38 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
     if (currentType === "register") {
       if (!formData.name || !formData.name.trim()) {
         setError("Please enter your full name.");
+        isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.email || !formData.email.trim()) {
         setError("Please enter your email address.");
+        isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.password || formData.password.length < 6) {
         setError("Password must be at least 6 characters long.");
+        isSubmittingRef.current = false;
         return;
       }
 
       const cleanPhone = (formData.phoneNumber || "").replace(/[\s-]/g, "");
       if (!cleanPhone || !/^\+?[0-9]{10,15}$/.test(cleanPhone)) {
         setError("Please enter a valid 10-15 digit mobile number (e.g. +91 9876543210).");
+        isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.address || formData.address.trim().length < 5) {
         setError("Please enter a complete address / location (minimum 5 characters).");
+        isSubmittingRef.current = false;
         return;
       }
 
       if (formData.role === "doctor" && !formData.medicalRegistrationNumber?.trim()) {
         setError("Medical Council Registration / License Number is required for doctors.");
+        isSubmittingRef.current = false;
         return;
       }
     }
@@ -225,6 +236,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
       setError(errMsg);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import "./ForgotPasswordPage.css";
 import { authAPI } from "../services/api";
@@ -17,9 +17,12 @@ const ForgotPasswordPage = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [devResetUrl, setDevResetUrl] = useState("");
+  const isSubmittingRef = useRef(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
     setError("");
     setMessage("");
     setDevResetUrl("");
@@ -53,6 +56,7 @@ const ForgotPasswordPage = () => {
       setError(errMsg);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
