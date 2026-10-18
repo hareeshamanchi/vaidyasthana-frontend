@@ -1209,6 +1209,373 @@
 }
 
 /* ==========================================================================
+   Sound Reminder Controls & Active Dose Alert Banner
+   ========================================================================== */
+
+.med-sound-control-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.med-sound-control-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 260px;
+  flex: 1;
+}
+
+.med-sound-icon-wrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  background: #ede9fe;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.med-sound-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.med-sound-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.med-sound-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.med-sound-badge.enabled {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.med-sound-badge.disabled {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.med-sound-desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.med-sound-control-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.med-sound-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.med-sound-toggle-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.med-toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #cbd5e1;
+  border-radius: 24px;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.med-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.med-sound-toggle-label input:checked + .med-toggle-slider {
+  background-color: #4f46e5;
+}
+
+.med-sound-toggle-label input:checked + .med-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.med-toggle-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.med-volume-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+}
+
+.volume-icon {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.volume-slider {
+  width: 80px;
+  cursor: pointer;
+  accent-color: #4f46e5;
+}
+
+.volume-value-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  min-width: 32px;
+  text-align: right;
+}
+
+.btn-test-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-test-sound:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Active Due Dose Alert Banner */
+.med-active-due-banner {
+  background: linear-gradient(135deg, #fef2f2, #fff1f2);
+  border: 1px solid #fecdd3;
+  border-left: 4px solid #e11d48;
+  border-radius: 10px;
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  animation: bannerFadeIn 0.3s ease-out;
+}
+
+@keyframes bannerFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.med-due-banner-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+  min-width: 280px;
+}
+
+.med-due-icon-pulse {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: #ffe4e6;
+  color: #e11d48;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  animation: pulseBell 2s infinite ease-in-out;
+}
+
+@keyframes pulseBell {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(225, 29, 72, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+.med-due-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.med-due-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #9f1239;
+}
+
+.med-due-countdown-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #ffe4e6;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.med-due-desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #881337;
+  line-height: 1.45;
+}
+
+.med-due-banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.due-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-due-take {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-due-take:hover {
+  background: #059669;
+}
+
+.btn-due-snooze {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-due-snooze:hover {
+  background: #e2e8f0;
+}
+
+.btn-due-skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-due-skip:hover {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+/* Mobile & Closed Browser Advisory Notice */
+.med-mobile-advisory-callout {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.med-mobile-advisory-callout .advisory-icon {
+  color: #6366f1;
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
    Responsive Adaptations
    ========================================================================== */
 
@@ -1216,6 +1583,23 @@
   .med-header-inner {
     flex-direction: column;
     align-items: stretch;
+  }
+  .med-sound-control-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .med-sound-control-actions {
+    justify-content: flex-start;
+  }
+  .med-active-due-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .med-due-banner-actions {
+    width: 100%;
+  }
+  .due-quick-actions {
+    justify-content: flex-start;
   }
   .dose-card {
     flex-direction: column;
@@ -1225,3 +1609,4 @@
     justify-content: flex-end;
   }
 }
+

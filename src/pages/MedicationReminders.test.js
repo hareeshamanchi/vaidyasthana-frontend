@@ -1,9 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import MedicationReminders from "./MedicationReminders";
 import { AuthContext } from "../context/AuthContext";
 import { medicationsAPI } from "../services/api";
+import {
+  playDoseReminderChime,
+  resumeAudioContext,
+} from "../utils/medicationAudio";
+
+jest.mock("../utils/medicationAudio", () => {
+  const actual = jest.requireActual("../utils/medicationAudio");
+  return {
+    ...actual,
+    playDoseReminderChime: jest.fn().mockResolvedValue(true),
+    resumeAudioContext: jest.fn().mockResolvedValue(true),
+  };
+});
 
 jest.mock("../services/api", () => ({
   medicationsAPI: {
@@ -106,6 +119,7 @@ const renderComponent = (user = mockUser) => {
 
 describe("MedicationReminders Component Suite", () => {
   beforeEach(() => {
+    localStorage.clear();
     jest.clearAllMocks();
     medicationsAPI.getDoses.mockResolvedValue({
       data: {
@@ -243,4 +257,107 @@ describe("MedicationReminders Component Suite", () => {
       expect(screen.getByText("Taken Doses")).toBeInTheDocument();
     });
   });
+
+  test("7. Renders Sound-Based Dose Reminders control card with toggle and test button", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText("Sound-Based Dose Reminders")).toBeInTheDocument();
+      expect(screen.getByText("Active")).toBeInTheDocument();
+      expect(screen.getByText("Sound On")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Test Sound/i })).toBeInTheDocument();
+    });
+
+    // Test playing sample chime
+    const testSoundBtn = screen.getByRole("button", { name: /Test Sound/i });
+    fireEvent.click(testSoundBtn);
+
+    await waitFor(() => {
+      expect(playDoseReminderChime).toHaveBeenCalled();
+    });
+
+    // Toggle sound off
+    const toggleCheckbox = screen.getByLabelText(/Sound On/i);
+    fireEvent.click(toggleCheckbox);
+
+    await waitFor(() => {
+      expect(screen.getByText("Muted")).toBeInTheDocument();
+      expect(screen.getByText("Sound Off")).toBeInTheDocument();
+    });
+  });
+
+  test("8. Adjusts volume slider and reflects percentage", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Reminder chime volume/i)).toBeInTheDocument();
+    });
+
+    const volumeSlider = screen.getByLabelText(/Reminder chime volume/i);
+    fireEvent.change(volumeSlider, { target: { value: "0.6" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("60%")).toBeInTheDocument();
+    });
+  });
+
+  test("9. Detects active due dose, displays pulsing alert banner with 90s chime pill, and stops on acknowledge", async () => {
+    const pastScheduledTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    medicationsAPI.getDoses.mockResolvedValueOnce({
+      data: {
+        success: true,
+        summary: { total: 1, scheduled: 1, taken: 0, missed: 0, skipped: 0 },
+        doses: [
+          {
+            _id: "urgent-dose-1",
+            medicationName: "Atorvastatin 20",
+            dosage: "20",
+            dosageUnit: "mg",
+            status: "Scheduled",
+            scheduledTime: pastScheduledTime,
+            reminderTime: "09:00",
+            scheduledDate: new Date().toISOString().split("T")[0],
+          },
+        ],
+      },
+    });
+
+    renderComponent();
+
+    // The active due banner should render
+    await waitFor(() => {
+      const alertBanner = screen.getByRole("alert");
+      expect(alertBanner).toBeInTheDocument();
+      expect(within(alertBanner).getByText(/Medication Due Now \(1\)/i)).toBeInTheDocument();
+      expect(within(alertBanner).getByText(/Repeating chime in/i)).toBeInTheDocument();
+    });
+
+    const alertBanner = screen.getByRole("alert");
+    // Acknowledge by clicking "Taken" on the active due banner
+    const takeButton = within(alertBanner).getByRole("button", { name: /Taken/i });
+    fireEvent.click(takeButton);
+
+    await waitFor(() => {
+      expect(medicationsAPI.updateDoseStatus).toHaveBeenCalledWith("urgent-dose-1", {
+        status: "Taken",
+        notes: "",
+      });
+      // Banner should disappear immediately because local state is optimistically updated
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+  });
+
+  test("10. Renders Mobile & Closed Browser Advisory Notice", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Browser & Mobile Audio Notice:/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Web Audio API playback require an open tab/i)
+      ).toBeInTheDocument();
+    });
+  });
 });
+

@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { medicationsAPI } from "../services/api";
+import {
+  isAudioSupported,
+  resumeAudioContext,
+  getSoundSettings,
+  saveSoundSettings,
+  playDoseReminderChime,
+  getDuePendingDoses,
+  ALERT_REPEAT_INTERVAL_MS,
+} from "../utils/medicationAudio";
 import "./MedicationReminders.css";
 import {
   FiClock,
@@ -20,6 +29,9 @@ import {
   FiFileText,
   FiRefreshCw,
   FiInfo,
+  FiVolume2,
+  FiVolumeX,
+  FiVolume1,
 } from "react-icons/fi";
 
 const MedicationReminders = () => {
@@ -86,9 +98,52 @@ const MedicationReminders = () => {
   const [snoozeDoseId, setSnoozeDoseId] = useState(null);
   const [snoozeMinutes, setSnoozeMinutes] = useState(15);
 
+  // Sound Reminder State & Settings
+  const [soundSettings, setSoundSettings] = useState(() => getSoundSettings());
+  const [activeDueDoses, setActiveDueDoses] = useState([]);
+  const [secondsUntilNextAlert, setSecondsUntilNextAlert] = useState(null);
+  const [, setAudioUnlocked] = useState(() => isAudioSupported());
+
+  // Timing Ref for 90-second repeating alert
+  const lastAlertTimeRef = useRef(null);
+
   const showFeedback = (message, type = "success") => {
     setFeedback({ message, type });
     setTimeout(() => setFeedback({ message: "", type: "" }), 5000);
+  };
+
+  const handleUnlockAudio = async () => {
+    const resumed = await resumeAudioContext();
+    setAudioUnlocked(resumed);
+    return resumed;
+  };
+
+  const handleToggleSound = (enabled) => {
+    const next = { ...soundSettings, soundEnabled: enabled };
+    setSoundSettings(next);
+    saveSoundSettings(next);
+    if (enabled) {
+      handleUnlockAudio();
+      showFeedback("Sound reminders enabled. Doses will chime every 90 seconds while pending.");
+    } else {
+      showFeedback("Sound reminders muted. Visual alerts will continue.", "info");
+    }
+  };
+
+  const handleVolumeChange = (vol) => {
+    const next = { ...soundSettings, volume: vol };
+    setSoundSettings(next);
+    saveSoundSettings(next);
+  };
+
+  const handleTestSound = async () => {
+    await handleUnlockAudio();
+    const played = await playDoseReminderChime(soundSettings.volume);
+    if (played) {
+      showFeedback("Test chime played successfully!");
+    } else {
+      showFeedback("Audio blocked by browser. Please interact with the page.", "error");
+    }
   };
 
   // Request browser notification permission
@@ -191,6 +246,15 @@ const MedicationReminders = () => {
 
   // Dose Quick Action Handlers
   const handleUpdateDoseStatus = async (doseId, status, notes = "") => {
+    // Optimistically update local doses so any active repeating sound stops immediately
+    setDoses((prevDoses) =>
+      prevDoses.map((d) =>
+        d._id === doseId
+          ? { ...d, status, actionTime: status === "Scheduled" ? null : new Date() }
+          : d
+      )
+    );
+
     try {
       const res = await medicationsAPI.updateDoseStatus(doseId, { status, notes });
       if (res.data?.success) {
@@ -199,10 +263,16 @@ const MedicationReminders = () => {
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || "Failed to update dose.", "error");
+      fetchDoses(selectedDate);
     }
   };
 
   const handleSnoozeDose = async (doseId) => {
+    const nextSnooze = new Date(Date.now() + snoozeMinutes * 60 * 1000);
+    setDoses((prevDoses) =>
+      prevDoses.map((d) => (d._id === doseId ? { ...d, snoozeUntil: nextSnooze } : d))
+    );
+
     try {
       const res = await medicationsAPI.updateDoseStatus(doseId, {
         action: "snooze",
@@ -215,8 +285,95 @@ const MedicationReminders = () => {
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || "Failed to snooze dose.", "error");
+      fetchDoses(selectedDate);
     }
   };
+
+  // 90-Second Repeating Medication Alert Engine
+  useEffect(() => {
+    if (!user) return;
+
+    const checkAndTriggerAlerts = () => {
+      const now = Date.now();
+      const dueDoses = getDuePendingDoses(doses, now);
+      setActiveDueDoses(dueDoses);
+
+      if (dueDoses.length === 0) {
+        // All due doses acknowledged / no pending doses: reset alert cycle immediately
+        lastAlertTimeRef.current = null;
+        setSecondsUntilNextAlert(null);
+        return;
+      }
+
+      // At least one dose is due!
+      if (lastAlertTimeRef.current === null) {
+        // Initial detection of due dose: trigger sound immediately
+        lastAlertTimeRef.current = now;
+        setSecondsUntilNextAlert(90);
+        if (soundSettings.soundEnabled) {
+          playDoseReminderChime(soundSettings.volume);
+        }
+        // Browser notification if permission granted
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          try {
+            const names = dueDoses.map((d) => d.medicationName).join(", ");
+            new Notification(`Medication Dose Due: ${names}`, {
+              body: `You have ${dueDoses.length} scheduled dose(s) pending. Sound alert will repeat every 90 seconds until taken.`,
+              icon: "/favicon.ico",
+              tag: "medication-due-alert",
+            });
+          } catch (e) {
+            // Ignore notification constructor errors
+          }
+        }
+      } else {
+        const elapsed = now - lastAlertTimeRef.current;
+        if (elapsed >= ALERT_REPEAT_INTERVAL_MS) {
+          // Exactly 90 seconds elapsed: repeat sound alert
+          lastAlertTimeRef.current = now;
+          setSecondsUntilNextAlert(90);
+          if (soundSettings.soundEnabled) {
+            playDoseReminderChime(soundSettings.volume);
+          }
+        } else {
+          const remaining = Math.max(0, Math.ceil((ALERT_REPEAT_INTERVAL_MS - elapsed) / 1000));
+          setSecondsUntilNextAlert(remaining);
+        }
+      }
+    };
+
+    checkAndTriggerAlerts();
+    const alertInterval = setInterval(checkAndTriggerAlerts, 1000);
+
+    return () => {
+      clearInterval(alertInterval);
+    };
+  }, [user, doses, soundSettings]);
+
+  // Periodic dose polling every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+    const pollInterval = setInterval(() => {
+      fetchDoses(selectedDate);
+    }, 30000);
+    return () => clearInterval(pollInterval);
+  }, [user, selectedDate, fetchDoses]);
+
+  // Tab visibility and focus listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchDoses(selectedDate);
+        resumeAudioContext();
+      }
+    };
+    window.addEventListener("focus", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [selectedDate, fetchDoses]);
 
   // Schedule Status Toggle Handlers
   const handleToggleScheduleStatus = async (medId, nextStatus) => {
@@ -428,6 +585,137 @@ const MedicationReminders = () => {
             </button>
           </div>
         )}
+
+        {/* Active Due Dose Alert Banner */}
+        {activeDueDoses.length > 0 && (
+          <div className="med-active-due-banner" role="alert" aria-live="assertive">
+            <div className="med-due-banner-left">
+              <div className="med-due-icon-pulse" aria-hidden="true">
+                <FiBell />
+              </div>
+              <div>
+                <div className="med-due-title-row">
+                  <span className="med-due-title">
+                    Medication Due Now ({activeDueDoses.length})
+                  </span>
+                  {secondsUntilNextAlert !== null && soundSettings.soundEnabled && (
+                    <span className="med-due-countdown-pill" title="Reminder chime repeats every 90 seconds while pending">
+                      <FiClock /> Repeating chime in {secondsUntilNextAlert}s
+                    </span>
+                  )}
+                </div>
+                <p className="med-due-desc">
+                  <strong>{activeDueDoses.map((d) => d.medicationName || "Medication").join(", ")}</strong> — Scheduled dose is due. Please take your medication and acknowledge it below. Chime repeats every 90s until taken or skipped.
+                </p>
+              </div>
+            </div>
+            <div className="med-due-banner-actions">
+              <div className="due-quick-actions">
+                {activeDueDoses.map((dueDose) => (
+                  <div key={dueDose._id} className="due-item-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#881337" }}>
+                      {dueDose.medicationName} ({dueDose.dosage}{dueDose.dosageUnit || "mg"}):
+                    </span>
+                    <button
+                      className="btn-due-take"
+                      onClick={() => handleUpdateDoseStatus(dueDose._id, "Taken")}
+                      title="Mark dose as taken"
+                    >
+                      <FiCheck /> Taken
+                    </button>
+                    <button
+                      className="btn-due-snooze"
+                      onClick={() => setSnoozeDoseId(dueDose._id)}
+                      title="Snooze reminder"
+                    >
+                      <FiClock /> Snooze
+                    </button>
+                    <button
+                      className="btn-due-skip"
+                      onClick={() => handleUpdateDoseStatus(dueDose._id, "Skipped")}
+                      title="Skip this dose"
+                    >
+                      <FiX /> Skip
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sound Reminder Controls Card */}
+        <div className="med-sound-control-card">
+          <div className="med-sound-control-left">
+            <div className="med-sound-icon-wrap" aria-hidden="true">
+              {soundSettings.soundEnabled ? (
+                soundSettings.volume === 0 ? <FiVolumeX /> : soundSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />
+              ) : (
+                <FiVolumeX />
+              )}
+            </div>
+            <div>
+              <div className="med-sound-title-row">
+                <span className="med-sound-title">Sound-Based Dose Reminders</span>
+                <span className={`med-sound-badge ${soundSettings.soundEnabled ? "enabled" : "disabled"}`}>
+                  {soundSettings.soundEnabled ? "Active" : "Muted"}
+                </span>
+              </div>
+              <p className="med-sound-desc">
+                Plays a chime immediately when a scheduled dose is due, repeating every 90 seconds until acknowledged.
+              </p>
+            </div>
+          </div>
+
+          <div className="med-sound-control-actions">
+            <label className="med-sound-toggle-label" htmlFor="med-sound-toggle">
+              <input
+                type="checkbox"
+                id="med-sound-toggle"
+                checked={soundSettings.soundEnabled}
+                onChange={(e) => handleToggleSound(e.target.checked)}
+              />
+              <span className="med-toggle-slider" aria-hidden="true"></span>
+              <span className="med-toggle-text">Sound {soundSettings.soundEnabled ? "On" : "Off"}</span>
+            </label>
+
+            {soundSettings.soundEnabled && (
+              <div className="med-volume-control" title="Adjust reminder chime volume">
+                <span className="volume-icon" aria-hidden="true">
+                  {soundSettings.volume === 0 ? <FiVolumeX /> : soundSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />}
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={soundSettings.volume}
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className="volume-slider"
+                  aria-label="Reminder chime volume"
+                />
+                <span className="volume-value-text">{Math.round(soundSettings.volume * 100)}%</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn-test-sound"
+              onClick={handleTestSound}
+              title="Play a sample reminder chime to test audio"
+            >
+              <FiVolume2 /> Test Sound
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile & Closed Browser Advisory Notice */}
+        <div className="med-mobile-advisory-callout">
+          <FiInfo className="advisory-icon" aria-hidden="true" />
+          <div>
+            <strong>Browser & Mobile Audio Notice:</strong> Browser timers and Web Audio API playback require an open tab or active window. On mobile devices or when the screen is locked/browser is closed, background timers are throttled by operating systems. To receive sound alerts, keep this dashboard open or enable system push notifications.
+          </div>
+        </div>
 
         {/* View Tabs */}
         <div className="med-view-tabs" role="tablist">
