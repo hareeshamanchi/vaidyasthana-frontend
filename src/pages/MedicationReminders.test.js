@@ -3,11 +3,15 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import { BrowserRouter } from "react-router-dom";
 import MedicationReminders from "./MedicationReminders";
 import { AuthContext } from "../context/AuthContext";
-import { medicationsAPI } from "../services/api";
+import { medicationsAPI, pushAPI } from "../services/api";
 import {
   playDoseReminderChime,
   resumeAudioContext,
 } from "../utils/medicationAudio";
+import {
+  subscribeUserToPush,
+  checkPushStatus,
+} from "../utils/pushManager";
 
 jest.mock("../utils/medicationAudio", () => {
   const actual = jest.requireActual("../utils/medicationAudio");
@@ -30,6 +34,23 @@ jest.mock("../services/api", () => ({
     updateStatus: jest.fn(),
     deleteMedication: jest.fn(),
   },
+  pushAPI: {
+    getVapidKey: jest.fn().mockResolvedValue({ data: { success: true, publicKey: "mock-key" } }),
+    subscribe: jest.fn().mockResolvedValue({ data: { success: true } }),
+    unsubscribe: jest.fn().mockResolvedValue({ data: { success: true } }),
+    testPush: jest.fn().mockResolvedValue({ data: { success: true, message: "Dispatched" } }),
+  },
+}));
+
+jest.mock("../utils/pushManager", () => ({
+  isPushSupported: jest.fn().mockReturnValue(true),
+  checkPushStatus: jest.fn().mockResolvedValue({
+    isSupported: true,
+    permission: "default",
+    isSubscribed: false,
+  }),
+  subscribeUserToPush: jest.fn().mockResolvedValue({ endpoint: "mock-endpoint" }),
+  unsubscribeUserFromPush: jest.fn().mockResolvedValue(true),
 }));
 
 const mockUser = {
@@ -143,6 +164,12 @@ describe("MedicationReminders Component Suite", () => {
     medicationsAPI.createMedication.mockResolvedValue({
       data: { success: true },
     });
+    checkPushStatus.mockResolvedValue({
+      isSupported: true,
+      permission: "default",
+      isSubscribed: false,
+    });
+    subscribeUserToPush.mockResolvedValue({ endpoint: "mock-endpoint" });
   });
 
   test("1. Renders executive header, tabs, and clinical disclaimer", async () => {
@@ -357,6 +384,43 @@ describe("MedicationReminders Component Suite", () => {
       expect(
         screen.getByText(/Web Audio API playback require an open tab/i)
       ).toBeInTheDocument();
+    });
+  });
+
+  test("11. Renders Background System Push Notifications card and handles enabling push", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText("Background System Push Notifications")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Enable Background Alerts/i })).toBeInTheDocument();
+    });
+
+    const enablePushBtn = screen.getByRole("button", { name: /Enable Background Alerts/i });
+    fireEvent.click(enablePushBtn);
+
+    await waitFor(() => {
+      expect(subscribeUserToPush).toHaveBeenCalled();
+    });
+  });
+
+  test("12. Dispatches test push notification when subscribed", async () => {
+    checkPushStatus.mockResolvedValueOnce({
+      isSupported: true,
+      permission: "granted",
+      isSubscribed: true,
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Test Push/i })).toBeInTheDocument();
+    });
+
+    const testPushBtn = screen.getByRole("button", { name: /Test Push/i });
+    fireEvent.click(testPushBtn);
+
+    await waitFor(() => {
+      expect(pushAPI.testPush).toHaveBeenCalled();
     });
   });
 });

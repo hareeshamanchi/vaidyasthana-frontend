@@ -229,4 +229,14 @@ export const medicationsAPI = {
   getPrescriptions: () => api.get("/api/medications/prescriptions"),
 };
 
+// ==========================================
+// Web Push Notifications API
+// ==========================================
+export const pushAPI = {
+  getVapidKey: () => api.get("/api/push/vapid-key"),
+  subscribe: (subscription) => api.post("/api/push/subscribe", { subscription }),
+  unsubscribe: (endpoint) => api.post("/api/push/unsubscribe", { endpoint }),
+  testPush: () => api.post("/api/push/test"),
+};
+
 export default api;

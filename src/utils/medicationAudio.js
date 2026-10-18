@@ -113,18 +113,21 @@ export const saveSoundSettings = ({ soundEnabled, volume }) => {
 };
 
 /**
- * Synthesizes a gentle, professional two-tone medical chime using the Web Audio API.
- * - Note 1: D5 (587.33 Hz) soft sine wave
- * - Note 2: A5 (880.00 Hz) resonant chime
- * Uses exponential gain envelopes to eliminate clicks and distortion.
- * Enforces a concurrency lock to avoid overlapping sound spikes.
+ * Synthesizes a premium, attention-catching 3-tone healthcare melodic chime using Web Audio API.
+ * - Motif: Ascending A-Major Triad (E5 -> A5 -> C#6)
+ * - Tone 1: E5 (659.25 Hz) with warm 2nd harmonic (1318.5 Hz)
+ * - Tone 2: A5 (880.00 Hz) with warm 2nd harmonic (1760.0 Hz)
+ * - Tone 3: C#6 (1108.73 Hz) resolving chime with resonant tail
+ * Uses subtle overtone reinforcement for audibility on laptop/phone speakers,
+ * exponential gain envelopes for zero-click smooth decay, and dynamics compression
+ * to protect against clipping distortion at higher volume.
  *
  * @param {number} [customVolume] - Optional volume override (0.0 to 1.0)
  * @returns {Promise<boolean>} True if sound was synthesized, false if blocked/unsupported
  */
 export const playDoseReminderChime = async (customVolume) => {
   if (!isAudioSupported()) return false;
-  if (isAudioPlaying) return false; // Prevent audio overlap
+  if (isAudioPlaying) return false; // Concurrency lock to avoid overlapping spikes
 
   const ctx = getAudioContext();
   if (!ctx) return false;
@@ -134,7 +137,6 @@ export const playDoseReminderChime = async (customVolume) => {
     try {
       await ctx.resume();
     } catch (e) {
-      // Browser blocked autoplay due to missing gesture
       return false;
     }
   }
@@ -153,49 +155,84 @@ export const playDoseReminderChime = async (customVolume) => {
   try {
     const now = ctx.currentTime;
     const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(masterVolume * 0.35, now);
-    masterGain.connect(ctx.destination);
+    masterGain.gain.setValueAtTime(masterVolume * 0.8, now);
 
-    // Tone 1: D5 (587.33 Hz)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(587.33, now);
+    // Route through DynamicsCompressor if supported to prevent clipping and enhance loudness
+    let outputTarget = ctx.destination;
+    if (typeof ctx.createDynamicsCompressor === "function") {
+      try {
+        const compressor = ctx.createDynamicsCompressor();
+        if (compressor.threshold && compressor.threshold.setValueAtTime) {
+          compressor.threshold.setValueAtTime(-12, now);
+          compressor.knee.setValueAtTime(20, now);
+          compressor.ratio.setValueAtTime(4, now);
+          compressor.attack.setValueAtTime(0.003, now);
+          compressor.release.setValueAtTime(0.15, now);
+          compressor.connect(ctx.destination);
+          outputTarget = compressor;
+        }
+      } catch (compErr) {
+        outputTarget = ctx.destination;
+      }
+    }
+    masterGain.connect(outputTarget);
 
-    gain1.gain.setValueAtTime(0.001, now);
-    gain1.gain.exponentialRampToValueAtTime(0.7, now + 0.02);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    // Helper to synthesize a melodic tone with warm fundamental + soft overtone
+    const scheduleChimeTone = (freq, startTime, peakGain, decayDuration) => {
+      // 1. Fundamental sine wave
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, startTime);
 
-    osc1.connect(gain1);
-    gain1.connect(masterGain);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + decayDuration);
 
-    osc1.start(now);
-    osc1.stop(now + 0.24);
+      osc.connect(gain);
+      gain.connect(masterGain);
 
-    // Tone 2: A5 (880.00 Hz) - resonant chime starting slightly after tone 1
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(880.0, now + 0.16);
+      osc.start(startTime);
+      osc.stop(startTime + decayDuration + 0.02);
 
-    gain2.gain.setValueAtTime(0.001, now + 0.16);
-    gain2.gain.exponentialRampToValueAtTime(0.85, now + 0.18);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      // 2. Gentle 2nd harmonic (octave overtone at 15% level for small speaker clarity)
+      try {
+        const overtoneOsc = ctx.createOscillator();
+        const overtoneGain = ctx.createGain();
+        overtoneOsc.type = "sine";
+        overtoneOsc.frequency.setValueAtTime(freq * 2, startTime);
 
-    osc2.connect(gain2);
-    gain2.connect(masterGain);
+        overtoneGain.gain.setValueAtTime(0.0001, startTime);
+        overtoneGain.gain.exponentialRampToValueAtTime(peakGain * 0.15, startTime + 0.015);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + decayDuration * 0.7);
 
-    osc2.start(now + 0.16);
-    osc2.stop(now + 0.58);
+        overtoneOsc.connect(overtoneGain);
+        overtoneGain.connect(masterGain);
 
-    // Release playback lock after sound completes
+        overtoneOsc.start(startTime);
+        overtoneOsc.stop(startTime + decayDuration * 0.75);
+      } catch (e) {
+        // Safe fallback if oscillator creation fails
+      }
+    };
+
+    // Tone 1: E5 (659.25 Hz) - bright, warm intro
+    scheduleChimeTone(659.25, now, 0.75, 0.28);
+
+    // Tone 2: A5 (880.00 Hz) - rising melodic lift
+    scheduleChimeTone(880.0, now + 0.13, 0.85, 0.32);
+
+    // Tone 3: C#6 (1108.73 Hz) - resolving major 3rd with rich ringing sustain
+    scheduleChimeTone(1108.73, now + 0.26, 0.95, 0.58);
+
+    // Release playback lock after chime sequence finishes
     setTimeout(() => {
       isAudioPlaying = false;
-    }, 600);
+    }, 880);
 
     return true;
   } catch (err) {
-    console.warn("[MEDICATION_AUDIO] Failed to play chime:", err.message);
+    console.warn("[MEDICATION_AUDIO] Failed to play premium chime:", err.message);
     isAudioPlaying = false;
     return false;
   }

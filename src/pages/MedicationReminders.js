@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { medicationsAPI } from "../services/api";
+import { medicationsAPI, pushAPI } from "../services/api";
+import { getSocket } from "../services/socket";
 import {
   isAudioSupported,
   resumeAudioContext,
@@ -11,6 +12,12 @@ import {
   getDuePendingDoses,
   ALERT_REPEAT_INTERVAL_MS,
 } from "../utils/medicationAudio";
+import {
+  isPushSupported,
+  checkPushStatus,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+} from "../utils/pushManager";
 import "./MedicationReminders.css";
 import {
   FiClock,
@@ -32,6 +39,7 @@ import {
   FiVolume2,
   FiVolumeX,
   FiVolume1,
+  FiSend,
 } from "react-icons/fi";
 
 const MedicationReminders = () => {
@@ -94,6 +102,14 @@ const MedicationReminders = () => {
     return "unsupported";
   });
 
+  // Web Push Background Notifications State
+  const [pushStatus, setPushStatus] = useState(() => ({
+    isSupported: isPushSupported(),
+    permission: typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported",
+    isSubscribed: false,
+    loading: false,
+  }));
+
   // Snooze Modal / Selector State
   const [snoozeDoseId, setSnoozeDoseId] = useState(null);
   const [snoozeMinutes, setSnoozeMinutes] = useState(15);
@@ -140,7 +156,7 @@ const MedicationReminders = () => {
     await handleUnlockAudio();
     const played = await playDoseReminderChime(soundSettings.volume);
     if (played) {
-      showFeedback("Test chime played successfully!");
+      showFeedback(`Test chime played successfully at ${Math.round(soundSettings.volume * 100)}% volume!`);
     } else {
       showFeedback("Audio blocked by browser. Please interact with the page.", "error");
     }
@@ -162,6 +178,76 @@ const MedicationReminders = () => {
       }
     }
   };
+
+  // Enable background Web Push notifications for closed-tab dose reminders
+  const handleEnablePush = async () => {
+    setPushStatus((prev) => ({ ...prev, loading: true }));
+    try {
+      await subscribeUserToPush();
+      const updated = await checkPushStatus();
+      setPushStatus((prev) => ({ ...prev, ...updated, loading: false }));
+      setNotificationPermission(updated.permission);
+      showFeedback("Background push notifications active! You will receive system alerts even when this tab is closed.");
+    } catch (err) {
+      console.error("Failed to enable push notifications:", err);
+      const updated = await checkPushStatus();
+      setPushStatus((prev) => ({ ...prev, ...updated, loading: false }));
+      showFeedback(err.message || "Failed to enable background push notifications.", "error");
+    }
+  };
+
+  // Disable background Web Push notifications
+  const handleDisablePush = async () => {
+    setPushStatus((prev) => ({ ...prev, loading: true }));
+    try {
+      await unsubscribeUserFromPush();
+      const updated = await checkPushStatus();
+      setPushStatus((prev) => ({ ...prev, ...updated, loading: false }));
+      showFeedback("Background push notifications disabled.", "info");
+    } catch (err) {
+      console.error("Failed to disable push notifications:", err);
+      setPushStatus((prev) => ({ ...prev, loading: false }));
+      showFeedback("Failed to disable push notifications.", "error");
+    }
+  };
+
+  // Dispatch a test push notification to verify background delivery
+  const handleTestPush = async () => {
+    try {
+      const res = await pushAPI.testPush();
+      if (res.data?.success) {
+        showFeedback("Test push notification dispatched! Check your system notification tray.");
+      } else {
+        showFeedback("No registered push devices found.", "info");
+      }
+    } catch (err) {
+      showFeedback("Failed to dispatch test push notification.", "error");
+    }
+  };
+
+  // Sync push subscription status on mount
+  useEffect(() => {
+    let isMounted = true;
+    if (typeof checkPushStatus === "function") {
+      try {
+        const promise = checkPushStatus();
+        if (promise && typeof promise.then === "function") {
+          promise
+            .then((status) => {
+              if (isMounted && status) {
+                setPushStatus((prev) => ({ ...prev, ...status }));
+              }
+            })
+            .catch(() => {});
+        }
+      } catch (e) {
+        // Safe ignore
+      }
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Fetch Daily Doses
   const fetchDoses = useCallback(async (dateStr) => {
@@ -246,14 +332,23 @@ const MedicationReminders = () => {
 
   // Dose Quick Action Handlers
   const handleUpdateDoseStatus = async (doseId, status, notes = "") => {
-    // Optimistically update local doses so any active repeating sound stops immediately
-    setDoses((prevDoses) =>
-      prevDoses.map((d) =>
+    // Optimistically update local doses and immediately halt sound alerts if no due doses remain
+    setDoses((prevDoses) => {
+      const updated = prevDoses.map((d) =>
         d._id === doseId
           ? { ...d, status, actionTime: status === "Scheduled" ? null : new Date() }
           : d
-      )
-    );
+      );
+      const remainingDue = getDuePendingDoses(updated, Date.now());
+      if (remainingDue.length === 0) {
+        lastAlertTimeRef.current = null;
+        setSecondsUntilNextAlert(null);
+        setActiveDueDoses([]);
+      } else {
+        setActiveDueDoses(remainingDue);
+      }
+      return updated;
+    });
 
     try {
       const res = await medicationsAPI.updateDoseStatus(doseId, { status, notes });
@@ -269,9 +364,18 @@ const MedicationReminders = () => {
 
   const handleSnoozeDose = async (doseId) => {
     const nextSnooze = new Date(Date.now() + snoozeMinutes * 60 * 1000);
-    setDoses((prevDoses) =>
-      prevDoses.map((d) => (d._id === doseId ? { ...d, snoozeUntil: nextSnooze } : d))
-    );
+    setDoses((prevDoses) => {
+      const updated = prevDoses.map((d) => (d._id === doseId ? { ...d, snoozeUntil: nextSnooze } : d));
+      const remainingDue = getDuePendingDoses(updated, Date.now());
+      if (remainingDue.length === 0) {
+        lastAlertTimeRef.current = null;
+        setSecondsUntilNextAlert(null);
+        setActiveDueDoses([]);
+      } else {
+        setActiveDueDoses(remainingDue);
+      }
+      return updated;
+    });
 
     try {
       const res = await medicationsAPI.updateDoseStatus(doseId, {
@@ -374,6 +478,25 @@ const MedicationReminders = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [selectedDate, fetchDoses]);
+
+  // Real-time socket listener for due dose events from background reminder worker
+  useEffect(() => {
+    if (!user) return;
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleDoseAlert = () => {
+      fetchDoses(selectedDate);
+    };
+
+    socket.on("medication:due_repeat", handleDoseAlert);
+    socket.on("notification:new", handleDoseAlert);
+
+    return () => {
+      socket.off("medication:due_repeat", handleDoseAlert);
+      socket.off("notification:new", handleDoseAlert);
+    };
+  }, [user, selectedDate, fetchDoses]);
 
   // Schedule Status Toggle Handlers
   const handleToggleScheduleStatus = async (medId, nextStatus) => {
@@ -662,7 +785,7 @@ const MedicationReminders = () => {
                 </span>
               </div>
               <p className="med-sound-desc">
-                Plays a chime immediately when a scheduled dose is due, repeating every 90 seconds until acknowledged.
+                Plays a premium 3-tone melodic chime immediately when a scheduled dose is due, repeating every 90 seconds while pending.
               </p>
             </div>
           </div>
@@ -709,11 +832,84 @@ const MedicationReminders = () => {
           </div>
         </div>
 
+        {/* Background System Push Notifications Card */}
+        <div className="med-push-control-card">
+          <div className="med-push-control-left">
+            <div className="med-push-icon-wrap" aria-hidden="true">
+              <FiBell />
+            </div>
+            <div>
+              <div className="med-push-title-row">
+                <span className="med-push-title">Background System Push Notifications</span>
+                <span
+                  className={`med-push-badge ${
+                    pushStatus.isSubscribed
+                      ? "enabled"
+                      : pushStatus.permission === "denied"
+                      ? "blocked"
+                      : "disabled"
+                  }`}
+                >
+                  {pushStatus.isSubscribed
+                    ? "Active"
+                    : pushStatus.permission === "denied"
+                    ? "Blocked"
+                    : !pushStatus.isSupported
+                    ? "Unsupported"
+                    : "Disabled"}
+                </span>
+              </div>
+              <p className="med-push-desc">
+                Delivers system notifications when doses are due, even if this browser tab is closed. Notification chimes and vibration are governed by device and operating system settings.
+              </p>
+            </div>
+          </div>
+
+          <div className="med-push-control-actions">
+            {!pushStatus.isSubscribed ? (
+              <button
+                type="button"
+                className="btn-enable-push"
+                onClick={handleEnablePush}
+                disabled={pushStatus.loading || !pushStatus.isSupported}
+                title="Enable background Web Push notifications for closed-tab reminders"
+              >
+                <FiBell /> {pushStatus.loading ? "Connecting..." : "Enable Background Alerts"}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn-test-push"
+                  onClick={handleTestPush}
+                  title="Dispatch a test push notification to this device"
+                >
+                  <FiSend /> Test Push
+                </button>
+                <button
+                  type="button"
+                  className="btn-disable-push"
+                  onClick={handleDisablePush}
+                  disabled={pushStatus.loading}
+                  title="Disable background push notifications"
+                >
+                  Disable
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Mobile & Closed Browser Advisory Notice */}
         <div className="med-mobile-advisory-callout">
           <FiInfo className="advisory-icon" aria-hidden="true" />
-          <div>
-            <strong>Browser & Mobile Audio Notice:</strong> Browser timers and Web Audio API playback require an open tab or active window. On mobile devices or when the screen is locked/browser is closed, background timers are throttled by operating systems. To receive sound alerts, keep this dashboard open or enable system push notifications.
+          <div className="advisory-text-content">
+            <div>
+              <strong>Browser & Mobile Audio Notice:</strong> Browser timers and Web Audio API playback require an open tab or active window. On mobile devices or when the screen is locked/browser is closed, background timers are throttled by operating systems. To receive sound alerts, keep this dashboard open or enable system push notifications.
+            </div>
+            <div style={{ marginTop: "0.35rem", fontSize: "0.8rem", color: "#475569" }}>
+              <strong>Device & System Volume:</strong> The volume slider controls web audio gain relative to your device's master media volume. Ensure device silent mode, Do-Not-Disturb, and browser autoplay permissions permit playback.
+            </div>
           </div>
         </div>
 
