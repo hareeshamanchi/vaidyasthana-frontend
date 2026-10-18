@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useContext } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useContext, useRef } from "react";
 import { Link } from "react-router-dom";
 import "./Appointment.css";
 import { appointmentsAPI, authAPI } from "../services/api";
@@ -52,6 +52,12 @@ const Appointment = () => {
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Cancellation Modal State
+  const [cancelModalAppt, setCancelModalAppt] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const keepApptBtnRef = useRef(null);
 
   // Verified Doctors from Atlas
   const [doctorsList, setDoctorsList] = useState([]);
@@ -481,35 +487,68 @@ const Appointment = () => {
     }
   };
 
-  const handleCancelAppointment = async (id) => {
-    const targetAppt = appointments.find((a) => a._id === id);
-    if (targetAppt && !isAppointmentCancellable(targetAppt)) {
-      alert("This appointment cannot be cancelled because it is completed, cancelled, rejected, or in the past.");
+  // Cancellation Modal Handlers
+  const handleOpenCancelModal = (appt) => {
+    if (!appt) return;
+    if (!isAppointmentCancellable(appt)) {
+      setErrorMessage("This appointment cannot be cancelled because it is completed, cancelled, rejected, or in the past.");
       return;
     }
+    setCancelError("");
+    setCancelModalAppt(appt);
+  };
 
-    if (!window.confirm("Are you sure you wish to cancel this scheduled consultation?")) {
-      return;
-    }
+  const handleDismissCancelModal = useCallback(() => {
+    if (isCancelling) return;
+    setCancelModalAppt(null);
+    setCancelError("");
+  }, [isCancelling]);
+
+  const handleConfirmCancellation = async () => {
+    if (!cancelModalAppt || isCancelling) return;
+
+    setIsCancelling(true);
+    setCancelError("");
 
     try {
-      const res = await appointmentsAPI.updateAppointment(id, { status: "Cancelled" });
+      const res = await appointmentsAPI.updateAppointment(cancelModalAppt._id, { status: "Cancelled" });
       if (res.data?.success) {
         setStatusMessage("Appointment cancelled successfully.");
+        setCancelModalAppt(null);
         await fetchAppointments();
         if (formData.doctorId && formData.appointmentDate) {
           fetchSlots(formData.doctorId, formData.appointmentDate);
         }
       } else {
-        setStatusMessage("");
-        alert(res.data?.message || "Could not cancel appointment.");
+        setCancelError(res.data?.message || "Could not cancel appointment.");
       }
     } catch (err) {
       console.error("Cancel failed:", err);
-      setStatusMessage("");
-      alert(err.response?.data?.message || "Could not cancel appointment.");
+      setCancelError(err.response?.data?.message || "Could not cancel appointment. Please try again.");
+    } finally {
+      setIsCancelling(false);
     }
   };
+
+  // Focus trap / keyboard management for Cancellation Modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && cancelModalAppt && !isCancelling) {
+        handleDismissCancelModal();
+      }
+    };
+
+    if (cancelModalAppt) {
+      window.addEventListener("keydown", handleKeyDown);
+      const timerId = setTimeout(() => {
+        keepApptBtnRef.current?.focus();
+      }, 50);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        clearTimeout(timerId);
+      };
+    }
+  }, [cancelModalAppt, isCancelling, handleDismissCancelModal]);
 
   // Clinician authorized actions: Confirm, Start, Complete, Reject
   const handleUpdateAppointment = async (apptId, status, rejectionReason = "") => {
@@ -775,12 +814,13 @@ const Appointment = () => {
           />
           {isCancellable ? (
             <button
-              className="btn-cancel-slot"
-              onClick={() => handleCancelAppointment(app._id)}
+              className="btn-card-cancel-action"
+              onClick={() => handleOpenCancelModal(app)}
               type="button"
               title="Cancel scheduled consultation"
+              aria-label={`Cancel appointment with ${docName}`}
             >
-              <FiXCircle /> Cancel Appointment
+              <FiXCircle size={14} /> Cancel Appointment
             </button>
           ) : (
             <div className={`appt-terminal-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}>
@@ -1495,6 +1535,154 @@ const Appointment = () => {
           </div>
         </div>
       )}
+
+      {/* Custom Accessible Cancellation Confirmation Modal */}
+      {cancelModalAppt && (() => {
+        const cancelDocObj =
+          typeof cancelModalAppt.doctorId === "object" && cancelModalAppt.doctorId !== null
+            ? cancelModalAppt.doctorId
+            : null;
+        const cancelDocName = cancelDocObj?.name
+          ? (cancelDocObj.name.startsWith("Dr.") ? cancelDocObj.name : `Dr. ${cancelDocObj.name}`)
+          : (cancelModalAppt.doctorName?.startsWith("Dr.")
+          ? cancelModalAppt.doctorName
+          : `Dr. ${cancelModalAppt.doctorName || "Doctor"}`);
+        const cancelDocDept = cancelDocObj?.specialization || cancelModalAppt.department || "General Medicine";
+        const cancelDateStr = cancelModalAppt.appointmentDate
+          ? new Date(cancelModalAppt.appointmentDate).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "Scheduled Date";
+        const cancelTimeStr = cancelModalAppt.timeSlot || "Scheduled Time";
+
+        return (
+          <div
+            className="modal-backdrop cancellation-modal-backdrop"
+            onClick={handleDismissCancelModal}
+            role="presentation"
+          >
+            <div
+              className="cancellation-modal-card"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-dialog-title"
+              aria-describedby="cancel-dialog-desc"
+            >
+              <div className="cancellation-modal-header">
+                <div className="cancel-title-wrap">
+                  <div className="cancel-icon-badge" aria-hidden="true">
+                    <FiAlertCircle size={22} />
+                  </div>
+                  <div>
+                    <h3 id="cancel-dialog-title">Cancel Appointment?</h3>
+                    <p className="cancel-subtitle">Review consultation details prior to confirmation</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="cancel-modal-close-btn"
+                  onClick={handleDismissCancelModal}
+                  disabled={isCancelling}
+                  aria-label="Close dialog without cancelling"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="cancellation-modal-body">
+                <p id="cancel-dialog-desc" className="cancel-prompt-message">
+                  Are you sure you want to cancel this scheduled consultation?
+                </p>
+
+                {/* Consultation Details Card */}
+                <div className="cancel-appt-summary-card">
+                  <div className="cancel-summary-row doc-row">
+                    <FiUser className="summary-icon" />
+                    <div className="summary-info">
+                      <span className="summary-label">Physician</span>
+                      <strong className="summary-val">{cancelDocName}</strong>
+                      {cancelDocDept && <span className="summary-dept">({cancelDocDept})</span>}
+                    </div>
+                  </div>
+
+                  <div className="cancel-summary-grid">
+                    <div className="cancel-summary-row">
+                      <FiCalendar className="summary-icon" />
+                      <div className="summary-info">
+                        <span className="summary-label">Scheduled Date</span>
+                        <strong className="summary-val">{cancelDateStr}</strong>
+                      </div>
+                    </div>
+                    <div className="cancel-summary-row">
+                      <FiClock className="summary-icon" />
+                      <div className="summary-info">
+                        <span className="summary-label">Time Slot</span>
+                        <strong className="summary-val">{cancelTimeStr}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {cancelModalAppt.consultationType && (
+                    <div className="cancel-summary-row">
+                      <FiActivity className="summary-icon" />
+                      <div className="summary-info">
+                        <span className="summary-label">Consultation Mode</span>
+                        <strong className="summary-val">{cancelModalAppt.consultationType}</strong>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {cancelError && (
+                  <div className="cancel-modal-error-alert" role="alert">
+                    <FiAlertCircle className="error-icon" />
+                    <span>{cancelError}</span>
+                  </div>
+                )}
+
+                <p className="cancel-warning-note">
+                  Once cancelled, this time slot will be released back to the hospital schedule for other patients.
+                </p>
+              </div>
+
+              <div className="cancellation-modal-footer">
+                <button
+                  type="button"
+                  ref={keepApptBtnRef}
+                  className="btn-cancel-modal-keep"
+                  onClick={handleDismissCancelModal}
+                  disabled={isCancelling}
+                >
+                  Keep Appointment
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel-modal-confirm"
+                  onClick={handleConfirmCancellation}
+                  disabled={isCancelling}
+                  aria-busy={isCancelling}
+                >
+                  {isCancelling ? (
+                    <>
+                      <FiRefreshCw className="spin" size={15} />
+                      <span>Cancelling...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiXCircle size={15} />
+                      <span>Confirm Cancellation</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

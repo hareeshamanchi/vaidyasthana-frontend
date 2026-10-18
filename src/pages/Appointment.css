@@ -8,6 +8,7 @@
   padding: 2rem 1.5rem 4rem;
   width: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ==========================================================================
@@ -227,10 +228,134 @@
   color: var(--text-muted);
 }
 
+/* View Tab Filter Controls */
+.appointment-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.view-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.view-tab-btn:hover {
+  background: #f1f5f9;
+  color: var(--navy-900);
+  border-color: var(--border-medium);
+}
+
+.view-tab-btn.active {
+  background: var(--navy-900);
+  color: #ffffff;
+  border-color: var(--navy-900);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.tab-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.view-tab-btn.active .tab-count-pill {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+/* Appointment Subgroups (Upcoming vs Past) */
+.appointment-subgroup {
+  margin-bottom: 2.5rem;
+  min-width: 0;
+}
+
+.appointment-subgroup:last-child {
+  margin-bottom: 0;
+}
+
+.subgroup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
+}
+
+.subgroup-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.subgroup-title-row h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.subgroup-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+}
+
+.subgroup-badge.upcoming {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.subgroup-badge.past {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.subgroup-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .appointments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
+  align-items: stretch;
 }
 
 .appointment-card {
@@ -241,6 +366,8 @@
   flex-direction: column;
   transition: all var(--transition-fast);
   background: #ffffff;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .appointment-card:hover {
@@ -379,26 +506,50 @@
   padding-top: 1rem;
 }
 
+.patient-card-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1rem;
+  margin-top: auto;
+}
+
+.btn-card-cancel-action,
 .btn-cancel-slot {
-  width: 100%;
-  background: transparent;
-  border: 1px solid var(--border-medium);
-  color: var(--status-danger);
-  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  color: #dc2626;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
   transition: all var(--transition-fast);
+  width: auto;
+  min-height: 36px;
+  box-sizing: border-box;
 }
 
-.btn-cancel-slot:hover {
-  background: var(--status-danger-bg);
-  border-color: var(--status-danger-border);
+.btn-card-cancel-action:hover:not(:disabled),
+.btn-cancel-slot:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #b91c1c;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.12);
+}
+
+.btn-card-cancel-action:focus-visible,
+.btn-cancel-slot:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
 }
 
 .appt-terminal-badge {
@@ -458,6 +609,28 @@
   margin-bottom: 1.5rem;
 }
 
+.empty-appointments-box.sub-empty {
+  padding: 2.25rem 1.5rem;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-medium);
+  margin: 1rem 0;
+}
+
+.empty-appointments-box.sub-empty .empty-cal-icon {
+  margin-bottom: 0.75rem;
+}
+
+.empty-appointments-box.sub-empty h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.empty-appointments-box.sub-empty p {
+  font-size: 0.88rem;
+  margin-bottom: 0;
+}
+
 .btn-book-first {
   background: var(--blue-600);
   color: #ffffff;
@@ -469,6 +642,256 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+}
+
+/* ==========================================================================
+   Accessible Cancellation Confirmation Modal
+   ========================================================================== */
+.cancellation-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1.25rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.cancellation-modal-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.cancellation-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #fafaf9;
+}
+
+.cancel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cancel-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+  flex-shrink: 0;
+}
+
+.cancellation-modal-header h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin: 0 0 0.15rem 0;
+  line-height: 1.2;
+}
+
+.cancel-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.cancel-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.cancel-modal-close-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: var(--navy-900);
+}
+
+.cancellation-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.cancel-prompt-message {
+  font-size: 0.95rem;
+  color: var(--navy-900);
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cancel-appt-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cancel-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+}
+
+.cancel-summary-row .summary-icon {
+  color: var(--teal-600);
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.summary-val {
+  color: var(--navy-900);
+  font-size: 0.92rem;
+}
+
+.summary-dept {
+  font-size: 0.8rem;
+  color: var(--teal-700);
+  font-weight: 500;
+}
+
+.cancel-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.cancel-modal-error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cancel-modal-error-alert .error-icon {
+  flex-shrink: 0;
+}
+
+.cancel-warning-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.cancellation-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.15rem 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+  background: #f8fafc;
+}
+
+.btn-cancel-modal-keep {
+  padding: 0.6rem 1.15rem;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  color: var(--navy-800);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-cancel-modal-keep:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-cancel-modal-keep:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+.btn-cancel-modal-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.25rem;
+  background: #dc2626;
+  border: 1px solid #b91c1c;
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.25);
+}
+
+.btn-cancel-modal-confirm:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #991b1b;
+}
+
+.btn-cancel-modal-confirm:disabled,
+.btn-cancel-modal-keep:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel-modal-confirm:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -1361,6 +1784,20 @@
     width: 100%;
   }
 
+  .patient-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-card-cancel-action,
+  .btn-cancel-slot {
+    width: 100%;
+    justify-content: center;
+    align-self: stretch;
+  }
+
   .btn-action-confirm,
   .btn-action-reject,
   .btn-action-start,
@@ -1375,6 +1812,28 @@
 
   .btn-action-vault {
     margin-left: 0;
+  }
+
+  /* Cancellation Modal Mobile */
+  .cancellation-modal-card {
+    max-width: 100%;
+    margin: 0.5rem;
+    border-radius: var(--radius-md);
+  }
+
+  .cancel-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cancellation-modal-footer {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .btn-cancel-modal-keep,
+  .btn-cancel-modal-confirm {
+    width: 100%;
+    justify-content: center;
   }
 
   /* Modal Form Mobile */
