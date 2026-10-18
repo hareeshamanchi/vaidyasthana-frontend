@@ -154,15 +154,28 @@ export const doctorAPI = {
 };
 
 // ==========================================
-// Admin API (Doctor Verification & Platform Metrics)
+// Admin & Super Admin API
 // ==========================================
 export const adminAPI = {
+  getOverview: () => api.get("/api/admin/overview"),
+  getStats: () => api.get("/api/admin/stats"),
+  getUsers: (params) => api.get("/api/admin/users", { params }),
+  getUserDetails: (id) => api.get(`/api/admin/users/${id}`),
+  updateUserStatus: (id, data) => api.patch(`/api/admin/users/${id}/status`, data),
   getPendingDoctors: () => api.get("/api/admin/doctors/pending-verification"),
   getAllDoctors: (params) => api.get("/api/admin/doctors", { params }),
   verifyDoctor: (id, data) => api.post(`/api/admin/doctors/${id}/verify`, data),
   getDocumentUrl: (id, docIndex) =>
     api.get(`/api/admin/doctors/${id}/document/${docIndex}`),
-  getStats: () => api.get("/api/admin/stats"),
+  getAppointments: (params) => api.get("/api/admin/appointments", { params }),
+  updateAppointment: (id, data) => api.patch(`/api/admin/appointments/${id}`, data),
+  getReports: (params) => api.get("/api/admin/reports", { params }),
+  getSecurityOverview: () => api.get("/api/admin/security/overview"),
+  getAuditLogs: (params) => api.get("/api/admin/security/audit-logs", { params }),
+  getSystemHealth: () => api.get("/api/admin/system-health"),
+  getSupportQueries: (params) => api.get("/api/admin/support", { params }),
+  updateSupportQuery: (id, data) => api.patch(`/api/admin/support/${id}`, data),
+  getAdminNotifications: () => api.get("/api/admin/notifications"),
 };
 
 // ==========================================

@@ -65,8 +65,8 @@ function Navbar() {
       navigate("/dashboard");
     } else if (data.user && data.user.role === "doctor") {
       navigate("/doctor-dashboard");
-    } else if (data.user && data.user.role === "admin") {
-      navigate("/admin-dashboard");
+    } else if (data.user && (data.user.role === "admin" || data.user.role === "superadmin")) {
+      navigate("/admin");
     }
   };
 
@@ -76,7 +76,7 @@ function Navbar() {
 
   const isDoctor = user && user.role === "doctor";
   const isPatient = user && (user.role === "patient" || !user.role);
-  const isAdmin = user && user.role === "admin";
+  const isAdmin = user && (user.role === "admin" || user.role === "superadmin");
 
   const getUserInitials = (name) => {
     if (!name) return "U";
