@@ -241,4 +241,12 @@ export const pushAPI = {
   testPush: () => api.post("/api/push/test"),
 };
 
+// ==========================================
+// Translation API
+// ==========================================
+export const translationAPI = {
+  translate: (data) => api.post("/api/translate", data),
+  getLanguages: () => api.get("/api/translate/languages"),
+};
+
 export default api;

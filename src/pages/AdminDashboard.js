@@ -31,7 +31,6 @@ import {
   FiRotateCcw,
 } from "react-icons/fi";
 import { useLanguage } from "../context/LanguageContext";
-import { translateStatus } from "../i18n";
 import "./AdminDashboard.css";
 
 const REPORT_CATEGORIES = [

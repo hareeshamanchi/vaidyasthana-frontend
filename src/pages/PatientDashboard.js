@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext, useCallback, useRef, useMemo } from "react";
 import { useLanguage } from "../context/LanguageContext";
-import { translateCategory, translateStatus } from "../i18n";
+import { translateCategory } from "../i18n";
 import "./PatientDashboard.css";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";

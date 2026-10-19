@@ -16,15 +16,18 @@ import {
   FiUploadCloud,
   FiArrowRight,
   FiHeart,
+  FiGlobe,
 } from "react-icons/fi";
 
 const AIAnalysis = () => {
-  const { t, translateCategory, translateStatus } = useLanguage();
+  const { t, translateCategory, translateStatus, language, translateClinicalText } = useLanguage();
   const [reports, setReports] = useState([]);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzingId, setAnalyzingId] = useState(null);
   const [statusMsg, setStatusMsg] = useState("");
+  const [translationData, setTranslationData] = useState({});
+  const [translatingReport, setTranslatingReport] = useState(false);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -71,6 +74,50 @@ const AIAnalysis = () => {
       }
     } catch (err) {
       console.error("Could not view report:", err);
+    }
+  };
+
+  const handleTranslateSummary = async (reportId, text) => {
+    if (!text) return;
+    if (translationData[reportId]?.show) {
+      setTranslationData((prev) => ({
+        ...prev,
+        [reportId]: { ...prev[reportId], show: false },
+      }));
+      return;
+    }
+
+    if (translationData[reportId]?.translatedText) {
+      setTranslationData((prev) => ({
+        ...prev,
+        [reportId]: { ...prev[reportId], show: true },
+      }));
+      return;
+    }
+
+    setTranslatingReport(true);
+    try {
+      const targetLang = language === "en" ? "te" : language;
+      const res = await translateClinicalText({
+        text,
+        targetLanguage: targetLang,
+        context: "clinical_report",
+      });
+      setTranslationData((prev) => ({
+        ...prev,
+        [reportId]: {
+          show: true,
+          originalText: text,
+          translatedText: res.translatedText,
+          preservedTerms: res.preservedTerms || [],
+          disclaimer: res.disclaimer,
+          targetLanguage: targetLang,
+        },
+      }));
+    } catch (err) {
+      console.error("Translation failed:", err);
+    } finally {
+      setTranslatingReport(false);
     }
   };
 
@@ -244,16 +291,137 @@ const AIAnalysis = () => {
 
               {/* Section 1: Plain-Language Summary */}
               <section className="dossier-sub-section summary-section">
-                <div className="section-title-wrap">
-                  <FiCpu className="sec-icon blue" />
-                  <h3>{t("aiAnalysis.summaryTitle", "Plain-Language Clinical Summary")}</h3>
+                <div className="section-title-wrap" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <FiCpu className="sec-icon blue" />
+                    <h3>{t("aiAnalysis.summaryTitle", "Plain-Language Clinical Summary")}</h3>
+                  </div>
+                  {selectedReport.aiAnalysis?.summary && (
+                    <button
+                      type="button"
+                      className="btn-translate-clinical"
+                      onClick={() => handleTranslateSummary(selectedReport._id, selectedReport.aiAnalysis.summary)}
+                      disabled={translatingReport}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        color: "#0369a1",
+                        background: "#f0f9ff",
+                        border: "1px solid #bae6fd",
+                        borderRadius: "20px",
+                        padding: "4px 12px",
+                        cursor: "pointer",
+                      }}
+                      title="AI-assisted translation preserving medical terms"
+                    >
+                      <FiGlobe size={14} />
+                      {translatingReport
+                        ? t("common.translating", "Translating...")
+                        : translationData[selectedReport._id]?.show
+                        ? t("aiAnalysis.hideTranslation", "Hide Translation")
+                        : t("aiAnalysis.translateSummary", "Translate (AI-Assisted)")}
+                    </button>
+                  )}
                 </div>
+
+                {/* Original clinical summary - always preserved */}
                 <div className="summary-box-card">
+                  <div className="source-label" style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748b", marginBottom: "0.35rem" }}>
+                    {t("aiAnalysis.originalReportText", "Original Clinical Summary (English):")}
+                  </div>
                   <p>
                     {selectedReport.aiAnalysis?.summary ||
                       t("aiAnalysis.summaryDefault", "Detailed clinical summary is being generated by Azure OpenAI. If newly configured, click 'Re-run AI Analysis' above.")}
                   </p>
                 </div>
+
+                {/* AI-Assisted Non-Destructive Translation Display */}
+                {translationData[selectedReport._id]?.show && (
+                  <div
+                    className="translated-summary-box"
+                    style={{
+                      marginTop: "1rem",
+                      background: "#f8fafc",
+                      border: "1px solid #cbd5e1",
+                      borderLeft: "4px solid #0284c7",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px", marginBottom: "0.5rem" }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          background: "#e0f2fe",
+                          color: "#0369a1",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <FiShield size={12} /> {t("aiAnalysis.aiTranslationBadge", "AI-Assisted Translation (Non-diagnostic)")}
+                      </span>
+                      {translationData[selectedReport._id].preservedTerms?.length > 0 && (
+                        <span style={{ fontSize: "0.75rem", color: "#475569" }}>
+                          {t("aiAnalysis.preservedCount", "{count} Clinical Term(s) Preserved", { count: translationData[selectedReport._id].preservedTerms.length })}
+                        </span>
+                      )}
+                    </div>
+
+                    <p style={{ fontSize: "0.95rem", lineHeight: "1.6", color: "#1e293b", margin: "0.5rem 0" }}>
+                      {translationData[selectedReport._id].translatedText}
+                    </p>
+
+                    {translationData[selectedReport._id].preservedTerms?.length > 0 && (
+                      <div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b" }}>
+                          {t("aiAnalysis.preservedTermsTitle", "Preserved Clinical Entities:")}
+                        </span>
+                        {translationData[selectedReport._id].preservedTerms.slice(0, 8).map((term, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: "0.72rem",
+                              background: "#f1f5f9",
+                              border: "1px solid #e2e8f0",
+                              color: "#0f172a",
+                              padding: "1px 6px",
+                              borderRadius: "4px",
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        marginTop: "0.75rem",
+                        paddingTop: "0.5rem",
+                        borderTop: "1px solid #e2e8f0",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "6px",
+                        fontSize: "0.75rem",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      <FiAlertTriangle size={14} style={{ flexShrink: 0, marginTop: "2px", color: "#f59e0b" }} />
+                      <span>
+                        {translationData[selectedReport._id].disclaimer ||
+                          t("aiAnalysis.transDisclaimer", "Medical Translation Disclaimer: This translation is AI-assisted for patient convenience and does not replace the original clinical record. Consult your physician.")}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* Section 2: Flagged Biomarkers */}

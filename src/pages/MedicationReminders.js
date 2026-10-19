@@ -19,7 +19,6 @@ import {
   unsubscribeUserFromPush,
 } from "../utils/pushManager";
 import { useLanguage } from "../context/LanguageContext";
-import { translateStatus } from "../i18n";
 import "./MedicationReminders.css";
 import {
   FiClock,
@@ -801,7 +800,7 @@ const MedicationReminders = () => {
                 onChange={(e) => handleToggleSound(e.target.checked)}
               />
               <span className="med-toggle-slider" aria-hidden="true"></span>
-              <span className="med-toggle-text">{soundSettings.soundEnabled ? t("medications.soundOn", "Sound ON") : t("medications.soundOff", "Sound Muted")}</span>
+              <span className="med-toggle-text">{soundSettings.soundEnabled ? t("medications.soundOn", "Sound On") : t("medications.soundOff", "Sound Off")}</span>
             </label>
 
             {soundSettings.soundEnabled && (

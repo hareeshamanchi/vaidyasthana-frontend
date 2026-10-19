@@ -403,7 +403,6 @@ function Navbar() {
                 <span className="brand-tagline">{t("common.tagline", "Clinical Health Records")}</span>
               </div>
               <div className="mobile-drawer-header-actions" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <LanguageToggle compact={true} />
                 <button
                   className="close-drawer-btn"
                   onClick={closeMobileMenu}

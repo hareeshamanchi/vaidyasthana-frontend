@@ -1733,7 +1733,7 @@ const Appointment = () => {
                     <FiAlertCircle size={22} />
                   </div>
                   <div>
-                    <h3 id="cancel-dialog-title">{t("appointment.cancelModalTitle", "Cancel Clinical Appointment")}</h3>
+                    <h3 id="cancel-dialog-title">{t("appointment.cancelModalTitle", "Cancel Appointment?")}</h3>
                     <p className="cancel-subtitle">Review consultation details prior to confirmation</p>
                   </div>
                 </div>
@@ -1820,6 +1820,7 @@ const Appointment = () => {
                   onClick={handleConfirmCancellation}
                   disabled={isCancelling}
                   aria-busy={isCancelling}
+                  aria-label="Confirm cancellation"
                 >
                   {isCancelling ? (
                     <>

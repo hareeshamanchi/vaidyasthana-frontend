@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react";
 import { useLanguage } from "../context/LanguageContext";
-import { translateCategory, translateStatus } from "../i18n";
 import "./DoctorDashboard.css";
 import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";

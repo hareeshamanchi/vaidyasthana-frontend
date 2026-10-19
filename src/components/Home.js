@@ -271,7 +271,7 @@ const Home = () => {
           <div className="hero-text-content">
             <div className="hero-trust-badge">
               <FiShield className="trust-icon" />
-              <span>{t("home.heroBadge", "Enterprise Medical Intelligence & Patient Health Records")}</span>
+              <span>{t("home.heroBadge", "Azure Cloud Vault & Clinical AI Intelligence")}</span>
             </div>
 
             <h1 className="hero-main-title">
