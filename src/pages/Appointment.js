@@ -32,6 +32,71 @@ import {
   FiMail,
 } from "react-icons/fi";
 
+const CLINIC_TIMEZONE = "Asia/Kolkata";
+
+export const getClinicDateParts = (tz = CLINIC_TIMEZONE) => {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const map = {};
+    for (const p of parts) map[p.type] = p.value;
+    let hour = parseInt(map.hour, 10);
+    if (hour === 24) hour = 0;
+    const minute = parseInt(map.minute, 10);
+    const dateStr = `${map.year}-${map.month}-${map.day}`;
+    return {
+      dateStr,
+      currentMinutes: hour * 60 + minute,
+      timeZone: tz,
+    };
+  } catch (e) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return {
+      dateStr: `${y}-${m}-${d}`,
+      currentMinutes: now.getHours() * 60 + now.getMinutes(),
+      timeZone: tz,
+    };
+  }
+};
+
+export const parseTimeSlotToMinutes = (timeSlotStr) => {
+  if (!timeSlotStr || typeof timeSlotStr !== "string") return -1;
+  const match = timeSlotStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return -1;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const modifier = match[3].toUpperCase();
+  if (modifier === "PM" && hours < 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
+
+export const checkIsDateInPast = (dateStr, tz = CLINIC_TIMEZONE) => {
+  if (!dateStr) return false;
+  const nowClinic = getClinicDateParts(tz);
+  const cleanDate = typeof dateStr === "string" ? dateStr.substring(0, 10) : "";
+  return cleanDate < nowClinic.dateStr;
+};
+
+export const checkIsDateToday = (dateStr, tz = CLINIC_TIMEZONE) => {
+  if (!dateStr) return false;
+  const nowClinic = getClinicDateParts(tz);
+  const cleanDate = typeof dateStr === "string" ? dateStr.substring(0, 10) : "";
+  return cleanDate === nowClinic.dateStr;
+};
+
 const Appointment = () => {
   const { user } = useContext(AuthContext);
 
@@ -75,44 +140,30 @@ const Appointment = () => {
   const [savingProfile, setSavingProfile] = useState(false);
 
   const getTodayISO = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return getClinicDateParts(CLINIC_TIMEZONE).dateStr;
   };
 
   // Helper to determine if an appointment date/time is in the past
   const checkIsPast = (appointmentDate, timeSlot) => {
     if (!appointmentDate) return false;
-    const d = new Date(appointmentDate);
-    if (isNaN(d.getTime())) return false;
+    const cleanDate = typeof appointmentDate === "string"
+      ? appointmentDate.substring(0, 10)
+      : (appointmentDate instanceof Date && !isNaN(appointmentDate.getTime())
+        ? appointmentDate.toISOString().substring(0, 10)
+        : "");
+    if (!cleanDate) return false;
 
-    const now = new Date();
-    const y = d.getUTCFullYear();
-    const m = d.getUTCMonth();
-    const day = d.getUTCDate();
+    const nowClinic = getClinicDateParts(CLINIC_TIMEZONE);
 
-    const apptLocalMidnight = new Date(y, m, day, 0, 0, 0, 0).getTime();
-    const todayLocalMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
-
-    if (apptLocalMidnight < todayLocalMidnight) {
+    if (cleanDate < nowClinic.dateStr) {
       return true;
     }
 
-    if (apptLocalMidnight === todayLocalMidnight && timeSlot) {
+    if (cleanDate === nowClinic.dateStr && timeSlot) {
       const slotStartStr = String(timeSlot).split("-")[0]?.trim();
-      const match = slotStartStr?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      if (match) {
-        let hours = parseInt(match[1], 10);
-        const minutes = parseInt(match[2], 10);
-        const modifier = match[3].toUpperCase();
-        if (modifier === "PM" && hours < 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-        const slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
-        if (slotTime.getTime() <= now.getTime()) {
-          return true;
-        }
+      const slotMins = parseTimeSlotToMinutes(slotStartStr);
+      if (slotMins !== -1 && slotMins <= nowClinic.currentMinutes) {
+        return true;
       }
     }
 
@@ -157,7 +208,7 @@ const Appointment = () => {
     setLoadingSlots(true);
     setSlotsError("");
     try {
-      const res = await appointmentsAPI.getSlots(docId, dateStr);
+      const res = await appointmentsAPI.getSlots(docId, dateStr, CLINIC_TIMEZONE);
       const slots = res.data?.slots || [];
       setSlotsData(slots);
     } catch (err) {
@@ -168,6 +219,47 @@ const Appointment = () => {
       setLoadingSlots(false);
     }
   }, []);
+
+  // Process and validate slots against current clinic time and date
+  const processedSlots = useMemo(() => {
+    void currentTime; // Dependency ensures re-evaluation every minute as time advances
+    if (!slotsData || slotsData.length === 0) return [];
+    const nowClinic = getClinicDateParts(CLINIC_TIMEZONE);
+    const isToday = checkIsDateToday(formData.appointmentDate, CLINIC_TIMEZONE);
+    const isPastDate = checkIsDateInPast(formData.appointmentDate, CLINIC_TIMEZONE);
+
+    return slotsData.map((slot) => {
+      const slotMins = parseTimeSlotToMinutes(slot.timeSlot);
+      const isElapsed = isPastDate || (isToday && slotMins !== -1 && slotMins <= nowClinic.currentMinutes);
+      const isPast = slot.isPast || isElapsed;
+      const isBooked = Boolean(slot.isBooked);
+      const isAvailable = Boolean(slot.isAvailable) && !isPast && !isBooked;
+
+      let reason = slot.reason || "Available";
+      if (isPast) {
+        reason = isPastDate ? "Appointment date has passed" : "Time slot has passed";
+      } else if (isBooked) {
+        reason = "Booked by another patient";
+      }
+
+      return {
+        ...slot,
+        isPast,
+        isBooked,
+        isAvailable,
+        reason,
+      };
+    });
+  }, [slotsData, formData.appointmentDate, currentTime]);
+
+  // Automatically clear selected timeSlot if it becomes invalid or unavailable
+  useEffect(() => {
+    if (!formData.timeSlot) return;
+    const matching = processedSlots.find((s) => s.timeSlot === formData.timeSlot);
+    if (!matching || !matching.isAvailable || matching.isPast || matching.isBooked) {
+      setFormData((prev) => ({ ...prev, timeSlot: "" }));
+    }
+  }, [processedSlots, formData.timeSlot]);
 
   // 2. Fetch Verified Doctors from Atlas (for patient booking)
   const fetchDoctors = useCallback(async () => {
@@ -409,24 +501,73 @@ const Appointment = () => {
     }
   };
 
-  const handleBookSubmit = async (e) => {
-    e.preventDefault();
+  const handleOpenBookingModal = () => {
+    setShowBookModal(true);
+    const currentDate = formData.appointmentDate || getTodayISO();
+    setFormData((prev) => ({
+      ...prev,
+      appointmentDate: prev.appointmentDate || currentDate,
+      timeSlot: "",
+    }));
+    fetchDoctors();
+    if (formData.doctorId) {
+      fetchSlots(formData.doctorId, formData.appointmentDate || currentDate);
+    }
+  };
+
+  const getBookingValidation = () => {
+    if (submitting) {
+      return { isValid: false, reason: "Reserving slot, please wait..." };
+    }
     if (!formData.doctorId) {
-      alert("Please select a doctor.");
-      return;
+      return { isValid: false, reason: "Please select a healthcare specialist." };
     }
     if (!formData.appointmentDate) {
-      alert("Please choose an appointment date.");
-      return;
+      return { isValid: false, reason: "Please choose an appointment date." };
+    }
+    if (checkIsDateInPast(formData.appointmentDate, CLINIC_TIMEZONE)) {
+      return { isValid: false, reason: "Selected date is in the past. Please select today or a future date." };
+    }
+    if (!formData.consultationType) {
+      return { isValid: false, reason: "Please select a consultation mode." };
+    }
+    if (loadingSlots) {
+      return { isValid: false, reason: "Calculating doctor slot availability..." };
     }
     if (!formData.timeSlot) {
-      alert("Please select an available time slot.");
-      return;
+      return { isValid: false, reason: "Please select an available time slot." };
     }
+    const matchingSlot = processedSlots.find((s) => s.timeSlot === formData.timeSlot);
+    if (!matchingSlot) {
+      return { isValid: false, reason: "Selected time slot is not available for this date." };
+    }
+    if (matchingSlot.isPast) {
+      return { isValid: false, reason: "Selected time slot has already passed. Please select an upcoming slot." };
+    }
+    if (matchingSlot.isBooked || !matchingSlot.isAvailable) {
+      return { isValid: false, reason: "Selected time slot is already booked. Please choose another." };
+    }
+    const hasPhone = Boolean(
+      (user?.phoneNumber && user.phoneNumber.trim()) ||
+      (patientPhone && patientPhone.replace(/[\s-]/g, "").length >= 10)
+    );
+    const hasAddress = Boolean(
+      (user?.address && user.address.trim()) ||
+      (patientAddress && patientAddress.trim().length >= 5)
+    );
+    if (!hasPhone || !hasAddress) {
+      return { isValid: false, reason: "Please complete your mobile phone number and address." };
+    }
+    return { isValid: true, reason: "" };
+  };
 
-    // Check client profile completeness first
-    if (!user?.phoneNumber && !patientPhone) {
-      setProfileIncomplete(true);
+  const { isValid: isBookingValid, reason: bookingValidationReason } = getBookingValidation();
+
+  const handleBookSubmit = async (e) => {
+    e.preventDefault();
+    const validation = getBookingValidation();
+    if (!validation.isValid) {
+      setErrorMessage(validation.reason);
       return;
     }
 
@@ -434,6 +575,19 @@ const Appointment = () => {
     setErrorMessage("");
 
     try {
+      const cleanPhone = patientPhone.replace(/[\s-]/g, "");
+      if ((!user?.phoneNumber || !user?.address) && cleanPhone && patientAddress) {
+        try {
+          await authAPI.updateProfile({
+            phoneNumber: cleanPhone,
+            address: patientAddress.trim(),
+          });
+          setProfileIncomplete(false);
+        } catch (profErr) {
+          console.warn("Could not pre-save profile before appointment:", profErr);
+        }
+      }
+
       const consultationReason = formData.reason || formData.notes || "";
       await appointmentsAPI.createAppointment({
         doctorId: formData.doctorId,
@@ -446,6 +600,7 @@ const Appointment = () => {
         notes: consultationReason,
         reason: consultationReason,
         patientName: user?.name || "Patient",
+        timezone: CLINIC_TIMEZONE,
       });
 
       setStatusMessage(
@@ -468,7 +623,14 @@ const Appointment = () => {
           err.response?.data?.message ||
             "Slot Conflict: This time slot was just booked by another patient! Please select another available slot."
         );
-        // Refresh slots immediately
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
+        fetchSlots(formData.doctorId, formData.appointmentDate);
+      } else if (err.response?.status === 400 && err.response?.data?.message?.includes("passed")) {
+        alert(
+          err.response?.data?.message ||
+            "The selected time slot has already passed. Please select an upcoming slot."
+        );
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
         fetchSlots(formData.doctorId, formData.appointmentDate);
       } else if (err.response?.data?.profileIncomplete) {
         setProfileIncomplete(true);
@@ -924,17 +1086,7 @@ const Appointment = () => {
         ) : (
           <button
             className="btn-book-new"
-            onClick={() => {
-              setShowBookModal(true);
-              const currentDate = formData.appointmentDate || getTodayISO();
-              if (!formData.appointmentDate) {
-                setFormData((prev) => ({ ...prev, appointmentDate: currentDate, timeSlot: "" }));
-              }
-              fetchDoctors();
-              if (formData.doctorId) {
-                fetchSlots(formData.doctorId, currentDate);
-              }
-            }}
+            onClick={handleOpenBookingModal}
             type="button"
           >
             <FiPlus /> Book New Appointment
@@ -1164,17 +1316,7 @@ const Appointment = () => {
             ) : (
               <button
                 className="btn-book-first"
-                onClick={() => {
-                  setShowBookModal(true);
-                  const currentDate = formData.appointmentDate || getTodayISO();
-                  if (!formData.appointmentDate) {
-                    setFormData((prev) => ({ ...prev, appointmentDate: currentDate, timeSlot: "" }));
-                  }
-                  fetchDoctors();
-                  if (formData.doctorId) {
-                    fetchSlots(formData.doctorId, currentDate);
-                  }
-                }}
+                onClick={handleOpenBookingModal}
                 type="button"
               >
                 <FiPlus /> Book Consultation Now
@@ -1398,9 +1540,10 @@ const Appointment = () => {
               {/* Date & Mode Selection */}
               <div className="form-row-2">
                 <div className="form-group">
-                  <label>Appointment Date *</label>
+                  <label htmlFor="appointmentDateInput">Appointment Date *</label>
                   <input
                     type="date"
+                    id="appointmentDateInput"
                     name="appointmentDate"
                     required
                     value={formData.appointmentDate}
@@ -1442,30 +1585,36 @@ const Appointment = () => {
                   </p>
                 ) : slotsError ? (
                   <p className="slot-error-text">{slotsError}</p>
-                ) : slotsData.length === 0 && !loadingSlots ? (
+                ) : processedSlots.length === 0 && !loadingSlots ? (
                   <p className="slot-hint-text">No time slots found for this date.</p>
                 ) : (
-                  <div className="slots-grid-container">
-                    {slotsData.map((slot, idx) => {
-                      const isSelected = formData.timeSlot === slot.timeSlot;
+                  <div
+                    className="slots-grid-container"
+                    role="group"
+                    aria-label="Available appointment time slots"
+                  >
+                    {processedSlots.map((slot, idx) => {
                       const isBooked = slot.isBooked;
-                      const isAvailable = slot.isAvailable;
                       const isPast = slot.isPast;
+                      const isAvailable = slot.isAvailable && !isPast && !isBooked;
+                      const isSelected = formData.timeSlot === slot.timeSlot && isAvailable;
 
                       return (
                         <button
                           key={idx}
                           type="button"
                           disabled={!isAvailable}
+                          aria-disabled={!isAvailable}
+                          tabIndex={!isAvailable ? -1 : 0}
                           className={`slot-chip ${
-                            isSelected
-                              ? "selected"
-                              : isPast
-                              ? "unavailable"
+                            isPast
+                              ? "unavailable passed"
                               : isBooked
                               ? "occupied"
                               : !isAvailable
                               ? "unavailable"
+                              : isSelected
+                              ? "selected"
                               : "available"
                           }`}
                           onClick={() => {
@@ -1481,7 +1630,7 @@ const Appointment = () => {
                           <FiClock className="chip-icon" />
                           <span className="chip-time">{slot.timeSlot}</span>
                           {isPast ? (
-                            <span className="chip-badge unavailable">Passed</span>
+                            <span className="chip-badge unavailable passed">Passed</span>
                           ) : isBooked ? (
                             <span className="chip-badge occupied">Booked</span>
                           ) : isSelected ? (
@@ -1509,6 +1658,13 @@ const Appointment = () => {
                 />
               </div>
 
+              {!isBookingValid && !submitting && (
+                <div className="booking-validation-hint" role="status" aria-live="polite">
+                  <FiAlertCircle className="hint-icon" />
+                  <span>{bookingValidationReason}</span>
+                </div>
+              )}
+
               <div className="dialog-buttons-row">
                 <button
                   type="button"
@@ -1520,13 +1676,8 @@ const Appointment = () => {
                 <button
                   type="submit"
                   className="btn-dialog-book"
-                  disabled={
-                    submitting ||
-                    !formData.doctorId ||
-                    !formData.appointmentDate ||
-                    !formData.timeSlot ||
-                    profileIncomplete
-                  }
+                  disabled={!isBookingValid || submitting}
+                  title={!isBookingValid ? bookingValidationReason : "Confirm & Schedule Appointment"}
                 >
                   {submitting ? "Reserving Slot..." : "Confirm & Schedule Appointment"}
                 </button>

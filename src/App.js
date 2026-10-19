@@ -19,6 +19,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VideoConsultation from "./pages/VideoConsultation";
 import HealthTimeline from "./pages/HealthTimeline";
 import MedicationReminders from "./pages/MedicationReminders";
+import MedicationAlarmListener from "./components/MedicationAlarmListener";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
       <ScrollToTop />
       <div className="App">
         <Navbar />
+        <MedicationAlarmListener />
 
         <main className="main-content" id="main-content" role="main">
           <Routes>

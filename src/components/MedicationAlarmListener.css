@@ -1,0 +1,186 @@
+/* ==========================================================================
+   Medication Alarm Floating Toast (Global Cross-Page Reminder)
+   ========================================================================== */
+
+.med-alarm-floating-toast {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 9999;
+  background: #ffffff;
+  border: 1px solid #fda4af;
+  border-left: 5px solid #e11d48;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: 440px;
+  animation: medToastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes medToastSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.med-floating-icon-wrap {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: #ffe4e6;
+  color: #e11d48;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  animation: medIconPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes medIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.med-floating-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.med-floating-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.med-floating-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #9f1239;
+}
+
+.med-floating-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #ffe4e6;
+  color: #e11d48;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+
+.med-floating-text {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-floating-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.btn-floating-take {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-floating-take:hover {
+  background: #047857;
+}
+
+.btn-floating-snooze {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-floating-snooze:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-floating-view {
+  display: inline-flex;
+  align-items: center;
+  background: #ede9fe;
+  color: #4f46e5;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-floating-view:hover {
+  background: #ddd6fe;
+}
+
+.btn-floating-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: color 0.15s ease;
+}
+
+.btn-floating-dismiss:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .med-alarm-floating-toast {
+    top: auto;
+    bottom: 20px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    flex-wrap: wrap;
+  }
+}

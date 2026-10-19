@@ -1398,6 +1398,64 @@
   color: #0f172a;
 }
 
+.med-alarm-settings-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  padding-top: 1rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.med-setting-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.med-setting-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.med-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.med-voice-select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.med-voice-select:focus {
+  border-color: #6366f1;
+  background-color: #ffffff;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Background Push Notification Controls Card */
 .med-push-control-card {
   background: #ffffff;

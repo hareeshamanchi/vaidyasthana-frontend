@@ -266,4 +266,114 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
     // Modal stays open so user can read the error and keep appointment
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  test("booking modal disables elapsed time slots with Passed badge and prevents their selection", async () => {
+    appointmentsAPI.getSlots.mockResolvedValue({
+      data: {
+        success: true,
+        slots: [
+          { timeSlot: "08:00 AM", isAvailable: false, isPast: true, isBooked: false, reason: "Time slot has passed" },
+          { timeSlot: "08:30 AM", isAvailable: false, isPast: true, isBooked: false, reason: "Time slot has passed" },
+          { timeSlot: "11:00 AM", isAvailable: true, isPast: false, isBooked: false, reason: "Available" },
+        ],
+      },
+    });
+
+    renderAppointmentPage();
+
+    const bookBtn = await screen.findByRole("button", { name: /book new appointment/i });
+    fireEvent.click(bookBtn);
+
+    const modal = await screen.findByRole("dialog");
+    expect(modal).toBeInTheDocument();
+
+    // Verify passed slot 08:00 AM is disabled and has Passed badge
+    const passedSlotBtn = await within(modal).findByRole("button", { name: /08:00 AM/i });
+    expect(passedSlotBtn).toBeDisabled();
+    expect(passedSlotBtn).toHaveClass("unavailable", "passed");
+    expect(within(passedSlotBtn).getByText("Passed")).toBeInTheDocument();
+
+    // Clicking a passed slot should not select it
+    fireEvent.click(passedSlotBtn);
+    expect(passedSlotBtn).not.toHaveClass("selected");
+
+    // Verify confirm button is disabled with message
+    const confirmBtn = within(modal).getByRole("button", { name: /confirm & schedule appointment/i });
+    expect(confirmBtn).toBeDisabled();
+    expect(within(modal).getByText(/please select an available time slot/i)).toBeInTheDocument();
+  });
+
+  test("selecting a valid future slot enables the Confirm & Schedule Appointment button", async () => {
+    appointmentsAPI.getSlots.mockResolvedValue({
+      data: {
+        success: true,
+        slots: [
+          { timeSlot: "08:00 AM", isAvailable: false, isPast: true, isBooked: false, reason: "Time slot has passed" },
+          { timeSlot: "07:30 PM", isAvailable: true, isPast: false, isBooked: false, reason: "Available" },
+        ],
+      },
+    });
+
+    renderAppointmentPage();
+
+    const bookBtn = await screen.findByRole("button", { name: /book new appointment/i });
+    fireEvent.click(bookBtn);
+
+    const modal = await screen.findByRole("dialog");
+    const validSlotBtn = await within(modal).findByRole("button", { name: /07:30 PM/i });
+    expect(validSlotBtn).not.toBeDisabled();
+
+    // Select the valid slot
+    fireEvent.click(validSlotBtn);
+    expect(validSlotBtn).toHaveClass("selected");
+
+    // Button should now be enabled
+    const confirmBtn = within(modal).getByRole("button", { name: /confirm & schedule appointment/i });
+    expect(confirmBtn).not.toBeDisabled();
+    expect(within(modal).queryByText(/please select an available time slot/i)).not.toBeInTheDocument();
+  });
+
+  test("changing appointment date clears the previously selected slot", async () => {
+    appointmentsAPI.getSlots.mockImplementation((docId, date) => {
+      if (date === "2028-12-01") {
+        return Promise.resolve({
+          data: {
+            success: true,
+            slots: [
+              { timeSlot: "07:30 PM", isAvailable: false, isPast: false, isBooked: true, reason: "Booked by another patient" },
+            ],
+          },
+        });
+      }
+      return Promise.resolve({
+        data: {
+          success: true,
+          slots: [
+            { timeSlot: "07:30 PM", isAvailable: true, isPast: false, isBooked: false, reason: "Available" },
+          ],
+        },
+      });
+    });
+
+    renderAppointmentPage();
+
+    const bookBtn = await screen.findByRole("button", { name: /book new appointment/i });
+    fireEvent.click(bookBtn);
+
+    const modal = await screen.findByRole("dialog");
+    const validSlotBtn = await within(modal).findByRole("button", { name: /07:30 PM/i });
+    fireEvent.click(validSlotBtn);
+    expect(validSlotBtn).toHaveClass("selected");
+
+    // Change the date
+    const dateInput = within(modal).getByLabelText(/appointment date \*/i);
+    fireEvent.change(dateInput, { target: { value: "2028-12-01" } });
+
+    // The slot should be cleared
+    await waitFor(() => {
+      const confirmBtn = within(modal).getByRole("button", { name: /confirm & schedule appointment/i });
+      expect(confirmBtn).toBeDisabled();
+    });
+  });
 });
+

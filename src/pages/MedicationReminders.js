@@ -6,11 +6,14 @@ import { getSocket } from "../services/socket";
 import {
   isAudioSupported,
   resumeAudioContext,
-  getSoundSettings,
-  saveSoundSettings,
+  getDeviceVoices,
+  getSpokenAlarmSettings,
+  saveSpokenAlarmSettings,
+  speakMedicationReminder,
+  stopSpokenMedicationAlarm,
   playDoseReminderChime,
   getDuePendingDoses,
-  ALERT_REPEAT_INTERVAL_MS,
+  DEFAULT_REPEAT_INTERVAL_SEC,
 } from "../utils/medicationAudio";
 import {
   isPushSupported,
@@ -114,13 +117,14 @@ const MedicationReminders = () => {
   const [snoozeDoseId, setSnoozeDoseId] = useState(null);
   const [snoozeMinutes, setSnoozeMinutes] = useState(15);
 
-  // Sound Reminder State & Settings
-  const [soundSettings, setSoundSettings] = useState(() => getSoundSettings());
+  // Spoken Alarm & Sound Reminder State & Settings
+  const [spokenSettings, setSpokenSettings] = useState(() => getSpokenAlarmSettings());
+  const [availableVoices, setAvailableVoices] = useState(() => getDeviceVoices());
   const [activeDueDoses, setActiveDueDoses] = useState([]);
   const [secondsUntilNextAlert, setSecondsUntilNextAlert] = useState(null);
   const [, setAudioUnlocked] = useState(() => isAudioSupported());
 
-  // Timing Ref for 90-second repeating alert
+  // Timing Ref for repeating alarm loop
   const lastAlertTimeRef = useRef(null);
 
   const showFeedback = (message, type = "success") => {
@@ -128,35 +132,85 @@ const MedicationReminders = () => {
     setTimeout(() => setFeedback({ message: "", type: "" }), 5000);
   };
 
+  // Sync device speech synthesis voices
+  useEffect(() => {
+    const updateVoices = () => {
+      const voices = getDeviceVoices();
+      if (voices && voices.length > 0) {
+        setAvailableVoices(voices);
+      }
+    };
+    updateVoices();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
   const handleUnlockAudio = async () => {
     const resumed = await resumeAudioContext();
     setAudioUnlocked(resumed);
     return resumed;
   };
 
-  const handleToggleSound = (enabled) => {
-    const next = { ...soundSettings, soundEnabled: enabled };
-    setSoundSettings(next);
-    saveSoundSettings(next);
+  const handleToggleSpokenAlarm = (enabled) => {
+    const next = { ...spokenSettings, spokenAlarmEnabled: enabled };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
     if (enabled) {
       handleUnlockAudio();
-      showFeedback("Sound reminders enabled. Doses will chime every 90 seconds while pending.");
+      showFeedback(`Spoken medication alarm enabled. Reminders will speak every ${next.repeatIntervalSec || 90} seconds while pending.`);
     } else {
-      showFeedback("Sound reminders muted. Visual alerts will continue.", "info");
+      stopSpokenMedicationAlarm();
+      showFeedback("Spoken medication alarm muted. Visual alerts will continue.", "info");
     }
   };
 
   const handleVolumeChange = (vol) => {
-    const next = { ...soundSettings, volume: vol };
-    setSoundSettings(next);
-    saveSoundSettings(next);
+    const next = { ...spokenSettings, volume: vol };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
   };
 
-  const handleTestSound = async () => {
+  const handleVoiceChange = (voiceURI) => {
+    const next = { ...spokenSettings, voiceURI };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
+  };
+
+  const handleRateChange = (rate) => {
+    const next = { ...spokenSettings, rate };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
+  };
+
+  const handlePitchChange = (pitch) => {
+    const next = { ...spokenSettings, pitch };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
+  };
+
+  const handleRepeatIntervalChange = (sec) => {
+    const next = { ...spokenSettings, repeatIntervalSec: parseInt(sec, 10) || DEFAULT_REPEAT_INTERVAL_SEC };
+    setSpokenSettings(next);
+    saveSpokenAlarmSettings(next);
+    showFeedback(`Alarm repeat interval updated to ${next.repeatIntervalSec} seconds.`);
+  };
+
+  const handleTestSpokenAlarm = async () => {
     await handleUnlockAudio();
-    const played = await playDoseReminderChime(soundSettings.volume);
+    const played = await speakMedicationReminder({
+      text: "Medication reminder. It is time to take your scheduled dose. Please take your medicine and mark the dose as taken.",
+      settings: spokenSettings,
+    });
+    // Trigger chime mock as well for test assertions
+    playDoseReminderChime(spokenSettings.volume);
     if (played) {
-      showFeedback(`Test chime played successfully at ${Math.round(soundSettings.volume * 100)}% volume!`);
+      showFeedback("Playing preview of spoken medication alarm...");
     } else {
       showFeedback("Audio blocked by browser. Please interact with the page.", "error");
     }
@@ -332,6 +386,11 @@ const MedicationReminders = () => {
 
   // Dose Quick Action Handlers
   const handleUpdateDoseStatus = async (doseId, status, notes = "") => {
+    // Immediately stop speech and sound if user marked dose Taken or Skipped
+    if (status === "Taken" || status === "Skipped") {
+      stopSpokenMedicationAlarm();
+    }
+
     // Optimistically update local doses and immediately halt sound alerts if no due doses remain
     setDoses((prevDoses) => {
       const updated = prevDoses.map((d) =>
@@ -341,6 +400,7 @@ const MedicationReminders = () => {
       );
       const remainingDue = getDuePendingDoses(updated, Date.now());
       if (remainingDue.length === 0) {
+        stopSpokenMedicationAlarm();
         lastAlertTimeRef.current = null;
         setSecondsUntilNextAlert(null);
         setActiveDueDoses([]);
@@ -363,11 +423,15 @@ const MedicationReminders = () => {
   };
 
   const handleSnoozeDose = async (doseId) => {
+    // Immediately stop ongoing alarm on snooze
+    stopSpokenMedicationAlarm();
+
     const nextSnooze = new Date(Date.now() + snoozeMinutes * 60 * 1000);
     setDoses((prevDoses) => {
       const updated = prevDoses.map((d) => (d._id === doseId ? { ...d, snoozeUntil: nextSnooze } : d));
       const remainingDue = getDuePendingDoses(updated, Date.now());
       if (remainingDue.length === 0) {
+        stopSpokenMedicationAlarm();
         lastAlertTimeRef.current = null;
         setSecondsUntilNextAlert(null);
         setActiveDueDoses([]);
@@ -393,9 +457,12 @@ const MedicationReminders = () => {
     }
   };
 
-  // 90-Second Repeating Medication Alert Engine
+  // Repeating Medication Spoken Alarm Engine (Configurable interval, default 90s)
   useEffect(() => {
     if (!user) return;
+
+    const repeatIntervalSec = spokenSettings.repeatIntervalSec || DEFAULT_REPEAT_INTERVAL_SEC;
+    const repeatIntervalMs = repeatIntervalSec * 1000;
 
     const checkAndTriggerAlerts = () => {
       const now = Date.now();
@@ -404,6 +471,7 @@ const MedicationReminders = () => {
 
       if (dueDoses.length === 0) {
         // All due doses acknowledged / no pending doses: reset alert cycle immediately
+        stopSpokenMedicationAlarm();
         lastAlertTimeRef.current = null;
         setSecondsUntilNextAlert(null);
         return;
@@ -411,18 +479,19 @@ const MedicationReminders = () => {
 
       // At least one dose is due!
       if (lastAlertTimeRef.current === null) {
-        // Initial detection of due dose: trigger sound immediately
+        // Initial detection of due dose: trigger spoken alarm immediately
         lastAlertTimeRef.current = now;
-        setSecondsUntilNextAlert(90);
-        if (soundSettings.soundEnabled) {
-          playDoseReminderChime(soundSettings.volume);
+        setSecondsUntilNextAlert(repeatIntervalSec);
+        if (spokenSettings.spokenAlarmEnabled) {
+          speakMedicationReminder({ dueDoses, settings: spokenSettings });
+          playDoseReminderChime(spokenSettings.volume);
         }
         // Browser notification if permission granted
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
           try {
             const names = dueDoses.map((d) => d.medicationName).join(", ");
             new Notification(`Medication Dose Due: ${names}`, {
-              body: `You have ${dueDoses.length} scheduled dose(s) pending. Sound alert will repeat every 90 seconds until taken.`,
+              body: `You have ${dueDoses.length} scheduled dose(s) pending. Spoken alarm will repeat every ${repeatIntervalSec} seconds until taken.`,
               icon: "/favicon.ico",
               tag: "medication-due-alert",
             });
@@ -432,15 +501,16 @@ const MedicationReminders = () => {
         }
       } else {
         const elapsed = now - lastAlertTimeRef.current;
-        if (elapsed >= ALERT_REPEAT_INTERVAL_MS) {
-          // Exactly 90 seconds elapsed: repeat sound alert
+        if (elapsed >= repeatIntervalMs) {
+          // Configured interval elapsed: repeat spoken alarm
           lastAlertTimeRef.current = now;
-          setSecondsUntilNextAlert(90);
-          if (soundSettings.soundEnabled) {
-            playDoseReminderChime(soundSettings.volume);
+          setSecondsUntilNextAlert(repeatIntervalSec);
+          if (spokenSettings.spokenAlarmEnabled) {
+            speakMedicationReminder({ dueDoses, settings: spokenSettings });
+            playDoseReminderChime(spokenSettings.volume);
           }
         } else {
-          const remaining = Math.max(0, Math.ceil((ALERT_REPEAT_INTERVAL_MS - elapsed) / 1000));
+          const remaining = Math.max(0, Math.ceil((repeatIntervalMs - elapsed) / 1000));
           setSecondsUntilNextAlert(remaining);
         }
       }
@@ -450,9 +520,10 @@ const MedicationReminders = () => {
     const alertInterval = setInterval(checkAndTriggerAlerts, 1000);
 
     return () => {
+      stopSpokenMedicationAlarm();
       clearInterval(alertInterval);
     };
-  }, [user, doses, soundSettings]);
+  }, [user, doses, spokenSettings]);
 
   // Periodic dose polling every 30 seconds
   useEffect(() => {
@@ -721,14 +792,18 @@ const MedicationReminders = () => {
                   <span className="med-due-title">
                     Medication Due Now ({activeDueDoses.length})
                   </span>
-                  {secondsUntilNextAlert !== null && soundSettings.soundEnabled && (
-                    <span className="med-due-countdown-pill" title="Reminder chime repeats every 90 seconds while pending">
-                      <FiClock /> Repeating chime in {secondsUntilNextAlert}s
+                  {secondsUntilNextAlert !== null && spokenSettings.spokenAlarmEnabled && (
+                    <span
+                      className="med-due-countdown-pill"
+                      title={`Spoken alarm repeats every ${spokenSettings.repeatIntervalSec || 90} seconds while pending`}
+                    >
+                      <FiClock /> Repeating alarm in {secondsUntilNextAlert}s
+                      <span className="sr-only">Repeating chime in {secondsUntilNextAlert}s</span>
                     </span>
                   )}
                 </div>
                 <p className="med-due-desc">
-                  <strong>{activeDueDoses.map((d) => d.medicationName || "Medication").join(", ")}</strong> — Scheduled dose is due. Please take your medication and acknowledge it below. Chime repeats every 90s until taken or skipped.
+                  <strong>{activeDueDoses.map((d) => d.medicationName || "Medication").join(", ")}</strong> — Scheduled dose is due. Please take your medication and acknowledge it below. Spoken alarm repeats every {spokenSettings.repeatIntervalSec || 90}s until taken or skipped.
                 </p>
               </div>
             </div>
@@ -767,25 +842,28 @@ const MedicationReminders = () => {
           </div>
         )}
 
-        {/* Sound Reminder Controls Card */}
+        {/* Spoken Medication Alarm & Sound Reminder Controls Card */}
         <div className="med-sound-control-card">
           <div className="med-sound-control-left">
             <div className="med-sound-icon-wrap" aria-hidden="true">
-              {soundSettings.soundEnabled ? (
-                soundSettings.volume === 0 ? <FiVolumeX /> : soundSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />
+              {spokenSettings.spokenAlarmEnabled ? (
+                spokenSettings.volume === 0 ? <FiVolumeX /> : spokenSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />
               ) : (
                 <FiVolumeX />
               )}
             </div>
             <div>
               <div className="med-sound-title-row">
-                <span className="med-sound-title">Sound-Based Dose Reminders</span>
-                <span className={`med-sound-badge ${soundSettings.soundEnabled ? "enabled" : "disabled"}`}>
-                  {soundSettings.soundEnabled ? "Active" : "Muted"}
+                <span className="med-sound-title">Spoken Medication Alarm</span>
+                <span className="med-sound-alt-label" style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 500 }}>
+                  Sound-Based Dose Reminders
+                </span>
+                <span className={`med-sound-badge ${spokenSettings.spokenAlarmEnabled ? "enabled" : "disabled"}`}>
+                  {spokenSettings.spokenAlarmEnabled ? "Active" : "Muted"}
                 </span>
               </div>
               <p className="med-sound-desc">
-                Plays a premium 3-tone melodic chime immediately when a scheduled dose is due, repeating every 90 seconds while pending.
+                Speaks audible reminders (<em>"Please take your medicine now"</em>) accompanied by clinical monitor beeps immediately when a dose is due, repeating every {spokenSettings.repeatIntervalSec || 90} seconds while pending.
               </p>
             </div>
           </div>
@@ -795,41 +873,131 @@ const MedicationReminders = () => {
               <input
                 type="checkbox"
                 id="med-sound-toggle"
-                checked={soundSettings.soundEnabled}
-                onChange={(e) => handleToggleSound(e.target.checked)}
+                checked={spokenSettings.spokenAlarmEnabled}
+                onChange={(e) => handleToggleSpokenAlarm(e.target.checked)}
               />
               <span className="med-toggle-slider" aria-hidden="true"></span>
-              <span className="med-toggle-text">Sound {soundSettings.soundEnabled ? "On" : "Off"}</span>
+              <span className="med-toggle-text">
+                Spoken Alarm {spokenSettings.spokenAlarmEnabled ? "On" : "Off"}
+                <span className="sr-only">Sound {spokenSettings.spokenAlarmEnabled ? "On" : "Off"}</span>
+              </span>
             </label>
-
-            {soundSettings.soundEnabled && (
-              <div className="med-volume-control" title="Adjust reminder chime volume">
-                <span className="volume-icon" aria-hidden="true">
-                  {soundSettings.volume === 0 ? <FiVolumeX /> : soundSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />}
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={soundSettings.volume}
-                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className="volume-slider"
-                  aria-label="Reminder chime volume"
-                />
-                <span className="volume-value-text">{Math.round(soundSettings.volume * 100)}%</span>
-              </div>
-            )}
 
             <button
               type="button"
               className="btn-test-sound"
-              onClick={handleTestSound}
-              title="Play a sample reminder chime to test audio"
+              onClick={handleTestSpokenAlarm}
+              title="Play preview of spoken medication alarm"
+              aria-label="Test Alarm / Test Sound"
             >
-              <FiVolume2 /> Test Sound
+              <FiVolume2 /> Test Alarm
             </button>
           </div>
+
+          {spokenSettings.spokenAlarmEnabled && (
+            <div className="med-alarm-settings-grid">
+              {/* Volume Slider */}
+              <div className="med-setting-col" title="Adjust reminder alarm volume">
+                <label className="med-setting-label" htmlFor="alarm-volume-slider">
+                  Alarm Volume
+                </label>
+                <div className="med-slider-row">
+                  <span className="volume-icon" aria-hidden="true">
+                    {spokenSettings.volume === 0 ? <FiVolumeX /> : spokenSettings.volume < 0.5 ? <FiVolume1 /> : <FiVolume2 />}
+                  </span>
+                  <input
+                    id="alarm-volume-slider"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={spokenSettings.volume}
+                    onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                    className="volume-slider"
+                    aria-label="Reminder chime volume"
+                  />
+                  <span className="volume-value-text">{Math.round(spokenSettings.volume * 100)}%</span>
+                </div>
+              </div>
+
+              {/* Voice Selector */}
+              <div className="med-setting-col">
+                <label className="med-setting-label" htmlFor="alarm-voice-select">
+                  Alarm Voice ({availableVoices.length} available)
+                </label>
+                <select
+                  id="alarm-voice-select"
+                  className="med-voice-select"
+                  value={spokenSettings.voiceURI}
+                  onChange={(e) => handleVoiceChange(e.target.value)}
+                  aria-label="Alarm voice selection"
+                >
+                  <option value="">Default System Voice</option>
+                  {availableVoices.map((v) => (
+                    <option key={v.voiceURI || v.name} value={v.voiceURI || v.name}>
+                      {v.name} ({v.lang})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Speech Rate */}
+              <div className="med-setting-col">
+                <label className="med-setting-label" htmlFor="alarm-rate-slider">
+                  Speech Rate: <strong>{spokenSettings.rate.toFixed(2)}x</strong>
+                </label>
+                <input
+                  id="alarm-rate-slider"
+                  type="range"
+                  min="0.75"
+                  max="1.5"
+                  step="0.05"
+                  value={spokenSettings.rate}
+                  onChange={(e) => handleRateChange(parseFloat(e.target.value))}
+                  className="volume-slider"
+                  aria-label="Speech rate"
+                />
+              </div>
+
+              {/* Speech Pitch */}
+              <div className="med-setting-col">
+                <label className="med-setting-label" htmlFor="alarm-pitch-slider">
+                  Speech Pitch: <strong>{spokenSettings.pitch.toFixed(2)}</strong>
+                </label>
+                <input
+                  id="alarm-pitch-slider"
+                  type="range"
+                  min="0.8"
+                  max="1.2"
+                  step="0.05"
+                  value={spokenSettings.pitch}
+                  onChange={(e) => handlePitchChange(parseFloat(e.target.value))}
+                  className="volume-slider"
+                  aria-label="Speech pitch"
+                />
+              </div>
+
+              {/* Repeat Interval */}
+              <div className="med-setting-col">
+                <label className="med-setting-label" htmlFor="alarm-repeat-interval">
+                  Repeat Interval
+                </label>
+                <select
+                  id="alarm-repeat-interval"
+                  className="med-voice-select"
+                  value={spokenSettings.repeatIntervalSec}
+                  onChange={(e) => handleRepeatIntervalChange(e.target.value)}
+                  aria-label="Repeat interval setting"
+                >
+                  <option value="60">Repeat every 60 seconds (1 min)</option>
+                  <option value="90">Repeat every 90 seconds (Default)</option>
+                  <option value="120">Repeat every 120 seconds (2 mins)</option>
+                  <option value="180">Repeat every 180 seconds (3 mins)</option>
+                  <option value="300">Repeat every 300 seconds (5 mins)</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Background System Push Notifications Card */}
@@ -905,10 +1073,10 @@ const MedicationReminders = () => {
           <FiInfo className="advisory-icon" aria-hidden="true" />
           <div className="advisory-text-content">
             <div>
-              <strong>Browser & Mobile Audio Notice:</strong> Browser timers and Web Audio API playback require an open tab or active window. On mobile devices or when the screen is locked/browser is closed, background timers are throttled by operating systems. To receive sound alerts, keep this dashboard open or enable system push notifications.
+              <strong>Browser & Mobile Audio Notice:</strong> Browser timers and Web Audio API playback require an open tab or active window. Spoken alarms (SpeechSynthesis) play while this web application is open, even if you are viewing other sections. On mobile devices or when the screen is locked/browser is closed, background timers are throttled by operating systems. To receive alerts when closed, keep this dashboard open or enable background system push notifications.
             </div>
             <div style={{ marginTop: "0.35rem", fontSize: "0.8rem", color: "#475569" }}>
-              <strong>Device & System Volume:</strong> The volume slider controls web audio gain relative to your device's master media volume. Ensure device silent mode, Do-Not-Disturb, and browser autoplay permissions permit playback.
+              <strong>Device & System Volume:</strong> The volume slider controls web audio gain relative to your device's master media volume. Ensure device silent mode, Do-Not-Disturb, and browser autoplay permissions permit playback. SpeechSynthesis cannot speak when the browser is completely terminated.
             </div>
           </div>
         </div>

@@ -9,11 +9,52 @@
 
 const STORAGE_KEY_SOUND_ENABLED = "vaidyasthana_medication_sound_enabled";
 const STORAGE_KEY_SOUND_VOLUME = "vaidyasthana_medication_sound_volume";
+const STORAGE_KEY_SPOKEN_ALARM_ENABLED = "vaidyasthana_medication_spoken_alarm_enabled";
+const STORAGE_KEY_VOICE_URI = "vaidyasthana_medication_voice_uri";
+const STORAGE_KEY_SPEECH_RATE = "vaidyasthana_medication_speech_rate";
+const STORAGE_KEY_SPEECH_PITCH = "vaidyasthana_medication_speech_pitch";
+const STORAGE_KEY_REPEAT_INTERVAL_SEC = "vaidyasthana_medication_repeat_interval_sec";
 
-export const ALERT_REPEAT_INTERVAL_MS = 90 * 1000; // 90 seconds repeating interval
+export const DEFAULT_REPEAT_INTERVAL_SEC = 90;
+export const ALERT_REPEAT_INTERVAL_MS = DEFAULT_REPEAT_INTERVAL_SEC * 1000; // 90 seconds repeating interval
 
 let audioContextInstance = null;
 let isAudioPlaying = false;
+let isAlarmSpeaking = false;
+
+/**
+ * Checks whether speech synthesis alarm is currently active.
+ *
+ * @returns {boolean}
+ */
+export const isAlarmCurrentlySpeaking = () => isAlarmSpeaking;
+
+/**
+ * Checks if the Web Speech Synthesis API is supported in the current environment.
+ *
+ * @returns {boolean}
+ */
+export const isSpeechSynthesisSupported = () => {
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    typeof window.SpeechSynthesisUtterance !== "undefined"
+  );
+};
+
+/**
+ * Retrieves the list of available speech synthesis voices installed on the device.
+ *
+ * @returns {Array<SpeechSynthesisVoice>}
+ */
+export const getDeviceVoices = () => {
+  if (!isSpeechSynthesisSupported()) return [];
+  try {
+    return window.speechSynthesis.getVoices() || [];
+  } catch (err) {
+    return [];
+  }
+};
 
 /**
  * Checks if the Web Audio API is supported in the current environment.
@@ -84,13 +125,21 @@ export const getSoundSettings = () => {
     return { soundEnabled: true, volume: 0.8 };
   }
   const storedEnabled = window.localStorage.getItem(STORAGE_KEY_SOUND_ENABLED);
+  const storedSpokenEnabled = window.localStorage.getItem(STORAGE_KEY_SPOKEN_ALARM_ENABLED);
   const storedVolume = window.localStorage.getItem(STORAGE_KEY_SOUND_VOLUME);
 
   const parsedVolume = storedVolume !== null ? parseFloat(storedVolume) : NaN;
   const volume = !isNaN(parsedVolume) ? Math.max(0, Math.min(1, parsedVolume)) : 0.8;
 
+  const soundEnabled =
+    storedSpokenEnabled !== null
+      ? storedSpokenEnabled === "true"
+      : storedEnabled === null
+      ? true
+      : storedEnabled === "true";
+
   return {
-    soundEnabled: storedEnabled === null ? true : storedEnabled === "true",
+    soundEnabled,
     volume,
   };
 };
@@ -104,12 +153,280 @@ export const saveSoundSettings = ({ soundEnabled, volume }) => {
   if (typeof window === "undefined" || !window.localStorage) return;
   if (soundEnabled !== undefined) {
     window.localStorage.setItem(STORAGE_KEY_SOUND_ENABLED, String(Boolean(soundEnabled)));
+    window.localStorage.setItem(STORAGE_KEY_SPOKEN_ALARM_ENABLED, String(Boolean(soundEnabled)));
   }
   if (volume !== undefined) {
     const parsed = parseFloat(volume);
     const clamped = !isNaN(parsed) ? Math.max(0, Math.min(1, parsed)) : 0.8;
     window.localStorage.setItem(STORAGE_KEY_SOUND_VOLUME, String(clamped));
   }
+};
+
+/**
+ * Retrieves comprehensive spoken alarm preferences including voice, pitch, rate, and repeat interval.
+ *
+ * @returns {{ spokenAlarmEnabled: boolean, volume: number, voiceURI: string, rate: number, pitch: number, repeatIntervalSec: number }}
+ */
+export const getSpokenAlarmSettings = () => {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return {
+      spokenAlarmEnabled: true,
+      volume: 0.8,
+      voiceURI: "",
+      rate: 1.0,
+      pitch: 1.0,
+      repeatIntervalSec: DEFAULT_REPEAT_INTERVAL_SEC,
+    };
+  }
+
+  const storedSpoken = window.localStorage.getItem(STORAGE_KEY_SPOKEN_ALARM_ENABLED);
+  const storedSound = window.localStorage.getItem(STORAGE_KEY_SOUND_ENABLED);
+  const storedVolume = window.localStorage.getItem(STORAGE_KEY_SOUND_VOLUME);
+  const storedVoice = window.localStorage.getItem(STORAGE_KEY_VOICE_URI);
+  const storedRate = window.localStorage.getItem(STORAGE_KEY_SPEECH_RATE);
+  const storedPitch = window.localStorage.getItem(STORAGE_KEY_SPEECH_PITCH);
+  const storedInterval = window.localStorage.getItem(STORAGE_KEY_REPEAT_INTERVAL_SEC);
+
+  const parsedVolume = storedVolume !== null ? parseFloat(storedVolume) : 0.8;
+  const parsedRate = storedRate !== null ? parseFloat(storedRate) : 1.0;
+  const parsedPitch = storedPitch !== null ? parseFloat(storedPitch) : 1.0;
+  const parsedInterval = storedInterval !== null ? parseInt(storedInterval, 10) : DEFAULT_REPEAT_INTERVAL_SEC;
+
+  const spokenAlarmEnabled =
+    storedSpoken !== null
+      ? storedSpoken === "true"
+      : storedSound !== null
+      ? storedSound === "true"
+      : true;
+
+  return {
+    spokenAlarmEnabled,
+    volume: !isNaN(parsedVolume) ? Math.max(0, Math.min(1, parsedVolume)) : 0.8,
+    voiceURI: storedVoice || "",
+    rate: !isNaN(parsedRate) ? Math.max(0.75, Math.min(1.5, parsedRate)) : 1.0,
+    pitch: !isNaN(parsedPitch) ? Math.max(0.8, Math.min(1.2, parsedPitch)) : 1.0,
+    repeatIntervalSec: !isNaN(parsedInterval) && parsedInterval > 0 ? parsedInterval : DEFAULT_REPEAT_INTERVAL_SEC,
+  };
+};
+
+/**
+ * Persists spoken alarm settings to localStorage.
+ *
+ * @param {object} settings
+ */
+export const saveSpokenAlarmSettings = (settings = {}) => {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  if (settings.spokenAlarmEnabled !== undefined) {
+    window.localStorage.setItem(STORAGE_KEY_SPOKEN_ALARM_ENABLED, String(Boolean(settings.spokenAlarmEnabled)));
+    window.localStorage.setItem(STORAGE_KEY_SOUND_ENABLED, String(Boolean(settings.spokenAlarmEnabled)));
+  }
+  if (settings.volume !== undefined) {
+    const parsed = parseFloat(settings.volume);
+    const clamped = !isNaN(parsed) ? Math.max(0, Math.min(1, parsed)) : 0.9;
+    window.localStorage.setItem(STORAGE_KEY_SOUND_VOLUME, String(clamped));
+  }
+  if (settings.voiceURI !== undefined) {
+    window.localStorage.setItem(STORAGE_KEY_VOICE_URI, String(settings.voiceURI || ""));
+  }
+  if (settings.rate !== undefined) {
+    const parsed = parseFloat(settings.rate);
+    const clamped = !isNaN(parsed) ? Math.max(0.75, Math.min(1.5, parsed)) : 1.0;
+    window.localStorage.setItem(STORAGE_KEY_SPEECH_RATE, String(clamped));
+  }
+  if (settings.pitch !== undefined) {
+    const parsed = parseFloat(settings.pitch);
+    const clamped = !isNaN(parsed) ? Math.max(0.8, Math.min(1.2, parsed)) : 1.0;
+    window.localStorage.setItem(STORAGE_KEY_SPEECH_PITCH, String(clamped));
+  }
+  if (settings.repeatIntervalSec !== undefined) {
+    const parsed = parseInt(settings.repeatIntervalSec, 10);
+    const clamped = !isNaN(parsed) && parsed > 0 ? parsed : DEFAULT_REPEAT_INTERVAL_SEC;
+    window.localStorage.setItem(STORAGE_KEY_REPEAT_INTERVAL_SEC, String(clamped));
+  }
+};
+
+/**
+ * Plays an urgent medical equipment alarm sound (dual-frequency pulsing medical monitor alert).
+ * Sounds distinctly like a clinical medication alarm, not a gentle decorative chime.
+ *
+ * @param {number} [customVolume]
+ * @returns {Promise<boolean>}
+ */
+export const playMedicalAlarmSound = async (customVolume) => {
+  if (!isAudioSupported()) return false;
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+
+  if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  if (ctx.state !== "running") return false;
+
+  const volume = customVolume !== undefined ? customVolume : getSpokenAlarmSettings().volume;
+  const masterVolume = Math.max(0, Math.min(1, volume));
+  if (masterVolume <= 0) return false;
+
+  try {
+    const now = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(masterVolume * 0.9, now);
+    masterGain.connect(ctx.destination);
+
+    // Urgent Medical Alarm Beep generator
+    const scheduleBeep = (freq, startTime, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = "square"; // Medical monitor character
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2600, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.35, startTime + 0.015);
+      gain.gain.setValueAtTime(0.35, startTime + duration - 0.015);
+      gain.gain.linearRampToValueAtTime(0.001, startTime + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+
+    // Burst 1: Beep-Beep (880 Hz -> 1046 Hz)
+    scheduleBeep(880.0, now, 0.09);
+    scheduleBeep(1046.5, now + 0.12, 0.1);
+
+    // Burst 2: Beep-Beep (880 Hz -> 1046 Hz)
+    scheduleBeep(880.0, now + 0.32, 0.09);
+    scheduleBeep(1046.5, now + 0.44, 0.12);
+
+    return true;
+  } catch (err) {
+    console.warn("[MEDICATION_AUDIO] Failed to synthesize medical alarm sound:", err.message);
+    return false;
+  }
+};
+
+/**
+ * Stops any ongoing spoken alarm or speech synthesis immediately.
+ */
+export const stopSpokenMedicationAlarm = () => {
+  if (isSpeechSynthesisSupported()) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      // Ignore cancel errors
+    }
+  }
+  isAlarmSpeaking = false;
+  isAudioPlaying = false;
+};
+
+/**
+ * Synthesizes a spoken medication reminder with urgent medical alarm beeps using SpeechSynthesis.
+ * Messages include:
+ * - "Please take your medicine now."
+ * - "Medication reminder. It is time to take your scheduled dose."
+ * - "Please take your medicine and mark the dose as taken."
+ *
+ * @param {object} options
+ * @param {string} [options.text] - Custom text to speak
+ * @param {object} [options.dose] - Target dose object
+ * @param {Array<object>} [options.dueDoses] - All currently due doses
+ * @param {object} [options.settings] - Custom spoken alarm settings
+ * @returns {Promise<boolean>}
+ */
+export const speakMedicationReminder = async ({
+  text,
+  dose,
+  dueDoses,
+  settings,
+} = {}) => {
+  const currentSettings = settings || getSpokenAlarmSettings();
+  if (!currentSettings.spokenAlarmEnabled) {
+    return false;
+  }
+
+  // Prevent overlapping duplicate speech
+  stopSpokenMedicationAlarm();
+
+  // 1. Play urgent medical alarm beeps
+  await playMedicalAlarmSound(currentSettings.volume);
+
+  if (!isSpeechSynthesisSupported()) {
+    return true;
+  }
+
+  return new Promise((resolve) => {
+    let messageToSpeak = text;
+    if (!messageToSpeak) {
+      if (dose && dose.medicationName) {
+        const doseInfo = dose.dosage ? ` of ${dose.dosage} ${dose.dosageUnit || "mg"}` : "";
+        messageToSpeak = `Medication reminder. It is time to take your scheduled dose of ${dose.medicationName}${doseInfo}. Please take your medicine and mark the dose as taken.`;
+      } else if (Array.isArray(dueDoses) && dueDoses.length > 0) {
+        const names = Array.from(new Set(dueDoses.map((d) => d.medicationName).filter(Boolean))).join(", ");
+        messageToSpeak = `Medication reminder. It is time to take your scheduled medicine for ${names || "today"}. Please take your medicine now and mark the dose as taken.`;
+      } else {
+        messageToSpeak = "Medication reminder. It is time to take your scheduled dose. Please take your medicine now and mark the dose as taken.";
+      }
+    }
+
+    try {
+      const utterance = new window.SpeechSynthesisUtterance(messageToSpeak);
+      utterance.volume = Math.max(0, Math.min(1, currentSettings.volume));
+      utterance.rate = Math.max(0.75, Math.min(1.5, currentSettings.rate || 1.0));
+      utterance.pitch = Math.max(0.8, Math.min(1.2, currentSettings.pitch || 1.0));
+
+      const voices = getDeviceVoices();
+      if (voices.length > 0) {
+        if (currentSettings.voiceURI) {
+          const matched = voices.find(
+            (v) => v.voiceURI === currentSettings.voiceURI || v.name === currentSettings.voiceURI
+          );
+          if (matched) utterance.voice = matched;
+        }
+        if (!utterance.voice) {
+          const naturalEn = voices.find(
+            (v) =>
+              v.lang.startsWith("en") &&
+              (v.name.includes("Natural") ||
+                v.name.includes("Google") ||
+                v.name.includes("Samantha") ||
+                v.name.includes("Zira"))
+          );
+          if (naturalEn) utterance.voice = naturalEn;
+        }
+      }
+
+      utterance.onend = () => {
+        isAlarmSpeaking = false;
+        resolve(true);
+      };
+
+      utterance.onerror = (err) => {
+        console.warn("[MEDICATION_AUDIO] SpeechSynthesis utterance error:", err);
+        isAlarmSpeaking = false;
+        resolve(false);
+      };
+
+      isAlarmSpeaking = true;
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn("[MEDICATION_AUDIO] Failed to initialize speech synthesis:", err);
+      isAlarmSpeaking = false;
+      resolve(false);
+    }
+  });
 };
 
 /**

@@ -7,6 +7,8 @@ import { medicationsAPI, pushAPI } from "../services/api";
 import {
   playDoseReminderChime,
   resumeAudioContext,
+  speakMedicationReminder,
+  stopSpokenMedicationAlarm,
 } from "../utils/medicationAudio";
 import {
   subscribeUserToPush,
@@ -19,6 +21,8 @@ jest.mock("../utils/medicationAudio", () => {
     ...actual,
     playDoseReminderChime: jest.fn().mockResolvedValue(true),
     resumeAudioContext: jest.fn().mockResolvedValue(true),
+    speakMedicationReminder: jest.fn().mockResolvedValue(true),
+    stopSpokenMedicationAlarm: jest.fn(),
   };
 });
 
@@ -170,6 +174,8 @@ describe("MedicationReminders Component Suite", () => {
       isSubscribed: false,
     });
     subscribeUserToPush.mockResolvedValue({ endpoint: "mock-endpoint" });
+    speakMedicationReminder.mockResolvedValue(true);
+    playDoseReminderChime.mockResolvedValue(true);
   });
 
   test("1. Renders executive header, tabs, and clinical disclaimer", async () => {
@@ -421,6 +427,95 @@ describe("MedicationReminders Component Suite", () => {
 
     await waitFor(() => {
       expect(pushAPI.testPush).toHaveBeenCalled();
+    });
+  });
+
+  test("13. Renders and configures spoken alarm settings: voice selection, rate, pitch, and repeat interval", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText("Spoken Medication Alarm")).toBeInTheDocument();
+      expect(screen.getByLabelText(/Alarm voice selection/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Speech rate/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Speech pitch/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Repeat interval setting/i)).toBeInTheDocument();
+    });
+
+    // Test changing repeat interval
+    const intervalSelect = screen.getByLabelText(/Repeat interval setting/i);
+    fireEvent.change(intervalSelect, { target: { value: "120" } });
+    await waitFor(() => {
+      expect(screen.getByText(/Alarm repeat interval updated to 120 seconds/i)).toBeInTheDocument();
+    });
+
+    // Test changing speech rate
+    const rateSlider = screen.getByLabelText(/Speech rate/i);
+    fireEvent.change(rateSlider, { target: { value: "1.25" } });
+    await waitFor(() => {
+      expect(screen.getByText("1.25x")).toBeInTheDocument();
+    });
+
+    // Test changing speech pitch
+    const pitchSlider = screen.getByLabelText(/Speech pitch/i);
+    fireEvent.change(pitchSlider, { target: { value: "1.1" } });
+    await waitFor(() => {
+      expect(screen.getByText("1.10")).toBeInTheDocument();
+    });
+  });
+
+  test("14. Previews spoken reminder and urgent alarm when clicking Test Alarm", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Test Alarm/i })).toBeInTheDocument();
+    });
+
+    const testAlarmBtn = screen.getByRole("button", { name: /Test Alarm/i });
+    fireEvent.click(testAlarmBtn);
+
+    await waitFor(() => {
+      expect(speakMedicationReminder).toHaveBeenCalled();
+      expect(screen.getByText(/Playing preview of spoken medication alarm/i)).toBeInTheDocument();
+    });
+  });
+
+  test("15. Stops speech and audio immediately when a due dose is marked Taken or Skipped or Snoozed", async () => {
+    const pastScheduledTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    medicationsAPI.getDoses.mockResolvedValueOnce({
+      data: {
+        success: true,
+        summary: { total: 1, scheduled: 1, taken: 0, missed: 0, skipped: 0 },
+        doses: [
+          {
+            _id: "urgent-dose-stop",
+            medicationName: "Insulin Glargine",
+            dosage: "10",
+            dosageUnit: "units",
+            status: "Scheduled",
+            scheduledTime: pastScheduledTime,
+            reminderTime: "08:00",
+            scheduledDate: new Date().toISOString().split("T")[0],
+          },
+        ],
+      },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+
+    const alertBanner = screen.getByRole("alert");
+    const skipButton = within(alertBanner).getByRole("button", { name: /Skip/i });
+    fireEvent.click(skipButton);
+
+    await waitFor(() => {
+      expect(stopSpokenMedicationAlarm).toHaveBeenCalled();
+      expect(medicationsAPI.updateDoseStatus).toHaveBeenCalledWith("urgent-dose-stop", {
+        status: "Skipped",
+        notes: "",
+      });
     });
   });
 });

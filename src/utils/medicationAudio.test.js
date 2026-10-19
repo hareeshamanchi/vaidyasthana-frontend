@@ -10,6 +10,14 @@ import {
   getDuePendingDoses,
   getDoseOccurrenceKey,
   ALERT_REPEAT_INTERVAL_MS,
+  isSpeechSynthesisSupported,
+  getDeviceVoices,
+  getSpokenAlarmSettings,
+  saveSpokenAlarmSettings,
+  playMedicalAlarmSound,
+  stopSpokenMedicationAlarm,
+  speakMedicationReminder,
+  DEFAULT_REPEAT_INTERVAL_SEC,
 } from "./medicationAudio";
 
 describe("medicationAudio utility test suite", () => {
@@ -226,6 +234,142 @@ describe("medicationAudio utility test suite", () => {
     test("playDoseReminderChime returns false when volume is 0", async () => {
       const success = await playDoseReminderChime(0);
       expect(success).toBe(false);
+    });
+  });
+
+  describe("Spoken Alarm Settings Persistence", () => {
+    test("returns default spoken settings including 90s interval, pitch 1.0, rate 1.0", () => {
+      const settings = getSpokenAlarmSettings();
+      expect(settings).toEqual({
+        spokenAlarmEnabled: true,
+        volume: 0.8,
+        voiceURI: "",
+        rate: 1.0,
+        pitch: 1.0,
+        repeatIntervalSec: DEFAULT_REPEAT_INTERVAL_SEC,
+      });
+    });
+
+    test("persists custom rate, pitch, voiceURI, and repeat interval", () => {
+      saveSpokenAlarmSettings({
+        spokenAlarmEnabled: true,
+        volume: 0.6,
+        voiceURI: "Google UK English Female",
+        rate: 1.25,
+        pitch: 0.95,
+        repeatIntervalSec: 120,
+      });
+
+      const updated = getSpokenAlarmSettings();
+      expect(updated.spokenAlarmEnabled).toBe(true);
+      expect(updated.volume).toBe(0.6);
+      expect(updated.voiceURI).toBe("Google UK English Female");
+      expect(updated.rate).toBe(1.25);
+      expect(updated.pitch).toBe(0.95);
+      expect(updated.repeatIntervalSec).toBe(120);
+    });
+
+    test("clamps rate between 0.75 and 1.5, and pitch between 0.8 and 1.2", () => {
+      saveSpokenAlarmSettings({
+        rate: 3.0,
+        pitch: 0.2,
+      });
+      const settings = getSpokenAlarmSettings();
+      expect(settings.rate).toBe(1.5);
+      expect(settings.pitch).toBe(0.8);
+    });
+  });
+
+  describe("SpeechSynthesis and Spoken Reminder Workflow", () => {
+    let originalSpeechSynthesis;
+    let originalUtterance;
+    let mockSpeak;
+    let mockCancel;
+    let mockGetVoices;
+
+    beforeEach(() => {
+      mockSpeak = jest.fn((utterance) => {
+        // Simulate immediate speech completion
+        if (utterance && utterance.onend) {
+          setTimeout(() => utterance.onend(), 10);
+        }
+      });
+      mockCancel = jest.fn();
+      mockGetVoices = jest.fn().mockReturnValue([
+        { voiceURI: "NaturalEn", name: "NaturalEn", lang: "en-US" },
+      ]);
+
+      originalSpeechSynthesis = window.speechSynthesis;
+      originalUtterance = window.SpeechSynthesisUtterance;
+
+      window.speechSynthesis = {
+        speak: mockSpeak,
+        cancel: mockCancel,
+        getVoices: mockGetVoices,
+      };
+
+      window.SpeechSynthesisUtterance = function (text) {
+        this.text = text;
+        this.volume = 1;
+        this.rate = 1;
+        this.pitch = 1;
+        this.voice = null;
+        this.onend = null;
+        this.onerror = null;
+      };
+    });
+
+    afterEach(() => {
+      window.speechSynthesis = originalSpeechSynthesis;
+      window.SpeechSynthesisUtterance = originalUtterance;
+    });
+
+    test("isSpeechSynthesisSupported returns true when window has API", () => {
+      expect(isSpeechSynthesisSupported()).toBe(true);
+    });
+
+    test("getDeviceVoices returns available speech synthesis voices", () => {
+      const voices = getDeviceVoices();
+      expect(voices.length).toBe(1);
+      expect(voices[0].name).toBe("NaturalEn");
+    });
+
+    test("stopSpokenMedicationAlarm cancels ongoing speech immediately", () => {
+      stopSpokenMedicationAlarm();
+      expect(mockCancel).toHaveBeenCalled();
+    });
+
+    test("speakMedicationReminder synthesizes alarm and speaks reminder message", async () => {
+      const result = await speakMedicationReminder({
+        text: "Please take your medicine now.",
+      });
+      expect(result).toBe(true);
+      expect(mockSpeak).toHaveBeenCalled();
+      const calledUtterance = mockSpeak.mock.calls[0][0];
+      expect(calledUtterance.text).toBe("Please take your medicine now.");
+    });
+
+    test("speakMedicationReminder constructs clinical dose prompt if text is omitted", async () => {
+      const sampleDose = {
+        medicationName: "Metformin 500",
+        dosage: "500",
+        dosageUnit: "mg",
+      };
+
+      await speakMedicationReminder({ dose: sampleDose });
+      expect(mockSpeak).toHaveBeenCalled();
+      const calledUtterance = mockSpeak.mock.calls[0][0];
+      expect(calledUtterance.text).toContain("Metformin 500");
+      expect(calledUtterance.text).toContain("Please take your medicine and mark the dose as taken.");
+    });
+
+    test("speakMedicationReminder returns false when spoken alarm is disabled", async () => {
+      const result = await speakMedicationReminder({
+        text: "Please take your medicine now.",
+        settings: { spokenAlarmEnabled: false },
+      });
+      expect(result).toBe(false);
+      expect(mockSpeak).not.toHaveBeenCalled();
     });
   });
 });

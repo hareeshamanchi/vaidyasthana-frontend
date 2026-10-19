@@ -106,8 +106,8 @@ export const reportsAPI = {
 export const appointmentsAPI = {
   getAppointments: (params) => api.get("/api/appointments", { params }),
   getDoctors: (params) => api.get("/api/appointments/doctors", { params }),
-  getSlots: (doctorId, date) =>
-    api.get("/api/appointments/slots", { params: { doctorId, date } }),
+  getSlots: (doctorId, date, timezone) =>
+    api.get("/api/appointments/slots", { params: { doctorId, date, timezone } }),
   createAppointment: (data) => api.post("/api/appointments", data),
   getAppointmentById: (id) => api.get(`/api/appointments/${id}`),
   updateAppointment: (id, data) => api.put(`/api/appointments/${id}`, data),

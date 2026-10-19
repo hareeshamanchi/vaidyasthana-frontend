@@ -980,11 +980,38 @@
   resize: vertical;
 }
 
+.booking-validation-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  margin-top: 0.75rem;
+  font-weight: 500;
+}
+
+.booking-validation-hint .hint-icon {
+  color: #ea580c;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
 .dialog-buttons-row {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-subtle);
+  position: sticky;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 5;
 }
 
 .btn-dialog-cancel {
@@ -1277,7 +1304,10 @@
   margin-top: 0.45rem;
   max-height: 220px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 0.25rem 0.1rem;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 .slot-chip {
@@ -1318,6 +1348,7 @@
 }
 
 .slot-chip.unavailable,
+.slot-chip.passed,
 .slot-chip:disabled {
   background: #f8fafc;
   border-color: #e2e8f0;
@@ -1342,6 +1373,13 @@
   background: #f1f5f9;
   color: #94a3b8;
   border: 1px solid #e2e8f0;
+}
+
+.chip-badge.unavailable.passed {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
 }
 
 .chip-badge.selected {
