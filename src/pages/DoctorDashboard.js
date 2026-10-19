@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react";
-import { useLanguage } from "../context/LanguageContext";
 import "./DoctorDashboard.css";
 import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -45,7 +44,6 @@ const CATEGORIES = [
 
 const DoctorDashboard = () => {
   const { user, loading } = useContext(AuthContext);
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -546,13 +544,13 @@ const DoctorDashboard = () => {
         <table className="consultations-table">
           <thead>
             <tr>
-              <th>{t("doctorDashboard.patientName", "Patient Name")}</th>
-              <th>{t("common.details", "Contact Info")}</th>
-              <th>{t("common.date", "Date")} & {t("common.time", "Time")}</th>
-              <th>{t("appointment.consultationType", "Mode / Type")}</th>
-              <th>{t("common.notes", "Clinical Notes / Reason")}</th>
-              <th>{t("common.status", "Status")}</th>
-              <th>{t("common.actions", "Actions")}</th>
+              <th>Patient Name</th>
+              <th>Contact Info</th>
+              <th>Date & Time</th>
+              <th>Mode / Type</th>
+              <th>Clinical Notes / Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -724,11 +722,12 @@ const DoctorDashboard = () => {
       <header className="doctor-header-card">
         <div className="doctor-header-content">
           <div className="doctor-badge">
-            <FiShield /> {t("doctorDashboard.badge", "Certified Physician Portal")}
+            <FiShield /> Certified Physician Portal
           </div>
-          <h1>{t("doctorDashboard.title", "Clinician & Doctor Workspace")}</h1>
+          <h1>Clinician & Doctor Workspace</h1>
           <p className="doctor-subtitle">
-            {t("doctorDashboard.subtitle", "Review patient health records, diagnostic summaries, and manage consultation sessions")}
+            Securely inspect laboratory diagnostic findings, upload medical records on behalf
+            of verified patients, and review AI biomarker extractions with full clinical auditability.
           </p>
         </div>
 
@@ -762,7 +761,7 @@ const DoctorDashboard = () => {
           <div className="verif-banner-left">
             <FiCheckCircle className="verif-banner-icon" />
             <div className="verif-banner-text">
-              <h4>{t("doctorDashboard.verifiedStatus", "Medical Credentials Verified & Approved")}</h4>
+              <h4>Medical Credentials Verified & Approved</h4>
               <p>Your license is actively registered. Patient appointments appear in your schedule below.</p>
             </div>
           </div>
@@ -775,7 +774,7 @@ const DoctorDashboard = () => {
           <div className="verif-banner-left">
             <FiClock className="verif-banner-icon" />
             <div className="verif-banner-text">
-              <h4>{t("doctorDashboard.pendingStatus", "Credentials Under Administrative Review")}</h4>
+              <h4>Credentials Under Administrative Review</h4>
               <p>
                 Your registration certificate and identity documents were received and are under review
                 by hospital administrators.
@@ -815,7 +814,7 @@ const DoctorDashboard = () => {
           <div className="verif-banner-left">
             <FiShield className="verif-banner-icon" />
             <div className="verif-banner-text">
-              <h4>{t("doctorDashboard.notSubmittedStatus", "Medical Credential Verification Required")}</h4>
+              <h4>Medical Credential Verification Required</h4>
               <p>
                 To accept patient appointments and appear in the hospital booking directory, submit your
                 government ID and medical council license certificate.
@@ -827,7 +826,7 @@ const DoctorDashboard = () => {
             onClick={() => setIsVerificationModalOpen(true)}
             type="button"
           >
-            <FiUploadCloud /> {t("doctorDashboard.submitVerificationBtn", "Upload Verification Credentials")}
+            <FiUploadCloud /> Upload Verification Credentials
           </button>
         </div>
       )}
@@ -836,7 +835,7 @@ const DoctorDashboard = () => {
       <section className="assigned-consultations-section">
         <div className="consultations-header-row">
           <div>
-            <h3>{t("doctorDashboard.assignedAppointmentsTitle", "Assigned Clinical Consultations")} ({doctorAppointments.length})</h3>
+            <h3>Assigned Clinical Consultations ({doctorAppointments.length})</h3>
             <p>Patients scheduled specifically for your clinical review</p>
           </div>
 
@@ -850,7 +849,7 @@ const DoctorDashboard = () => {
                   className={`view-tab-btn ${appointmentTab === "all" ? "active" : ""}`}
                   onClick={() => setAppointmentTab("all")}
                 >
-                  {t("common.all", "All")} <span className="tab-count-pill">{doctorAppointments.length}</span>
+                  All <span className="tab-count-pill">{doctorAppointments.length}</span>
                 </button>
                 <button
                   type="button"
@@ -859,7 +858,7 @@ const DoctorDashboard = () => {
                   className={`view-tab-btn ${appointmentTab === "upcoming" ? "active" : ""}`}
                   onClick={() => setAppointmentTab("upcoming")}
                 >
-                  {t("appointment.upcomingTab", "Upcoming")} <span className="tab-count-pill">{upcomingAppointments.length}</span>
+                  Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
                 </button>
                 <button
                   type="button"
@@ -868,7 +867,7 @@ const DoctorDashboard = () => {
                   className={`view-tab-btn ${appointmentTab === "past" ? "active" : ""}`}
                   onClick={() => setAppointmentTab("past")}
                 >
-                  {t("appointment.pastTab", "Past")} <span className="tab-count-pill">{pastAppointments.length}</span>
+                  Past <span className="tab-count-pill">{pastAppointments.length}</span>
                 </button>
               </div>
             )}
@@ -934,7 +933,7 @@ const DoctorDashboard = () => {
         <div className="search-header-row">
           <FiSearch className="search-icon" />
           <div>
-            <h3>{t("doctorDashboard.searchPatientTitle", "Patient Record Lookup")}</h3>
+            <h3>Patient Record Lookup</h3>
             <p>Query encrypted records using the patient's permanent identifier, email, or phone</p>
           </div>
         </div>
@@ -942,7 +941,7 @@ const DoctorDashboard = () => {
         <div className="search-bar-row">
           <input
             type="text"
-            placeholder={t("doctorDashboard.searchPlaceholder", "Enter Patient ID (e.g., 6619fc18a...)")}
+            placeholder="Enter Patient ID (e.g., 6619fc18a...)"
             value={patientId}
             onChange={(e) => setPatientId(e.target.value)}
             className="patient-search-input"
@@ -958,7 +957,7 @@ const DoctorDashboard = () => {
                 <FiRefreshCw className="spinning" /> Querying...
               </span>
             ) : (
-              t("doctorDashboard.searchBtn", "Retrieve Health Vault")
+              "Retrieve Health Vault"
             )}
           </button>
         </div>
@@ -966,7 +965,7 @@ const DoctorDashboard = () => {
         {/* Quick Selector for Associated Patients */}
         {associatedPatients.length > 0 ? (
           <div className="associated-patients-wrap">
-            <span className="associated-label">{t("doctorDashboard.associatedPatientsTitle", "Quick Patient Selector:")}</span>
+            <span className="associated-label">Quick Patient Selector:</span>
             <div className="associated-pills">
               {associatedPatients.map((pat) => {
                 const patIdVal = pat._id || pat.id;

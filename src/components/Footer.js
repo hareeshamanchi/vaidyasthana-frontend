@@ -1,7 +1,6 @@
 import React from "react";
 import "./Footer.css";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../context/LanguageContext";
 import {
   FiShield,
   FiFileText,
@@ -13,8 +12,6 @@ import {
 import { FaWhatsapp, FaInstagram, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
-  const { t } = useLanguage();
-
   return (
     <footer className="vaidya-footer" role="contentinfo">
       <div className="footer-top-container">
@@ -22,91 +19,93 @@ const Footer = () => {
         <div className="footer-col brand-col">
           <div className="footer-brand-title">
             <FiActivity className="footer-brand-icon" />
-            <span>{t("common.appName", "Vaidyasthana")}</span>
+            <span>Vaidyasthana</span>
           </div>
           <p className="footer-mission">
-            {t("footer.mission", "A secure cloud-based medical document platform designed for patients and clinicians. Built on private Azure cloud infrastructure with automated AI document extraction and medical record intelligence.")}
+            A secure cloud-based medical document platform designed for patients and
+            clinicians. Built on private Azure cloud infrastructure with automated AI
+            document extraction and medical record intelligence.
           </p>
           <div className="security-badges-row">
             <span className="sec-badge">
-              <FiShield className="sec-icon" /> {t("footer.privateAzureVault", "Private Azure Vault")}
+              <FiShield className="sec-icon" /> Private Azure Vault
             </span>
             <span className="sec-badge">
-              <FiFileText className="sec-icon" /> {t("footer.sasTokens", "SAS-Signed Tokens")}
+              <FiFileText className="sec-icon" /> SAS-Signed Tokens
             </span>
           </div>
         </div>
 
         {/* Column 2: Platform Navigation */}
         <div className="footer-col">
-          <h4 className="footer-heading">{t("footer.platform", "Platform")}</h4>
+          <h4 className="footer-heading">Platform</h4>
           <ul className="footer-links-list">
             <li>
-              <Link to="/">{t("footer.homeOverview", "Home Overview")}</Link>
+              <Link to="/">Home Overview</Link>
             </li>
             <li>
-              <Link to="/dashboard">{t("footer.recordsVault", "Medical Records Vault")}</Link>
+              <Link to="/dashboard">Medical Records Vault</Link>
             </li>
             <li>
-              <Link to="/ai-analysis">{t("footer.aiInsights", "AI Clinical Insights")}</Link>
+              <Link to="/ai-analysis">AI Clinical Insights</Link>
             </li>
             <li>
-              <Link to="/appointment">{t("footer.appointmentBooking", "Appointment Booking")}</Link>
+              <Link to="/appointment">Appointment Booking</Link>
             </li>
             <li>
-              <Link to="/insurance">{t("footer.insurancePlans", "Health Insurance Plans")}</Link>
+              <Link to="/insurance">Health Insurance Plans</Link>
             </li>
             <li>
-              <Link to="/diet">{t("footer.dietAdvisor", "Nutrition & Diet Advisor")}</Link>
+              <Link to="/diet">Nutrition & Diet Advisor</Link>
             </li>
           </ul>
         </div>
 
         {/* Column 3: Capabilities */}
         <div className="footer-col">
-          <h4 className="footer-heading">{t("footer.clinicalTech", "Clinical Tech")}</h4>
+          <h4 className="footer-heading">Clinical Tech</h4>
           <ul className="footer-links-list">
             <li>
-              <span className="capability-item">{t("footer.azureDocIntel", "Azure Document Intelligence")}</span>
+              <span className="capability-item">Azure Document Intelligence</span>
             </li>
             <li>
-              <span className="capability-item">{t("footer.azureOpenAI", "Azure OpenAI Analysis")}</span>
+              <span className="capability-item">Azure OpenAI Analysis</span>
             </li>
             <li>
-              <span className="capability-item">{t("footer.biomarkerExtraction", "Biomarker Extraction")}</span>
+              <span className="capability-item">Biomarker Extraction</span>
             </li>
             <li>
-              <span className="capability-item">{t("footer.physicianPortal", "Physician Diagnostic Portal")}</span>
+              <span className="capability-item">Physician Diagnostic Portal</span>
             </li>
             <li>
-              <span className="capability-item">{t("footer.encryptedStorage", "Encrypted Health Storage")}</span>
+              <span className="capability-item">Encrypted Health Storage</span>
             </li>
           </ul>
         </div>
 
         {/* Column 4: Contact & Emergency */}
         <div className="footer-col contact-col">
-          <h4 className="footer-heading">{t("footer.contactHelpline", "Contact & Helpline")}</h4>
+          <h4 className="footer-heading">Contact & Helpline</h4>
           <ul className="footer-contact-list">
             <li>
               <FiPhoneCall className="contact-icon" />
               <div>
-                <strong>{t("footer.supportDesk", "Support Desk:")}</strong>
+                <strong>Support Desk:</strong>
                 <div>+91 72070 97501</div>
               </div>
             </li>
             <li>
               <FiMail className="contact-icon" />
               <div>
-                <strong>{t("footer.clinicalInquiries", "Clinical Inquiries:")}</strong>
+                <strong>Clinical Inquiries:</strong>
                 <div>support@vaidyasthana.org</div>
               </div>
             </li>
             <li>
               <FiMapPin className="contact-icon" />
               <div>
-                <strong>{t("footer.location", "Location:")}</strong>
-                <div>{t("footer.locationAddress", "MITS Campus, Madanapalle, AP, India")}</div>
+                <strong>Location:</strong>
+                <div>MITS Campus, Madanapalle, AP, India</div>
               </div>
             </li>
           </ul>
@@ -147,18 +146,20 @@ const Footer = () => {
       <div className="footer-bottom-container">
         <div className="disclaimer-strip">
           <p>
-            <strong>{t("footer.medicalNoticeTitle", "Medical Notice:")}</strong>{" "}
-            {t("footer.medicalNoticeText", "Vaidyasthana is an informational health records management platform. AI-generated summaries and biomarker interpretations are educational aids and do not constitute formal medical advice or diagnostic evaluations. Always consult licensed medical professionals.")}
+            <strong>Medical Notice:</strong> Vaidyasthana is an informational health
+            records management platform. AI-generated summaries and biomarker
+            interpretations are educational aids and do not constitute formal medical
+            advice or diagnostic evaluations. Always consult licensed medical professionals.
           </p>
         </div>
         <div className="footer-copyright-row">
-          <span>&copy; {new Date().getFullYear()} {t("footer.allRightsReserved", "Vaidyasthana Healthcare Platform. All rights reserved.")}</span>
+          <span>&copy; {new Date().getFullYear()} Vaidyasthana Healthcare Platform. All rights reserved.</span>
           <div className="footer-legal-links">
-            <Link to="/contact">{t("footer.support", "Support")}</Link>
+            <Link to="/contact">Support</Link>
             <span>•</span>
-            <Link to="/">{t("footer.termsOfService", "Terms of Service")}</Link>
+            <Link to="/">Terms of Service</Link>
             <span>•</span>
-            <Link to="/">{t("footer.privacyPolicy", "Privacy Policy")}</Link>
+            <Link to="/">Privacy Policy</Link>
           </div>
         </div>
       </div>

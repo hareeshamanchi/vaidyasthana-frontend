@@ -5,8 +5,6 @@ import "./Navbar.css";
 import AuthModal from "./AuthModal";
 import NotificationDropdown from "./NotificationDropdown";
 import { AuthContext } from "../context/AuthContext";
-import { useLanguage } from "../context/LanguageContext";
-import LanguageToggle from "./LanguageToggle";
 import {
   FiMenu,
   FiX,
@@ -26,7 +24,6 @@ function Navbar() {
   const [authModalType, setAuthModalType] = useState(null);
 
   const { user, logout } = useContext(AuthContext);
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -119,8 +116,8 @@ function Navbar() {
               </div>
             </div>
             <div className="brand-text">
-              <span className="navbar-title">{t("common.appName", "Vaidyasthana")}</span>
-              <span className="brand-tagline">{t("common.tagline", "Clinical Health Records")}</span>
+              <span className="navbar-title">Vaidyasthana</span>
+              <span className="brand-tagline">Clinical Health Records</span>
             </div>
           </Link>
         </div>
@@ -129,7 +126,7 @@ function Navbar() {
         <ul className="navbar-links desktop-only">
           <li>
             <Link to="/" className={`nav-link ${isActive("/") ? "active" : ""}`}>
-              {t("nav.home", "Home")}
+              Home
             </Link>
           </li>
 
@@ -143,7 +140,7 @@ function Navbar() {
                     isActive("/doctor-dashboard") ? "active" : ""
                   }`}
                 >
-                  <FiShield className="nav-icon" /> {t("nav.doctorDashboard", "Doctor Dashboard")}
+                  <FiShield className="nav-icon" /> Doctor Dashboard
                 </Link>
               </li>
               <li>
@@ -153,7 +150,7 @@ function Navbar() {
                     isActive("/appointment") || isActive("/appointments") ? "active" : ""
                   }`}
                 >
-                  <FiCalendar className="nav-icon" /> {t("nav.consultations", "Consultations")}
+                  <FiCalendar className="nav-icon" /> Consultations
                 </Link>
               </li>
               <li>
@@ -163,7 +160,7 @@ function Navbar() {
                     isActive("/doctor-dashboard") ? "active" : ""
                   }`}
                 >
-                  <FiFileText className="nav-icon" /> {t("nav.medicalVault", "Medical Vault")}
+                  <FiFileText className="nav-icon" /> Medical Vault
                 </Link>
               </li>
               <li>
@@ -173,7 +170,7 @@ function Navbar() {
                     isActive("/timeline") || isActive("/health-timeline") ? "active" : ""
                   }`}
                 >
-                  <FiActivity className="nav-icon" /> {t("nav.healthTimeline", "Health Timeline")}
+                  <FiActivity className="nav-icon" /> Health Timeline
                 </Link>
               </li>
             </>
@@ -189,7 +186,7 @@ function Navbar() {
                     isActive("/timeline") || isActive("/health-timeline") ? "active" : ""
                   }`}
                 >
-                  <FiActivity className="nav-icon" /> {t("nav.timeline", "Timeline")}
+                  <FiActivity className="nav-icon" /> Timeline
                 </Link>
               </li>
               <li>
@@ -199,7 +196,7 @@ function Navbar() {
                     isActive("/appointment") || isActive("/appointments") ? "active" : ""
                   }`}
                 >
-                  <FiCalendar className="nav-icon" /> {t("nav.appointments", "Appointments")}
+                  <FiCalendar className="nav-icon" /> Appointments
                 </Link>
               </li>
               <li>
@@ -209,7 +206,7 @@ function Navbar() {
                     isActive("/medications") || isActive("/medication-reminders") ? "active" : ""
                   }`}
                 >
-                  <FiClock className="nav-icon" /> {t("nav.medications", "Medications")}
+                  <FiClock className="nav-icon" /> Medications
                 </Link>
               </li>
               <li>
@@ -217,7 +214,7 @@ function Navbar() {
                   to="/dashboard"
                   className={`nav-link ${isActive("/dashboard") ? "active" : ""}`}
                 >
-                  <FiFileText className="nav-icon" /> {t("nav.myRecords", "My Records")}
+                  <FiFileText className="nav-icon" /> My Records
                 </Link>
               </li>
               <li>
@@ -225,7 +222,7 @@ function Navbar() {
                   to="/ai-analysis"
                   className={`nav-link ${isActive("/ai-analysis") ? "active" : ""}`}
                 >
-                  <FiCpu className="nav-icon" /> {t("nav.aiAnalysis", "AI Analysis")}
+                  <FiCpu className="nav-icon" /> AI Analysis
                 </Link>
               </li>
               <li>
@@ -233,7 +230,7 @@ function Navbar() {
                   to="/diet"
                   className={`nav-link ${isActive("/diet") ? "active" : ""}`}
                 >
-                  <FiHeart className="nav-icon" /> {t("nav.dietPlan", "Diet Plan")}
+                  <FiHeart className="nav-icon" /> Diet Plan
                 </Link>
               </li>
               <li>
@@ -241,7 +238,7 @@ function Navbar() {
                   to="/insurance"
                   className={`nav-link ${isActive("/insurance") ? "active" : ""}`}
                 >
-                  <FiShield className="nav-icon" /> {t("nav.insurance", "Insurance")}
+                  <FiShield className="nav-icon" /> Insurance
                 </Link>
               </li>
             </>
@@ -257,7 +254,7 @@ function Navbar() {
                     isActive("/admin-dashboard") || isActive("/admin") ? "active" : ""
                   }`}
                 >
-                  <FiShield className="nav-icon" /> {t("nav.adminPortal", "Admin Portal")}
+                  <FiShield className="nav-icon" /> Admin Portal
                 </Link>
               </li>
               <li>
@@ -267,7 +264,7 @@ function Navbar() {
                     isActive("/appointment") || isActive("/appointments") ? "active" : ""
                   }`}
                 >
-                  <FiCalendar className="nav-icon" /> {t("nav.consultations", "Consultations")}
+                  <FiCalendar className="nav-icon" /> Consultations
                 </Link>
               </li>
             </>
@@ -283,7 +280,7 @@ function Navbar() {
                     isActive("/appointment") || isActive("/appointments") ? "active" : ""
                   }`}
                 >
-                  <FiCalendar className="nav-icon" /> {t("nav.appointments", "Appointments")}
+                  <FiCalendar className="nav-icon" /> Appointments
                 </Link>
               </li>
               <li>
@@ -291,7 +288,7 @@ function Navbar() {
                   to="/ai-analysis"
                   className={`nav-link ${isActive("/ai-analysis") ? "active" : ""}`}
                 >
-                  <FiCpu className="nav-icon" /> {t("nav.aiAnalysis", "AI Analysis")}
+                  <FiCpu className="nav-icon" /> AI Analysis
                 </Link>
               </li>
               <li>
@@ -299,7 +296,7 @@ function Navbar() {
                   to="/diet"
                   className={`nav-link ${isActive("/diet") ? "active" : ""}`}
                 >
-                  <FiHeart className="nav-icon" /> {t("nav.dietPlan", "Diet Plan")}
+                  <FiHeart className="nav-icon" /> Diet Plan
                 </Link>
               </li>
               <li>
@@ -307,7 +304,7 @@ function Navbar() {
                   to="/insurance"
                   className={`nav-link ${isActive("/insurance") ? "active" : ""}`}
                 >
-                  <FiShield className="nav-icon" /> {t("nav.insurance", "Insurance")}
+                  <FiShield className="nav-icon" /> Insurance
                 </Link>
               </li>
             </>
@@ -318,14 +315,13 @@ function Navbar() {
               to="/contact"
               className={`nav-link ${isActive("/contact") ? "active" : ""}`}
             >
-              <FiMail className="nav-icon" /> {t("nav.contact", "Contact")}
+              <FiMail className="nav-icon" /> Contact
             </Link>
           </li>
         </ul>
 
         {/* Desktop Auth Controls */}
         <div className="navbar-auth desktop-only">
-          <LanguageToggle />
           {user ? (
             <div className="navbar-user-section">
               <NotificationDropdown user={user} />
@@ -335,13 +331,13 @@ function Navbar() {
                 </div>
                 <div className="user-details">
                   <span className="user-name" title={user.name}>{user.name}</span>
-                  <span className="user-role-pill">{t("nav." + (user.role || "patient"), user.role || "patient")}</span>
+                  <span className="user-role-pill">{user.role || "patient"}</span>
                 </div>
                 <button
                   onClick={handleLogout}
                   className="btn-nav-logout"
-                  title={t("nav.signOut", "Sign Out")}
-                  aria-label={t("nav.signOut", "Logout")}
+                  title="Sign Out"
+                  aria-label="Logout"
                 >
                   <FiLogOut size={16} />
                 </button>
@@ -354,14 +350,14 @@ function Navbar() {
                 className="btn-nav-login login"
                 type="button"
               >
-                {t("nav.signIn", "Sign In")}
+                Sign In
               </button>
               <button
                 onClick={handleOpenSignup}
                 className="btn-nav-signup signup"
                 type="button"
               >
-                {t("nav.getStarted", "Get Started")}
+                Get Started
               </button>
             </div>
           )}
@@ -369,7 +365,6 @@ function Navbar() {
 
         {/* Mobile Header Controls */}
         <div className="mobile-header-controls mobile-only">
-          <LanguageToggle compact={true} />
           {user && (
             <div className="mobile-header-notif">
               <NotificationDropdown user={user} />
@@ -378,7 +373,7 @@ function Navbar() {
           <button
             className="mobile-toggle-btn"
             onClick={toggleMobileMenu}
-            aria-label={isMobileMenuOpen ? t("nav.closeMenu", "Close menu") : t("nav.openMenu", "Open menu")}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -399,18 +394,16 @@ function Navbar() {
                 >
             <div className="mobile-drawer-header">
               <div className="brand-text">
-                <span className="navbar-title">{t("common.appName", "Vaidyasthana")}</span>
-                <span className="brand-tagline">{t("common.tagline", "Clinical Health Records")}</span>
+                <span className="navbar-title">Vaidyasthana</span>
+                <span className="brand-tagline">Clinical Health Records</span>
               </div>
-              <div className="mobile-drawer-header-actions" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  className="close-drawer-btn"
-                  onClick={closeMobileMenu}
-                  aria-label={t("nav.closeMenu", "Close menu")}
-                >
-                  <FiX size={22} />
-                </button>
-              </div>
+              <button
+                className="close-drawer-btn"
+                onClick={closeMobileMenu}
+                aria-label="Close menu"
+              >
+                <FiX size={22} />
+              </button>
             </div>
 
             {user && (
@@ -421,7 +414,7 @@ function Navbar() {
                   </div>
                   <div className="mobile-user-text">
                     <div className="mobile-user-name">{user.name}</div>
-                    <span className="user-role-pill">{t("nav." + (user.role || "patient"), user.role || "patient")}</span>
+                    <span className="user-role-pill">{user.role || "patient"}</span>
                   </div>
                 </div>
                 <div className="mobile-notif-wrap">
@@ -437,7 +430,7 @@ function Navbar() {
                   className={isActive("/") ? "active" : ""}
                   onClick={closeMobileMenu}
                 >
-                  {t("nav.home", "Home")}
+                  Home
                 </Link>
               </li>
 
@@ -450,7 +443,7 @@ function Navbar() {
                       className={isActive("/doctor-dashboard") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.doctorDashboard", "Doctor Dashboard")}
+                      Doctor Dashboard
                     </Link>
                   </li>
                   <li>
@@ -459,7 +452,7 @@ function Navbar() {
                       className={isActive("/appointment") || isActive("/appointments") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.consultationsSchedule", "Consultations Schedule")}
+                      Consultations Schedule
                     </Link>
                   </li>
                   <li>
@@ -468,7 +461,7 @@ function Navbar() {
                       className={isActive("/doctor-dashboard") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.medicalVault", "Medical Vault")}
+                      Medical Vault
                     </Link>
                   </li>
                   <li>
@@ -477,7 +470,7 @@ function Navbar() {
                       className={isActive("/timeline") || isActive("/health-timeline") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.patientHealthTimeline", "Patient Health Timeline")}
+                      Patient Health Timeline
                     </Link>
                   </li>
                 </>
@@ -492,7 +485,7 @@ function Navbar() {
                       className={isActive("/timeline") || isActive("/health-timeline") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.healthTimeline", "Health Timeline")}
+                      Health Timeline
                     </Link>
                   </li>
                   <li>
@@ -501,7 +494,7 @@ function Navbar() {
                       className={isActive("/appointment") || isActive("/appointments") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.appointments", "Appointments")}
+                      Appointments
                     </Link>
                   </li>
                   <li>
@@ -510,7 +503,7 @@ function Navbar() {
                       className={isActive("/medications") || isActive("/medication-reminders") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.medications", "Medications & Reminders")}
+                      Medications & Reminders
                     </Link>
                   </li>
                   <li>
@@ -519,7 +512,7 @@ function Navbar() {
                       className={isActive("/dashboard") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.myRecordsDashboard", "My Records & Dashboard")}
+                      My Records & Dashboard
                     </Link>
                   </li>
                   <li>
@@ -528,7 +521,7 @@ function Navbar() {
                       className={isActive("/ai-analysis") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.aiMedicalInsights", "AI Medical Insights")}
+                      AI Medical Insights
                     </Link>
                   </li>
                   <li>
@@ -537,7 +530,7 @@ function Navbar() {
                       className={isActive("/diet") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.dietNutritionPlan", "Diet & Nutrition Plan")}
+                      Diet & Nutrition Plan
                     </Link>
                   </li>
                   <li>
@@ -546,7 +539,7 @@ function Navbar() {
                       className={isActive("/insurance") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.healthInsurance", "Health Insurance")}
+                      Health Insurance
                     </Link>
                   </li>
                 </>
@@ -561,7 +554,7 @@ function Navbar() {
                       className={isActive("/admin-dashboard") || isActive("/admin") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.adminVerification", "Administrative Verification")}
+                      Administrative Verification
                     </Link>
                   </li>
                   <li>
@@ -570,7 +563,7 @@ function Navbar() {
                       className={isActive("/appointment") || isActive("/appointments") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.consultations", "Consultations")}
+                      Consultations
                     </Link>
                   </li>
                 </>
@@ -585,7 +578,7 @@ function Navbar() {
                       className={isActive("/appointment") || isActive("/appointments") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.appointments", "Appointments")}
+                      Appointments
                     </Link>
                   </li>
                   <li>
@@ -594,7 +587,7 @@ function Navbar() {
                       className={isActive("/ai-analysis") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.aiMedicalInsights", "AI Medical Insights")}
+                      AI Medical Insights
                     </Link>
                   </li>
                   <li>
@@ -603,7 +596,7 @@ function Navbar() {
                       className={isActive("/diet") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.dietNutritionPlan", "Diet & Nutrition Plan")}
+                      Diet & Nutrition Plan
                     </Link>
                   </li>
                   <li>
@@ -612,7 +605,7 @@ function Navbar() {
                       className={isActive("/insurance") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      {t("nav.healthInsurance", "Health Insurance")}
+                      Health Insurance
                     </Link>
                   </li>
                 </>
@@ -624,7 +617,7 @@ function Navbar() {
                   className={isActive("/contact") ? "active" : ""}
                   onClick={closeMobileMenu}
                 >
-                  {t("nav.supportContact", "Support & Contact")}
+                  Support & Contact
                 </Link>
               </li>
             </ul>
@@ -636,7 +629,7 @@ function Navbar() {
                   className="mobile-btn-logout"
                   type="button"
                 >
-                  <FiLogOut size={16} /> {t("nav.signOut", "Sign Out")}
+                  <FiLogOut size={16} /> Sign Out
                 </button>
               ) : (
                 <div className="mobile-auth-stack">
@@ -648,7 +641,7 @@ function Navbar() {
                     className="mobile-btn-login"
                     type="button"
                   >
-                    {t("nav.signIn", "Sign In")}
+                    Sign In
                   </button>
                   <button
                     onClick={() => {
@@ -658,7 +651,7 @@ function Navbar() {
                     className="mobile-btn-signup"
                     type="button"
                   >
-                    {t("nav.createAccount", "Create Account")}
+                    Create Account
                   </button>
                 </div>
               )}

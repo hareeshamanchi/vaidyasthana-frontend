@@ -4,7 +4,6 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './context/AuthContext';
-import { LanguageProvider } from './context/LanguageContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
@@ -13,9 +12,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <LanguageProvider>
-        <App />
-      </LanguageProvider>
+      <App />
     </AuthProvider>
   </React.StrictMode>
 );

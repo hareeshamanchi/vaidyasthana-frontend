@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import "./ForgotPasswordPage.css";
 import { authAPI } from "../services/api";
-import { useLanguage } from "../context/LanguageContext";
 import {
   FiMail,
   FiArrowLeft,
@@ -13,7 +12,6 @@ import {
 } from "react-icons/fi";
 
 const ForgotPasswordPage = () => {
-  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,8 +31,7 @@ const ForgotPasswordPage = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      setError(t("auth.invalidEmail", "Please enter a valid email address."));
-      isSubmittingRef.current = false;
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -45,7 +42,7 @@ const ForgotPasswordPage = () => {
       const data = res.data;
       setMessage(
         data.message ||
-          t("auth.resetEmailSent", "If an account exists for this email, password reset instructions will be sent.")
+          "If an account exists for this email, password reset instructions will be sent."
       );
       if (data.devResetUrl) {
         setDevResetUrl(data.devResetUrl);
@@ -55,7 +52,7 @@ const ForgotPasswordPage = () => {
       const errMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        t("common.error", "An error occurred while requesting password reset. Please try again.");
+        "An error occurred while requesting password reset. Please try again.";
       setError(errMsg);
     } finally {
       setLoading(false);
@@ -70,9 +67,9 @@ const ForgotPasswordPage = () => {
           <div className="forgot-icon-wrap">
             <FiKey size={26} color="#0284c7" />
           </div>
-          <h2>{t("forgotPassword.title", "Reset Your Password")}</h2>
+          <h2>Reset Your Password</h2>
           <p className="forgot-subtitle">
-            {t("forgotPassword.subtitle", "Enter your registered email address below and we'll send you single-use instructions to securely choose a new password.")}
+            Enter your registered email address below and we'll send you single-use instructions to securely choose a new password.
           </p>
         </div>
 
@@ -87,7 +84,7 @@ const ForgotPasswordPage = () => {
           <div className="auth-alert success" role="status">
             <FiCheckCircle className="alert-icon" />
             <div>
-              <strong>{t("common.success", "Request Received")}:</strong>
+              <strong>Request Received:</strong>
               <p style={{ margin: "4px 0 0" }}>{message}</p>
             </div>
           </div>
@@ -109,7 +106,7 @@ const ForgotPasswordPage = () => {
         <form onSubmit={handleSubmit} className="forgot-form">
           <div className="form-group">
             <label htmlFor="forgot-email" className="field-label">
-              {t("forgotPassword.emailLabel", "Registered Email Address *")}
+              Registered Email Address *
             </label>
             <div className="field-input-wrap">
               <FiMail className="input-icon" />
@@ -117,7 +114,7 @@ const ForgotPasswordPage = () => {
                 id="forgot-email"
                 type="email"
                 required
-                placeholder={t("forgotPassword.emailPlaceholder", "name@example.com")}
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -131,16 +128,16 @@ const ForgotPasswordPage = () => {
             disabled={loading || !email}
           >
             {loading ? (
-              <span className="spinner-text">{t("forgotPassword.sending", "Sending Reset Link...")}</span>
+              <span className="spinner-text">Sending Reset Link...</span>
             ) : (
-              t("forgotPassword.submitBtn", "Send Reset Link")
+              "Send Reset Link"
             )}
           </button>
         </form>
 
         <div className="forgot-card-footer">
           <Link to="/" className="btn-back-signin">
-            <FiArrowLeft size={16} /> {t("forgotPassword.backToSignIn", "Return to Homepage & Sign In")}
+            <FiArrowLeft size={16} /> Return to Homepage & Sign In
           </Link>
         </div>
       </div>

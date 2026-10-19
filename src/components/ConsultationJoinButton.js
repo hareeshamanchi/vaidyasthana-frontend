@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FiVideo, FiClock, FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { getConsultationWindowState } from "../utils/consultationWindow";
-import { useLanguage } from "../context/LanguageContext";
 
 /**
  * Universal Video Consultation Action Button component.
@@ -24,7 +23,6 @@ const ConsultationJoinButton = ({
   iconSize = 15,
   useVideoPrefixRoute = false,
 }) => {
-  const { t } = useLanguage();
   if (!appointment) return null;
 
   const windowState = getConsultationWindowState(appointment, currentTime);
@@ -56,27 +54,8 @@ const ConsultationJoinButton = ({
     }
   };
 
-  const getLocalizedDisabledText = () => {
-    switch (windowState.status) {
-      case "BEFORE_START": {
-        const timePart = windowState.buttonText.replace(/^Starts at\s*/i, "");
-        return t("appointment.startsAt", { time: timePart }, windowState.buttonText);
-      }
-      case "EXPIRED":
-        return t("appointment.timeExceeded", windowState.buttonText);
-      case "CANCELLED":
-        return t("appointment.appointmentCancelled", windowState.buttonText);
-      case "REJECTED":
-        return t("appointment.appointmentRejected", windowState.buttonText);
-      case "COMPLETED":
-        return t("appointment.appointmentCompleted", windowState.buttonText);
-      default:
-        return windowState.buttonText;
-    }
-  };
-
   if (windowState.canJoin) {
-    const label = customEnabledText || t("appointment.joinVideoBtn", "Join Video Consultation");
+    const label = customEnabledText || "Join Video Consultation";
     return (
       <Link
         to={targetRoute}
@@ -90,19 +69,17 @@ const ConsultationJoinButton = ({
     );
   }
 
-  const disabledText = getLocalizedDisabledText();
-
   return (
     <button
       type="button"
       disabled
       aria-disabled="true"
       className={`btn-video-join-disabled ${className}`}
-      title={disabledText}
-      aria-label={disabledText}
+      title={windowState.buttonText}
+      aria-label={windowState.buttonText}
     >
       {getStatusIcon()}
-      <span className="btn-status-label">{disabledText}</span>
+      <span className="btn-status-label">{windowState.buttonText}</span>
     </button>
   );
 };

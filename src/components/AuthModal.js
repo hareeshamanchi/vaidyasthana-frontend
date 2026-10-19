@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import "./AuthModal.css";
 import { AuthContext } from "../context/AuthContext";
-import { useLanguage } from "../context/LanguageContext";
 import { authAPI } from "../services/api";
 import {
   FiX,
@@ -21,7 +20,6 @@ import {
 
 const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
   const { login } = useContext(AuthContext);
-  const { t } = useLanguage();
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -88,7 +86,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
     if (currentType === "forgot-password") {
       const cleanEmail = (formData.email || "").trim();
       if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-        setError(t("auth.invalidEmail", "Please enter a valid email address."));
+        setError("Please enter a valid email address.");
         isSubmittingRef.current = false;
         return;
       }
@@ -99,7 +97,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         const data = res.data;
         setMessage(
           data.message ||
-            t("auth.resetEmailSent", "If an account exists for this email, password reset instructions will be sent.")
+            "If an account exists for this email, password reset instructions will be sent."
         );
         if (data.devResetUrl) {
           setDevResetUrl(data.devResetUrl);
@@ -109,7 +107,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         const errMsg =
           err.response?.data?.message ||
           err.response?.data?.error ||
-          t("common.error", "Unable to process password reset request. Please try again later.");
+          "Unable to process password reset request. Please try again later.";
         setError(errMsg);
       } finally {
         setLoading(false);
@@ -121,46 +119,45 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
     // Client-side validation for registration
     if (currentType === "register") {
       if (!formData.name || !formData.name.trim()) {
-        setError(t("auth.nameRequired", "Please enter your full name."));
+        setError("Please enter your full name.");
         isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.email || !formData.email.trim()) {
-        setError(t("auth.invalidEmail", "Please enter your email address."));
+        setError("Please enter your email address.");
         isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.password || formData.password.length < 6) {
-        setError(t("auth.passwordTooShort", "Password must be at least 6 characters long."));
+        setError("Password must be at least 6 characters long.");
         isSubmittingRef.current = false;
         return;
       }
 
       const cleanPhone = (formData.phoneNumber || "").replace(/[\s-]/g, "");
       if (!cleanPhone || !/^\+?[0-9]{10,15}$/.test(cleanPhone)) {
-        setError(t("auth.phoneRequired", "Please enter a valid mobile number with 10–15 digits."));
+        setError("Please enter a valid 10-15 digit mobile number (e.g. +91 9876543210).");
         isSubmittingRef.current = false;
         return;
       }
 
       if (!formData.address || formData.address.trim().length < 5) {
-        setError(t("auth.addressPlaceholder", "Please enter a complete address (minimum 5 characters)."));
+        setError("Please enter a complete address / location (minimum 5 characters).");
         isSubmittingRef.current = false;
         return;
       }
 
-      if (formData.role === "doctor") {
-        if (!formData.medicalRegistrationNumber || !formData.medicalRegistrationNumber.trim()) {
-          setError(t("auth.medicalRegRequired", "Medical Registration / License Number is required for doctor accounts."));
-          isSubmittingRef.current = false;
-          return;
-        }
+      if (formData.role === "doctor" && !formData.medicalRegistrationNumber?.trim()) {
+        setError("Medical Council Registration / License Number is required for doctors.");
+        isSubmittingRef.current = false;
+        return;
       }
     }
 
     setLoading(true);
+
     try {
       if (currentType === "login") {
         const res = await authAPI.login({
@@ -168,55 +165,75 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
           password: formData.password,
         });
 
-        if (res.data && res.data.token) {
-          login(res.data.token, res.data.user);
+        const data = res.data;
+        setMessage("Login successful! Redirecting to your vault...");
+        login(data.user, data.token);
+
+        setTimeout(() => {
           if (onLoginSuccess) {
-            onLoginSuccess(res.data);
-          } else {
-            onClose();
+            onLoginSuccess(data);
           }
-        } else {
-          setError(t("auth.authFailed", "Invalid response from server."));
-        }
+          onClose();
+        }, 700);
       } else {
-        // Registration Flow
-        const payload = {
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
+        const res = await authAPI.register({
+          name: formData.name,
+          email: formData.email,
           password: formData.password,
           phoneNumber: formData.phoneNumber.trim(),
           address: formData.address.trim(),
-          role: formData.role,
-        };
+          role: formData.role || "patient",
+          specialization: formData.specialization || "General Medicine",
+          medicalRegistrationNumber: formData.medicalRegistrationNumber?.trim() || "",
+        });
 
-        if (formData.role === "doctor") {
-          payload.specialization = formData.specialization;
-          payload.medicalRegistrationNumber = formData.medicalRegistrationNumber.trim();
-        }
+        const data = res.data;
+        setMessage("Registration successful! Logging you in...");
+        login(data.user, data.token);
 
-        const res = await authAPI.register(payload);
-
-        if (res.data && res.data.token) {
-          login(res.data.token, res.data.user);
+        setTimeout(() => {
           if (onLoginSuccess) {
-            onLoginSuccess(res.data);
-          } else {
-            onClose();
+            onLoginSuccess(data);
           }
-        } else {
-          setMessage(t("auth.registrationSuccess", "Registration successful! Please sign in."));
-          setCurrentType("login");
-        }
+          onClose();
+        }, 800);
       }
     } catch (err) {
       console.error("Auth error:", err);
-      const backendMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        (currentType === "login"
-          ? t("auth.authFailed", "Invalid credentials. Please verify your email and password.")
-          : t("common.error", "Registration could not be completed. Please verify your details."));
-      setError(backendMsg);
+      let errMsg = "";
+      if (err.response) {
+        const status = err.response.status;
+        const serverMsg = err.response.data?.message || err.response.data?.error;
+        if (serverMsg && typeof serverMsg === "string") {
+          errMsg = serverMsg;
+        } else if (status === 503 || status === 502 || status === 504) {
+          errMsg =
+            "The backend service is currently waking up (Render cold boot). Please wait 30 seconds and try again.";
+        } else if (status === 400 || status === 409) {
+          errMsg =
+            currentType === "register"
+              ? "Unable to complete registration. Please ensure your email is unique and all fields are valid."
+              : "Invalid request. Please check your entered credentials.";
+        } else if (status === 401) {
+          errMsg = "Invalid email or password. Please verify your credentials.";
+        } else if (status === 404) {
+          errMsg = "Account not found. Please verify your email or register.";
+        } else if (status >= 500) {
+          errMsg = "Server error occurred. Please try again in a few moments.";
+        } else {
+          errMsg =
+            currentType === "register"
+              ? "Registration failed. Please try again."
+              : "Unable to authenticate. Please verify your credentials or server status.";
+        }
+      } else if (err.code === "ECONNABORTED" || err.message?.toLowerCase().includes("timeout")) {
+        errMsg =
+          "The server took too long to respond (Render cold boot in progress). Please retry in 30 seconds.";
+      } else {
+        errMsg =
+          "Unable to reach the server. The backend may be starting up on Render — please wait a moment and retry.";
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;
@@ -235,8 +252,8 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         <button
           onClick={onClose}
           className="auth-close-btn"
-          title={t("common.closeDialog", "Close Dialog")}
-          aria-label={t("common.close", "Close")}
+          title="Close Dialog"
+          aria-label="Close"
           type="button"
         >
           <FiX size={20} />
@@ -261,17 +278,17 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
           </div>
           <h2 id="auth-modal-title">
             {currentType === "login"
-              ? t("auth.signInTitle", "Welcome Back to Vaidyasthana")
+              ? "Welcome Back to Vaidyasthana"
               : currentType === "register"
-              ? t("auth.registerTitle", "Create Your Clinical Account")
-              : t("auth.forgotTitle", "Reset Your Password")}
+              ? "Create Your Clinical Account"
+              : "Reset Your Password"}
           </h2>
           <p className="auth-subtitle">
             {currentType === "login"
-              ? t("auth.signInSubtitle", "Access your encrypted medical records and AI analyses")
+              ? "Access your encrypted medical records and AI analyses"
               : currentType === "register"
-              ? t("auth.registerSubtitle", "Register to manage health records, lab reports, and doctor visits")
-              : t("auth.forgotSubtitle", "Enter your registered email address to receive secure reset instructions")}
+              ? "Register to manage health records, lab reports, and doctor visits"
+              : "Enter your registered email address to receive secure reset instructions"}
           </p>
         </div>
 
@@ -279,7 +296,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         {currentType === "forgot-password" ? (
           <div className="auth-recovery-indicator">
             <span className="recovery-pill">
-              <FiShield size={14} /> {t("auth.passwordRecoveryPill", "Password Recovery")}
+              <FiShield size={14} /> Password Recovery
             </span>
           </div>
         ) : (
@@ -294,7 +311,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
               }}
               type="button"
             >
-              {t("nav.signIn", "Sign In")}
+              Sign In
             </button>
             <button
               className={`auth-tab-btn ${currentType === "register" ? "active" : ""}`}
@@ -306,7 +323,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
               }}
               type="button"
             >
-              {t("auth.registerTab", "New Patient / Doctor")}
+              New Patient / Doctor
             </button>
           </div>
         )}
@@ -338,19 +355,19 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
               {currentType === "register"
                 ? formData.name?.trim()
                   ? (formData.role === "doctor" ? `Dr. ${formData.name.trim()}` : formData.name.trim())
-                  : (formData.role === "doctor" ? t("auth.doctor", "Doctor Account") : t("auth.patient", "Patient Account"))
+                  : (formData.role === "doctor" ? "Doctor Account Preview" : "Patient Account Preview")
                 : currentType === "login"
-                ? t("footer.recordsVault", "Clinical Health Vault Access")
-                : t("auth.secureRecoveryTitle", "Secure Account Recovery")}
+                ? "Clinical Health Vault Access"
+                : "Secure Account Recovery"}
             </span>
             <span className="preview-role-text">
               {currentType === "register"
                 ? (formData.role === "doctor"
-                    ? `${t("auth.roleLabel", "Role:")} ${t("auth.doctor", "Licensed Physician")} • ${formData.specialization}`
-                    : `${t("auth.roleLabel", "Role:")} ${t("auth.patient", "Patient")} • ${t("dashboard.recordsVaultTitle", "Personal Vault & Appointments")}`)
+                    ? `Role: Licensed Physician • ${formData.specialization}`
+                    : "Role: Patient • Personal Vault & Appointments")
                 : currentType === "login"
-                ? t("auth.signInSubtitle", "Sign in with verified clinical credentials")
-                : t("auth.forgotSubtitle", "Reset instructions will be delivered to your registered email")}
+                ? "Sign in with verified clinical credentials"
+                : "Reset instructions will be delivered to your registered email"}
             </span>
           </div>
         </div>
@@ -376,7 +393,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
             <>
               {/* Role Picker */}
               <div className="role-selector-wrap">
-                <label className="field-label">{t("auth.iAmA", "Select Account Role:")}</label>
+                <label className="field-label">Select Account Role:</label>
                 <div className="role-cards-grid">
                   <label
                     className={`role-option-card patient ${
@@ -392,13 +409,13 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                     />
                     <div className="role-card-top">
                       <div className="role-title">
-                        <FiUser /> {t("auth.patient", "Patient")}
+                        <FiUser /> Patient
                       </div>
                       {formData.role === "patient" && (
                         <FiCheckCircle className="role-check-indicator" />
                       )}
                     </div>
-                    <div className="role-desc">{t("dashboard.subtitle", "Upload reports, track vitals & book appointments")}</div>
+                    <div className="role-desc">Upload reports, track vitals & book appointments</div>
                   </label>
 
                   <label
@@ -415,26 +432,26 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                     />
                     <div className="role-card-top">
                       <div className="role-title">
-                        <FiShield /> {t("auth.doctor", "Physician / Doctor")}
+                        <FiShield /> Physician / Doctor
                       </div>
                       {formData.role === "doctor" && (
                         <FiCheckCircle className="role-check-indicator" />
                       )}
                     </div>
-                    <div className="role-desc">{t("doctorDashboard.subtitle", "Access authorized patient vaults & manage schedule")}</div>
+                    <div className="role-desc">Access authorized patient vaults & manage schedule</div>
                   </label>
                 </div>
               </div>
 
               <div className="auth-field-group">
-                <label className="field-label">{t("auth.fullName", "Full Name")} *</label>
+                <label className="field-label">Full Name *</label>
                 <div className="field-input-wrap">
                   <FiUser className="input-icon" />
                   <input
                     type="text"
                     name="name"
                     required
-                    placeholder={t("auth.fullNamePlaceholder", "e.g. John Doe")}
+                    placeholder="e.g. John Doe"
                     value={formData.name}
                     onChange={handleChange}
                   />
@@ -444,14 +461,14 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
           )}
 
           <div className="auth-field-group">
-            <label className="field-label">{t("auth.email", "Email Address")} *</label>
+            <label className="field-label">Email Address *</label>
             <div className="field-input-wrap">
               <FiMail className="input-icon" />
               <input
                 type="email"
                 name="email"
                 required
-                placeholder={t("auth.emailPlaceholder", "name@example.com")}
+                placeholder="name@example.com"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -461,7 +478,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
           {currentType !== "forgot-password" && (
             <div className="auth-field-group">
               <div className="field-label-row">
-                <label className="field-label">{t("auth.password", "Password")} *</label>
+                <label className="field-label">Password *</label>
                 {currentType === "login" && (
                   <button
                     type="button"
@@ -473,7 +490,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                       setDevResetUrl("");
                     }}
                   >
-                    {t("auth.forgotPasswordQuestion", "Forgot Password?")}
+                    Forgot Password?
                   </button>
                 )}
               </div>
@@ -483,7 +500,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   required
-                  placeholder={t("auth.passwordPlaceholder", "Minimum 6 characters")}
+                  placeholder="Minimum 6 characters"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -504,7 +521,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
             <>
               <div className="auth-field-group">
                 <label className="field-label">
-                  {t("auth.phoneNumber", "Mobile Number")} * <span className="field-hint">(10–15 digits)</span>
+                  Mobile Number * <span className="field-hint">(10–15 digits)</span>
                 </label>
                 <div className="field-input-wrap">
                   <FiPhone className="input-icon" />
@@ -512,7 +529,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                     type="tel"
                     name="phoneNumber"
                     required
-                    placeholder={t("auth.phoneNumberPlaceholder", "+91 98765 43210")}
+                    placeholder="+91 98765 43210"
                     value={formData.phoneNumber}
                     onChange={handleChange}
                   />
@@ -521,7 +538,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
 
               <div className="auth-field-group">
                 <label className="field-label">
-                  {t("auth.address", "Complete Address / City")} * <span className="field-hint">(Min 5 chars)</span>
+                  Complete Address / City * <span className="field-hint">(Min 5 chars)</span>
                 </label>
                 <div className="field-input-wrap">
                   <FiMapPin className="input-icon" />
@@ -529,7 +546,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                     type="text"
                     name="address"
                     required
-                    placeholder={t("auth.addressPlaceholder", "e.g. 42 MG Road, Bengaluru, Karnataka")}
+                    placeholder="e.g. 42 MG Road, Bengaluru, Karnataka"
                     value={formData.address}
                     onChange={handleChange}
                   />
@@ -539,7 +556,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
               {formData.role === "doctor" && (
                 <>
                   <div className="auth-field-group">
-                    <label className="field-label">{t("auth.specialization", "Clinical Specialization")} *</label>
+                    <label className="field-label">Clinical Specialization *</label>
                     <div className="field-input-wrap">
                       <FiActivity className="input-icon" />
                       <select
@@ -548,22 +565,22 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                         onChange={handleChange}
                         className="field-select-input"
                       >
-                        <option value="General Medicine">{t("appointment.generalMedicine", "General Medicine")}</option>
-                        <option value="Cardiology">{t("appointment.cardiology", "Cardiology")}</option>
-                        <option value="Orthopedics">{t("appointment.orthopedics", "Orthopedics")}</option>
-                        <option value="Pediatrics">{t("appointment.pediatrics", "Pediatrics")}</option>
-                        <option value="Dermatology">{t("appointment.dermatology", "Dermatology")}</option>
-                        <option value="Neurology">{t("appointment.neurology", "Neurology")}</option>
-                        <option value="Gynecology">{t("appointment.gynecology", "Gynecology")}</option>
+                        <option value="General Medicine">General Medicine</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Orthopedics">Orthopedics</option>
+                        <option value="Pediatrics">Pediatrics</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Neurology">Neurology</option>
                         <option value="ENT">ENT (Otolaryngology)</option>
                         <option value="Oncology">Oncology</option>
+                        <option value="Gynecology">Gynecology</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="auth-field-group">
                     <label className="field-label">
-                      {t("auth.medicalRegistrationNumber", "Medical Registration / License Number")} *
+                      Medical Registration / License Number *
                     </label>
                     <div className="field-input-wrap">
                       <FiShield className="input-icon" />
@@ -571,7 +588,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                         type="text"
                         name="medicalRegistrationNumber"
                         required
-                        placeholder={t("auth.medicalRegPlaceholder", "e.g. MCI-2024-89712")}
+                        placeholder="e.g. MCI-2024-89712"
                         value={formData.medicalRegistrationNumber}
                         onChange={handleChange}
                       />
@@ -588,13 +605,13 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
             disabled={loading}
           >
             {loading ? (
-              <span className="spinner-text">{t("common.loading", "Processing...")}</span>
+              <span className="spinner-text">Processing...</span>
             ) : currentType === "login" ? (
-              t("auth.signInButton", "Sign In to Health Vault")
+              "Sign In to Health Vault"
             ) : currentType === "register" ? (
-              t("auth.registerButton", "Create Account")
+              "Create Account"
             ) : (
-              t("auth.sendResetLinkButton", "Send Reset Link")
+              "Send Reset Link"
             )}
           </button>
 
@@ -613,7 +630,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
         <div className="auth-modal-footer">
           {currentType === "forgot-password" ? (
             <p>
-              {t("auth.rememberedPassword", "Remembered your password?")}{" "}
+              Remembered your password?{" "}
               <button
                 className="switch-link-btn"
                 type="button"
@@ -624,12 +641,12 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                   setDevResetUrl("");
                 }}
               >
-                {t("auth.backToSignIn", "Return to Sign In")}
+                Return to Sign In
               </button>
             </p>
           ) : currentType === "login" ? (
             <p>
-              {t("auth.noAccount", "Don't have an account?")}{" "}
+              Don't have an account?{" "}
               <button
                 className="switch-link-btn"
                 type="button"
@@ -640,12 +657,12 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                   setDevResetUrl("");
                 }}
               >
-                {t("auth.registerButton", "Create Account")}
+                Create Account
               </button>
             </p>
           ) : (
             <p>
-              {t("auth.alreadyHaveAccount", "Already registered?")}{" "}
+              Already registered?{" "}
               <button
                 className="switch-link-btn"
                 type="button"
@@ -656,7 +673,7 @@ const AuthModal = ({ type = "login", onClose, onLoginSuccess }) => {
                   setDevResetUrl("");
                 }}
               >
-                {t("auth.signInButton", "Sign In")}
+                Sign In
               </button>
             </p>
           )}

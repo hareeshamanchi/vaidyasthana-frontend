@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useContext } from "react";
 import "./InsurancePage.css";
 import { insuranceAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { useLanguage } from "../context/LanguageContext";
 import {
   FiShield,
   FiPlus,
@@ -17,7 +16,6 @@ import {
 
 const InsurancePage = () => {
   const { user } = useContext(AuthContext);
-  const { t, isTelugu } = useLanguage();
 
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +135,7 @@ const InsurancePage = () => {
       <div className="insurance-page-container">
         <div className="insurance-loading">
           <FiRefreshCw className="spinner-icon" />
-          <p>{t("common.loading", "Retrieving your health insurance records...")}</p>
+          <p>Retrieving your health insurance records...</p>
         </div>
       </div>
     );
@@ -148,10 +146,11 @@ const InsurancePage = () => {
       {/* Page Header */}
       <header className="insurance-page-header">
         <div className="header-info">
-          <span className="header-badge">{t("nav.insurance", "Coverage Vault")}</span>
-          <h1>{t("insurance.pageTitle", "Health Insurance & Policy Integration")}</h1>
+          <span className="header-badge">Coverage Vault</span>
+          <h1>Health Insurance & Policy Tracker</h1>
           <p>
-            {t("insurance.pageSubtitle", "Centralize your health insurance coverage, track sum insured limits, and access 24/7 cashless emergency TPA helplines.")}
+            Centralize your health insurance coverage, track sum insured limits, and
+            access 24/7 cashless emergency TPA helplines.
           </p>
         </div>
         <button
@@ -159,7 +158,7 @@ const InsurancePage = () => {
           onClick={() => setShowAddModal(true)}
           type="button"
         >
-          <FiPlus /> {t("insurance.addPolicyBtn", "Add Insurance Policy")}
+          <FiPlus /> Add Insurance Policy
         </button>
       </header>
 
@@ -183,15 +182,16 @@ const InsurancePage = () => {
           <FiPhoneCall size={28} />
         </div>
         <div className="tpa-content">
-          <h3>{t("insurance.emergencyContactLabel", "24/7 Hospital Cashless & TPA Emergency Desk")}</h3>
+          <h3>24/7 Hospital Cashless & TPA Emergency Desk</h3>
           <p>
-            {t("footer.disclaimerDetails", "For emergency hospitalization, cashless pre-authorization, or claim settlement assistance across our partner hospital network:")}
+            For emergency hospitalization, cashless pre-authorization, or claim
+            settlement assistance across our partner hospital network:
           </p>
           <div className="tpa-helpline-numbers">
             <a href="tel:18004252255" className="helpline-pill">
-              {t("insurance.callHelpline", "Toll-Free Helpline")}: 1800-425-2255
+              Toll-Free Helpline: 1800-425-2255
             </a>
-            <span className="helpline-subtext">{t("footer.emergencySupport", "Instant cashless pre-authorization support")}</span>
+            <span className="helpline-subtext">Instant cashless pre-authorization support</span>
           </div>
         </div>
       </section>
@@ -199,23 +199,24 @@ const InsurancePage = () => {
       {/* Active Policies Section */}
       <section className="policies-grid-section">
         <div className="section-title-wrap">
-          <h2>{t("insurance.totalPolicies", "Linked Insurance Policies")} ({policies.length})</h2>
-          <span className="sub-tag">{t("home.securityCard1Desc", "Verified coverage for diagnostic tests and hospitalization")}</span>
+          <h2>Linked Insurance Policies ({policies.length})</h2>
+          <span className="sub-tag">Verified coverage for diagnostic tests and hospitalization</span>
         </div>
 
         {policies.length === 0 ? (
           <div className="empty-policies-box">
             <FiShield size={48} className="empty-shield-icon" />
-            <h3>{t("insurance.noPolicies", "No Policies Linked")}</h3>
+            <h3>No Policies Linked</h3>
             <p>
-              {t("insurance.pageSubtitle", "Link your health insurance provider to ensure quick claim validation and cashless approvals during clinical visits.")}
+              Link your health insurance provider to ensure quick claim validation and
+              cashless approvals during clinical visits.
             </p>
             <button
               className="btn-link-first"
               onClick={() => setShowAddModal(true)}
               type="button"
             >
-              <FiPlus /> {t("insurance.addPolicyBtn", "Link Your Policy")}
+              <FiPlus /> Link Your Policy
             </button>
           </div>
         ) : (
@@ -227,7 +228,7 @@ const InsurancePage = () => {
                   <span className="policy-type-tag">
                     {pol.coverageType || "Comprehensive Health"}
                   </span>
-                  <span className="policy-status-pill active">{t("status.scheduled", "Active")}</span>
+                  <span className="policy-status-pill active">Active</span>
                 </div>
 
                 <div className="provider-name-row">
@@ -235,7 +236,7 @@ const InsurancePage = () => {
                 </div>
 
                 <div className="policy-number-block">
-                  <span className="label">{t("insurance.policyNumberLabel", "Policy Number")}</span>
+                  <span className="label">Policy Number</span>
                   <div className="number-value">
                     {pol.policyNumber.replace(/(\w{4})/g, "$1 ").trim()}
                   </div>
@@ -243,16 +244,16 @@ const InsurancePage = () => {
 
                 <div className="policy-financials-grid">
                   <div className="fin-item">
-                    <span className="label">{t("insurance.coverageAmountLabel", "Sum Insured")}</span>
+                    <span className="label">Sum Insured</span>
                     <span className="value">
                       ₹{Number(pol.coverageAmount || 500000).toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="fin-item">
-                    <span className="label">{t("insurance.validUntilLabel", "Valid Until")}</span>
+                    <span className="label">Valid Until</span>
                     <span className="value">
                       {pol.validUntil
-                        ? new Date(pol.validUntil).toLocaleDateString(isTelugu ? "te-IN" : "en-US", {
+                        ? new Date(pol.validUntil).toLocaleDateString("en-US", {
                             month: "short",
                             year: "numeric",
                           })
@@ -268,10 +269,10 @@ const InsurancePage = () => {
                   <button
                     className="btn-delete-policy"
                     onClick={() => handleDeletePolicy(pol._id)}
-                    title={t("common.delete", "Remove Policy")}
+                    title="Remove Policy"
                     type="button"
                   >
-                    <FiTrash2 size={14} /> {t("common.delete", "Remove")}
+                    <FiTrash2 size={14} /> Remove
                   </button>
                 </div>
               </div>
@@ -293,15 +294,14 @@ const InsurancePage = () => {
               <div className="title-wrap">
                 <FiShield className="header-icon" />
                 <div>
-                  <h3>{t("insurance.modalTitle", "Register Health Insurance Policy")}</h3>
-                  <p>{t("insurance.pageSubtitle", "Add your policy information to your patient records vault")}</p>
+                  <h3>Link Insurance Policy</h3>
+                  <p>Add your policy information to your patient records vault</p>
                 </div>
               </div>
               <button
                 className="close-btn"
                 onClick={() => setShowAddModal(false)}
                 type="button"
-                aria-label={t("common.close", "Close")}
               >
                 <FiX size={20} />
               </button>
@@ -309,7 +309,7 @@ const InsurancePage = () => {
 
             <form onSubmit={handleAddSubmit} className="insurance-form">
               <div className="form-group">
-                <label>{t("insurance.providerLabel", "Insurance Provider *")}</label>
+                <label>Insurance Provider *</label>
                 <select
                   name="providerName"
                   value={formData.providerName}
@@ -325,7 +325,7 @@ const InsurancePage = () => {
               </div>
 
               <div className="form-group">
-                <label>{t("insurance.policyNumberLabel", "Policy Number *")}</label>
+                <label>Policy Number *</label>
                 <input
                   type="text"
                   name="policyNumber"
@@ -339,7 +339,7 @@ const InsurancePage = () => {
 
               <div className="form-row-2">
                 <div className="form-group">
-                  <label>{t("insurance.coverageAmountLabel", "Sum Insured (Coverage Amount in ₹)")}</label>
+                  <label>Sum Insured (Coverage Amount in ₹)</label>
                   <input
                     type="number"
                     name="coverageAmount"
@@ -350,7 +350,7 @@ const InsurancePage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>{t("insurance.validUntilLabel", "Valid Until *")}</label>
+                  <label>Valid Until *</label>
                   <input
                     type="date"
                     name="validUntil"
@@ -363,7 +363,7 @@ const InsurancePage = () => {
               </div>
 
               <div className="form-group">
-                <label>{t("insurance.policyHolderLabel", "Policyholder Name")}</label>
+                <label>Policy Holder Full Name</label>
                 <input
                   type="text"
                   name="policyHolderName"
@@ -380,10 +380,10 @@ const InsurancePage = () => {
                   className="btn-dialog-cancel"
                   onClick={() => setShowAddModal(false)}
                 >
-                  {t("common.cancel", "Cancel")}
+                  Cancel
                 </button>
                 <button type="submit" className="btn-dialog-save">
-                  {t("insurance.savePolicyBtn", "Register Policy")}
+                  Save Policy Record
                 </button>
               </div>
             </form>

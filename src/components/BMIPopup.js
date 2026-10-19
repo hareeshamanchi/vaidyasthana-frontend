@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "./BMIPopup.css";
-import { useLanguage } from "../context/LanguageContext";
 import {
   FiX,
   FiActivity,
@@ -10,7 +9,6 @@ import {
 } from "react-icons/fi";
 
 const BMIPopup = ({ onClose }) => {
-  const { t, translateCategory } = useLanguage();
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -84,19 +82,19 @@ const BMIPopup = ({ onClose }) => {
           <div className="bmi-icon-badge">
             <FiActivity size={20} />
           </div>
-          <h2>{t("bmi.title", "Body Mass Index (BMI) Calculator")}</h2>
+          <h2>Body Mass Index (BMI) Calculator</h2>
           <p className="bmi-subtitle">
-            {t("bmi.subtitle", "World Health Organization (WHO) adult anthropometric weight classification")}
+            World Health Organization (WHO) adult anthropometric weight classification
           </p>
         </div>
 
         {!bmi ? (
           <div className="bmi-form-body">
             <div className="bmi-input-group">
-              <label>{t("bmi.heightLabel", "Height (in cm) *")}</label>
+              <label>Height (in cm) *</label>
               <input
                 type="number"
-                placeholder={t("bmi.heightPlaceholder", "e.g. 175")}
+                placeholder="e.g. 175"
                 min="50"
                 max="250"
                 value={height}
@@ -105,10 +103,10 @@ const BMIPopup = ({ onClose }) => {
             </div>
 
             <div className="bmi-input-group">
-              <label>{t("bmi.weightLabel", "Weight (in kg) *")}</label>
+              <label>Weight (in kg) *</label>
               <input
                 type="number"
-                placeholder={t("bmi.weightPlaceholder", "e.g. 70")}
+                placeholder="e.g. 70"
                 min="20"
                 max="300"
                 value={weight}
@@ -121,20 +119,20 @@ const BMIPopup = ({ onClose }) => {
               onClick={calculateBMI}
               type="button"
             >
-              {t("bmi.calculateBtn", "Calculate BMI")}
+              Calculate BMI
             </button>
           </div>
         ) : (
           <div className="bmi-result-dossier">
             <div className="result-metric-display">
-              <span className="result-label">{t("bmi.resultScore", "Calculated Body Mass Index")}</span>
+              <span className="result-label">Calculated Body Mass Index</span>
               <div className="bmi-number-callout">{bmi}</div>
               <div
                 className={`bmi-category-badge ${category
                   .toLowerCase()
                   .replace(" ", "-")}`}
               >
-                {t("bmi.categoryTitle", "Category:")} {translateCategory(category) || category}
+                Category: {category}
               </div>
             </div>
 
@@ -176,7 +174,11 @@ const BMIPopup = ({ onClose }) => {
             <div className="bmi-disclaimer-box">
               <FiInfo className="info-icon" />
               <div>
-                <strong>{t("bmi.screeningDisclaimer", "Screening Disclaimer")}:</strong> {t("bmi.tip", "BMI is a general screening metric and does not differentiate between adipose tissue and lean muscle mass. Consult a physician or dietitian for comprehensive body composition analysis.")}
+                <strong>Screening Disclaimer:</strong> BMI is a general screening
+                metric and does not differentiate between adipose tissue and lean muscle
+                mass, nor does it assess bone density or visceral fat distribution.
+                Consult a physician or dietitian for comprehensive body composition
+                analysis.
               </div>
             </div>
 
@@ -185,7 +187,7 @@ const BMIPopup = ({ onClose }) => {
               onClick={resetForm}
               type="button"
             >
-              <FiRefreshCw /> {t("bmi.resetBtn", "Recalculate Another Value")}
+              <FiRefreshCw /> Recalculate Another Value
             </button>
           </div>
         )}

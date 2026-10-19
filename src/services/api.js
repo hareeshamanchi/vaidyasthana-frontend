@@ -106,10 +106,8 @@ export const reportsAPI = {
 export const appointmentsAPI = {
   getAppointments: (params) => api.get("/api/appointments", { params }),
   getDoctors: (params) => api.get("/api/appointments/doctors", { params }),
-  getSlots: (doctorId, date, timezone) =>
-    api.get("/api/appointments/slots", {
-      params: { doctorId, date, ...(timezone ? { timezone } : {}) },
-    }),
+  getSlots: (doctorId, date) =>
+    api.get("/api/appointments/slots", { params: { doctorId, date } }),
   createAppointment: (data) => api.post("/api/appointments", data),
   getAppointmentById: (id) => api.get(`/api/appointments/${id}`),
   updateAppointment: (id, data) => api.put(`/api/appointments/${id}`, data),
@@ -239,14 +237,6 @@ export const pushAPI = {
   subscribe: (subscription) => api.post("/api/push/subscribe", { subscription }),
   unsubscribe: (endpoint) => api.post("/api/push/unsubscribe", { endpoint }),
   testPush: () => api.post("/api/push/test"),
-};
-
-// ==========================================
-// Translation API
-// ==========================================
-export const translationAPI = {
-  translate: (data) => api.post("/api/translate", data),
-  getLanguages: () => api.get("/api/translate/languages"),
 };
 
 export default api;
