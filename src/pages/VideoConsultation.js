@@ -21,11 +21,13 @@ import {
   FiFileText,
 } from "react-icons/fi";
 import { appointmentsAPI } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 import "./VideoConsultation.css";
 
 const VideoConsultation = () => {
   const { id: appointmentId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Consultation Session State
   const [loading, setLoading] = useState(true);
@@ -500,8 +502,8 @@ const VideoConsultation = () => {
       <div className="video-consultation-loading-wrap">
         <div className="consult-loading-card">
           <div className="consult-spinner-ring"></div>
-          <h2>Securing Clinical Consultation Channel</h2>
-          <p>Verifying appointment authorization, participant roles, and cryptographic room tokens...</p>
+          <h2>{t("video.securingChannel", "Securing Clinical Consultation Channel")}</h2>
+          <p>{t("video.securingDesc", "Verifying appointment authorization, participant roles, and cryptographic room tokens...")}</p>
         </div>
       </div>
     );
@@ -520,18 +522,18 @@ const VideoConsultation = () => {
           </div>
           <h2>
             {authErrorCode === "CONSULTATION_TIME_EXCEEDED"
-              ? "Consultation Time Exceeded"
+              ? t("video.timeExceeded", "Consultation Time Exceeded")
               : authErrorCode === "CONSULTATION_NOT_STARTED"
-              ? "Consultation Has Not Started Yet"
+              ? t("video.notStartedYet", "Consultation Has Not Started Yet")
               : authError
-              ? "Consultation Access Restricted"
-              : "Connection Failed"}
+              ? t("video.accessRestricted", "Consultation Access Restricted")
+              : t("video.connectionFailed", "Connection Failed")}
           </h2>
           <p className="error-desc">{authError || serviceError || "Unable to establish video consultation session."}</p>
 
           <div className="error-guidance-box">
             <div className="guidance-title">
-              <FiShield size={16} /> {authError ? "Clinical Security & Policy" : "WebRTC Troubleshooting & Guidance"}
+              <FiShield size={16} /> {authError ? t("video.securityPolicy", "Clinical Security & Policy") : t("video.troubleshootingGuidance", "WebRTC Troubleshooting & Guidance")}
             </div>
             {authErrorCode === "CONSULTATION_TIME_EXCEEDED" ? (
               <ul>
@@ -568,7 +570,7 @@ const VideoConsultation = () => {
                 onClick={startVideoCall}
                 type="button"
               >
-                <FiRefreshCw size={16} /> Retry Call Connection
+                <FiRefreshCw size={16} /> {t("video.retryCall", "Retry Call Connection")}
               </button>
             )}
             {isServiceFailure && meetingData?.roomName && (
@@ -578,7 +580,7 @@ const VideoConsultation = () => {
                 rel="noopener noreferrer"
                 className="btn-external-room"
               >
-                <FiVideo size={16} /> Open in Dedicated Window
+                <FiVideo size={16} /> {t("video.openDedicatedWindow", "Open in Dedicated Window")}
               </a>
             )}
             <button
@@ -586,7 +588,7 @@ const VideoConsultation = () => {
               onClick={() => navigate(meetingData?.userRole === "doctor" ? "/doctor-dashboard" : "/appointment")}
               type="button"
             >
-              <FiArrowLeft size={16} /> Return to Appointments
+              <FiArrowLeft size={16} /> {t("video.returnToAppointments", "Return to Appointments")}
             </button>
           </div>
         </div>
@@ -604,30 +606,28 @@ const VideoConsultation = () => {
           <div className="ended-icon-circle">
             <FiCheckCircle size={40} />
           </div>
-          <h2>Consultation Session Concluded</h2>
+          <h2>{t("video.sessionConcluded", "Consultation Session Concluded")}</h2>
           <p className="ended-subtitle">
-            You have left the video room for appointment with{" "}
-            <strong>
-              {meetingData?.userRole === "doctor" ? meetingData?.patientName : meetingData?.doctorName}
-            </strong>
-            .
+            {t("video.leftRoomSubtitle", "You have left the video room for appointment with {name}.", {
+              name: meetingData?.userRole === "doctor" ? meetingData?.patientName : meetingData?.doctorName
+            })}
           </p>
 
           <div className="ended-stats-grid">
             <div className="stat-box">
-              <span className="stat-label">Call Duration</span>
+              <span className="stat-label">{t("video.callDuration", "Call Duration")}</span>
               <span className="stat-val">{formatDuration(callDuration)}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-label">Consultation Mode</span>
+              <span className="stat-label">{t("video.consultationMode", "Consultation Mode")}</span>
               <span className="stat-val">{meetingData?.consultationType || "Video / Online"}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-label">Department</span>
+              <span className="stat-label">{t("video.department", "Department")}</span>
               <span className="stat-val">{meetingData?.department || "General Medicine"}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-label">Scheduled Slot</span>
+              <span className="stat-label">{t("video.scheduledSlot", "Scheduled Slot")}</span>
               <span className="stat-val">{meetingData?.timeSlot || "Scheduled"}</span>
             </div>
           </div>
@@ -636,19 +636,19 @@ const VideoConsultation = () => {
             {meetingData?.userRole === "doctor" ? (
               <>
                 <Link to="/doctor-dashboard" className="btn-primary-ended">
-                  <FiActivity size={16} /> Doctor Dashboard & Complete Visit
+                  <FiActivity size={16} /> {t("video.completeVisitBtn", "Doctor Dashboard & Complete Visit")}
                 </Link>
                 <Link to="/appointment" className="btn-secondary-ended">
-                  <FiCalendar size={16} /> View Appointments
+                  <FiCalendar size={16} /> {t("video.viewAppointmentsBtn", "View Appointments")}
                 </Link>
               </>
             ) : (
               <>
                 <Link to="/appointment" className="btn-primary-ended">
-                  <FiCalendar size={16} /> Back to My Appointments
+                  <FiCalendar size={16} /> {t("video.backToAppointmentsBtn", "Back to My Appointments")}
                 </Link>
                 <Link to="/dashboard" className="btn-secondary-ended">
-                  <FiFileText size={16} /> Return to Patient Vault
+                  <FiFileText size={16} /> {t("video.returnToPatientVaultBtn", "Return to Patient Vault")}
                 </Link>
               </>
             )}
@@ -658,7 +658,7 @@ const VideoConsultation = () => {
               type="button"
               title="Re-enter meeting room if you left accidentally"
             >
-              <FiRefreshCw size={15} /> Rejoin Consultation
+              <FiRefreshCw size={15} /> {t("video.rejoinCallBtn", "Rejoin Consultation")}
             </button>
           </div>
         </div>
@@ -674,24 +674,24 @@ const VideoConsultation = () => {
       <div className="video-consultation-lobby-wrap">
         <div className="consult-lobby-card">
           <div className="lobby-top-badge">
-            <span className="live-dot pulse"></span> Telehealth Consultation Ready
+            <span className="live-dot pulse"></span> {t("video.telehealthReady", "Telehealth Consultation Ready")}
           </div>
-          <h2>Ready to enter your Consultation Room</h2>
+          <h2>{t("video.readyToEnter", "Ready to enter your Consultation Room")}</h2>
           <p className="lobby-subtitle">
-            Welcome, <strong>{meetingData?.displayName}</strong>. You are authorized to join this clinical appointment.
+            {t("video.welcomeAuthorized", "Welcome, {name}. You are authorized to join this clinical appointment.", { name: meetingData?.displayName })}
           </p>
 
           <div className="lobby-details-box">
             <div className="lobby-detail-row">
               <div className="detail-col">
-                <span className="col-label">Doctor</span>
+                <span className="col-label">{t("common.doctor", "Doctor")}</span>
                 <span className="col-value doctor-name">{meetingData?.doctorName}</span>
                 <span className="col-sub">{meetingData?.department}</span>
               </div>
               <div className="detail-col">
-                <span className="col-label">Patient</span>
+                <span className="col-label">{t("common.patient", "Patient")}</span>
                 <span className="col-value">{meetingData?.patientName}</span>
-                <span className="col-sub">Assigned Patient</span>
+                <span className="col-sub">{t("video.assignedPatient", "Assigned Patient")}</span>
               </div>
             </div>
 
@@ -706,7 +706,7 @@ const VideoConsultation = () => {
                         day: "numeric",
                         year: "numeric",
                       })
-                    : "Scheduled Date"}
+                    : t("video.scheduledDate", "Scheduled Date")}
                 </span>
               </div>
               <div className="meta-item">
@@ -715,7 +715,7 @@ const VideoConsultation = () => {
               </div>
               <div className="meta-item">
                 <FiShield className="meta-icon text-teal" />
-                <span>Encrypted Room</span>
+                <span>{t("video.encryptedRoom", "Encrypted Room")}</span>
               </div>
             </div>
           </div>
@@ -724,7 +724,7 @@ const VideoConsultation = () => {
             <div className="lobby-permission-alert">
               <FiAlertTriangle className="alert-icon" />
               <div>
-                <strong>Camera or Microphone Permission Needed</strong>
+                <strong>{t("video.permissionNeeded", "Camera or Microphone Permission Needed")}</strong>
                 <p>{permissionMessage}</p>
               </div>
             </div>
@@ -738,21 +738,21 @@ const VideoConsultation = () => {
               disabled={permissionStatus === "requesting"}
             >
               <FiVideo size={18} />
-              {permissionStatus === "requesting" ? "Requesting Permissions..." : "Enter Video Consultation"}
+              {permissionStatus === "requesting" ? t("video.requestingPermissions", "Requesting Permissions...") : t("video.enterConsultation", "Enter Video Consultation")}
             </button>
             <button
               className="btn-cancel-lobby"
               onClick={() => navigate(meetingData?.userRole === "doctor" ? "/doctor-dashboard" : "/appointment")}
               type="button"
             >
-              <FiArrowLeft size={16} /> Return to Dashboard
+              <FiArrowLeft size={16} /> {t("video.returnToDashboard", "Return to Dashboard")}
             </button>
           </div>
 
           <div className="lobby-disclaimer">
             <FiInfo size={14} />
             <span>
-              Audio and video streams are transmitted using WebRTC peer-to-peer protocols. Camera and microphone hardware access is only activated after clicking &quot;Enter Video Consultation&quot;.
+              {t("video.webrtcDisclaimer", "Audio and video streams are transmitted using WebRTC peer-to-peer protocols. Camera and microphone hardware access is only activated after clicking \"Enter Video Consultation\".")}
             </span>
           </div>
         </div>
@@ -777,11 +777,11 @@ const VideoConsultation = () => {
             <FiArrowLeft size={18} />
           </button>
           <div className="consultation-title-wrap">
-            <div className="brand-pill">Vaidyasthana Telehealth</div>
+            <div className="brand-pill">{t("video.brandPill", "Vaidyasthana Telehealth")}</div>
             <h1 className="room-title">
-              {meetingData?.userRole === "doctor"
-                ? `Consultation with ${meetingData?.patientName}`
-                : `Consultation with ${meetingData?.doctorName}`}
+              {t("video.consultationWith", "Consultation with {name}", {
+                name: meetingData?.userRole === "doctor" ? meetingData?.patientName : meetingData?.doctorName
+              })}
             </h1>
           </div>
         </div>
@@ -801,14 +801,16 @@ const VideoConsultation = () => {
             ></span>
             <span className="status-text">
               {connectionState === "connected"
-                ? `Connected to meeting • LIVE ${formatDuration(callDuration)}`
+                ? t("video.connectedLive", "Connected to meeting • LIVE {duration}", { duration: formatDuration(callDuration) })
                 : connectionState === "waiting_for_peer"
-                ? "Waiting for the other participant..."
+                ? t("video.waitingForOther", "Waiting for the other participant ({name}) to join...", {
+                    name: meetingData?.userRole === "doctor" ? meetingData?.patientName : meetingData?.doctorName
+                  })
                 : connectionState === "reconnecting"
-                ? "Reconnecting..."
+                ? t("video.reconnecting", "Reconnecting...")
                 : connectionState === "initializing"
-                ? "Initializing meeting..."
-                : "Connecting to meeting server..."}
+                ? t("video.initializingMeeting", "Initializing meeting...")
+                : t("video.connectingMeeting", "Connecting to meeting server...")}
             </span>
           </div>
         </div>
@@ -834,7 +836,7 @@ const VideoConsultation = () => {
         {connectionState === "connecting" && (
           <div className="non-blocking-status-banner connecting" role="status">
             <div className="status-spinner-small"></div>
-            <span>Connecting to meeting server...</span>
+            <span>{t("video.connectingMeeting", "Connecting to meeting server...")}</span>
           </div>
         )}
 
@@ -842,11 +844,9 @@ const VideoConsultation = () => {
           <div className="non-blocking-status-banner waiting" role="status">
             <FiUser className="banner-icon" />
             <span>
-              Waiting for the other participant (
-              {meetingData?.userRole === "doctor"
-                ? meetingData?.patientName
-                : meetingData?.doctorName}
-              ) to join...
+              {t("video.waitingForOther", "Waiting for the other participant ({name}) to join...", {
+                name: meetingData?.userRole === "doctor" ? meetingData?.patientName : meetingData?.doctorName
+              })}
             </span>
           </div>
         )}
@@ -854,7 +854,7 @@ const VideoConsultation = () => {
         {connectionState === "reconnecting" && (
           <div className="non-blocking-status-banner reconnecting" role="status">
             <div className="status-spinner-small"></div>
-            <span>Reconnecting to meeting...</span>
+            <span>{t("video.reconnecting", "Reconnecting...")}</span>
           </div>
         )}
 
@@ -873,7 +873,7 @@ const VideoConsultation = () => {
             aria-label={isAudioMuted ? "Unmute Microphone" : "Mute Microphone"}
           >
             {isAudioMuted ? <FiMicOff size={20} /> : <FiMic size={20} />}
-            <span className="control-label">{isAudioMuted ? "Unmute" : "Mute"}</span>
+            <span className="control-label">{isAudioMuted ? t("video.unmute", "Unmute") : t("video.mute", "Mute")}</span>
           </button>
 
           <button
@@ -884,7 +884,7 @@ const VideoConsultation = () => {
             aria-label={isVideoMuted ? "Turn On Camera" : "Turn Off Camera"}
           >
             {isVideoMuted ? <FiVideoOff size={20} /> : <FiVideo size={20} />}
-            <span className="control-label">{isVideoMuted ? "Start Video" : "Stop Video"}</span>
+            <span className="control-label">{isVideoMuted ? t("video.startVideo", "Start Video") : t("video.stopVideo", "Stop Video")}</span>
           </button>
 
           <button
@@ -895,7 +895,7 @@ const VideoConsultation = () => {
             aria-label="Toggle Fullscreen"
           >
             {isFullscreen ? <FiMinimize size={20} /> : <FiMaximize size={20} />}
-            <span className="control-label">{isFullscreen ? "Exit Full" : "Fullscreen"}</span>
+            <span className="control-label">{isFullscreen ? t("video.exitFullscreen", "Exit Full") : t("video.fullscreen", "Fullscreen")}</span>
           </button>
 
           <button
@@ -906,7 +906,7 @@ const VideoConsultation = () => {
             aria-label="Leave Consultation"
           >
             <FiPhoneOff size={22} />
-            <span className="control-label">Leave Call</span>
+            <span className="control-label">{t("video.leaveCall", "Leave Call")}</span>
           </button>
         </div>
       </footer>

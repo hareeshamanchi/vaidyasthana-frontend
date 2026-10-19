@@ -30,6 +30,8 @@ import {
   FiCopy,
   FiRotateCcw,
 } from "react-icons/fi";
+import { useLanguage } from "../context/LanguageContext";
+import { translateStatus } from "../i18n";
 import "./AdminDashboard.css";
 
 const REPORT_CATEGORIES = [
@@ -121,6 +123,7 @@ const formatReportDateTime = (dateStr) => {
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
+  const { t } = useLanguage();
 
   // Active top-level section:
   // "overview" | "users" | "doctors" | "appointments" | "reports" | "security" | "health" | "support"
@@ -725,7 +728,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiActivity className="tab-icon" />
-            <span>Overview & Metrics</span>
+            <span>{t("adminDashboard.overviewTab", "Overview & Metrics")}</span>
           </button>
 
           <button
@@ -736,7 +739,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiUsers className="tab-icon" />
-            <span>User Management</span>
+            <span>{t("adminDashboard.usersTab", "User Management")}</span>
           </button>
 
           <button
@@ -747,7 +750,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiCheckCircle className="tab-icon" />
-            <span>Doctor Verifications</span>
+            <span>{t("adminDashboard.doctorsTab", "Doctor Verifications")}</span>
           </button>
 
           <button
@@ -758,7 +761,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiCalendar className="tab-icon" />
-            <span>Global Appointments</span>
+            <span>{t("adminDashboard.appointmentsTab", "Global Appointments")}</span>
           </button>
 
           <button
@@ -769,7 +772,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiFileText className="tab-icon" />
-            <span>Report Storage</span>
+            <span>{t("adminDashboard.reportsTab", "Report Storage")}</span>
           </button>
 
           <button
@@ -780,7 +783,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiLock className="tab-icon" />
-            <span>Security & Audit Logs</span>
+            <span>{t("adminDashboard.securityTab", "Security & Audit Logs")}</span>
           </button>
 
           <button
@@ -791,7 +794,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiServer className="tab-icon" />
-            <span>System Health</span>
+            <span>{t("adminDashboard.systemTab", "System Health")}</span>
           </button>
 
           <button
@@ -802,7 +805,7 @@ const AdminDashboard = () => {
             }}
           >
             <FiMail className="tab-icon" />
-            <span>Support Inbox</span>
+            <span>{t("adminDashboard.supportTab", "Support Inbox")}</span>
           </button>
         </nav>
 
@@ -843,7 +846,7 @@ const AdminDashboard = () => {
                 {activeSection === "support" && "Patient & Doctor Inquiries"}
               </h1>
               <span className="header-page-subtitle">
-                Authenticated administrative session with role-enforced access controls
+                {t("adminDashboard.portalSubtitle", "Authenticated administrative session with role-enforced access controls")}
               </span>
             </div>
           </div>
@@ -862,7 +865,7 @@ const AdminDashboard = () => {
               aria-label="Refresh Records"
             >
               <FiRefreshCw className={loading ? "spin" : ""} size={16} />
-              <span>Refresh Records</span>
+              <span>{t("common.refresh", "Refresh Records")}</span>
             </button>
           </div>
         </header>
@@ -911,7 +914,7 @@ const AdminDashboard = () => {
                       <FiUsers size={22} />
                     </div>
                     <div className="kpi-metric-info">
-                      <span className="kpi-label">Registered Users</span>
+                      <span className="kpi-label">{t("adminDashboard.totalPatients", "Registered Users")}</span>
                       <span className="kpi-number">{overviewData.stats.users.total}</span>
                       <span className="kpi-subtext">
                         {overviewData.stats.users.patients} Patients • {overviewData.stats.users.doctors} Doctors
@@ -924,7 +927,7 @@ const AdminDashboard = () => {
                       <FiCheckCircle size={22} />
                     </div>
                     <div className="kpi-metric-info">
-                      <span className="kpi-label">Doctor Verifications</span>
+                      <span className="kpi-label">{t("adminDashboard.verifiedDoctors", "Doctor Verifications")}</span>
                       <span className="kpi-number">{overviewData.stats.doctors.verified}</span>
                       <span className="kpi-subtext">
                         {overviewData.stats.doctors.pending} Pending Review • {overviewData.stats.doctors.rejected} Declined
@@ -937,7 +940,7 @@ const AdminDashboard = () => {
                       <FiCalendar size={22} />
                     </div>
                     <div className="kpi-metric-info">
-                      <span className="kpi-label">Consultations</span>
+                      <span className="kpi-label">{t("adminDashboard.appointmentsTab", "Consultations")}</span>
                       <span className="kpi-number">{overviewData.stats.appointments.total}</span>
                       <span className="kpi-subtext">
                         {overviewData.stats.appointments.upcoming} Upcoming • {overviewData.stats.appointments.completed} Completed

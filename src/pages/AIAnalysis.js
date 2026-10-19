@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import "./AIAnalysis.css";
 import { reportsAPI } from "../services/api";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import {
   FiAlertTriangle,
   FiFileText,
@@ -18,6 +19,7 @@ import {
 } from "react-icons/fi";
 
 const AIAnalysis = () => {
+  const { t, translateCategory, translateStatus } = useLanguage();
   const [reports, setReports] = useState([]);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,7 @@ const AIAnalysis = () => {
       <div className="ai-analysis-container">
         <div className="ai-loading-state">
           <FiRefreshCw className="ai-spinner-icon" />
-          <p>Retrieving Azure AI Clinical Document Interpretations...</p>
+          <p>{t("common.loading", "Retrieving Azure AI Clinical Document Interpretations...")}</p>
         </div>
       </div>
     );
@@ -94,23 +96,19 @@ const AIAnalysis = () => {
           <FiAlertTriangle size={22} />
         </div>
         <div className="disclaimer-copy">
-          <strong>Mandatory Medical Notice:</strong> The diagnostic interpretations
-          below are generated via Azure AI Document Intelligence and Azure OpenAI models
-          for patient educational reference. This output is <strong>not a medical diagnosis</strong>,
-          clinical prescription, or replacement for evaluation by a licensed physician.
-          Always consult your healthcare provider before altering treatments or medications.
+          <strong>{t("aiAnalysis.safetyNoticeTitle", "Mandatory Medical Notice:")}</strong>{" "}
+          {t("aiAnalysis.safetyNoticeText", "The diagnostic interpretations below are generated via Azure AI Document Intelligence and Azure OpenAI models for patient educational reference. This output is not a medical diagnosis, clinical prescription, or replacement for evaluation by a licensed physician.")}
         </div>
       </div>
 
       {/* Page Header */}
       <header className="ai-page-header">
         <div className="ai-header-tag">
-          <FiCpu /> Azure OpenAI Medical Language Model
+          <FiCpu /> {t("aiAnalysis.engineTag", "Azure OpenAI Medical Language Model")}
         </div>
-        <h1>AI Medical Report Insights</h1>
+        <h1>{t("aiAnalysis.pageTitle", "AI Medical Report Insights")}</h1>
         <p className="ai-header-subtitle">
-          Translate complex laboratory measurements, identify abnormal biomarkers, and
-          prepare evidence-based questions for your next clinical consultation.
+          {t("aiAnalysis.pageSubtitle", "Translate complex laboratory measurements, identify abnormal biomarkers, and prepare evidence-based questions for your next clinical consultation.")}
         </p>
       </header>
 
@@ -119,20 +117,19 @@ const AIAnalysis = () => {
           <div className="empty-icon-wrap">
             <FiUploadCloud size={44} />
           </div>
-          <h3>No Diagnostic Records Found</h3>
+          <h3>{t("aiAnalysis.emptyTitle", "No Diagnostic Records Found")}</h3>
           <p>
-            You haven't uploaded any reports yet. Upload laboratory test results,
-            blood panels, or radiology findings to generate intelligent insights.
+            {t("aiAnalysis.emptyDesc", "You haven't uploaded any reports yet. Upload laboratory test results, blood panels, or radiology findings to generate intelligent insights.")}
           </p>
           <Link to="/dashboard" className="btn-go-vault">
-            Go to Medical Vault <FiArrowRight />
+            {t("aiAnalysis.goToVault", "Go to Medical Vault")} <FiArrowRight />
           </Link>
         </div>
       ) : (
         <div className="ai-analysis-workspace">
           {/* Document Tab Selector Bar */}
           <div className="report-tab-selector-bar">
-            <span className="tab-bar-label">Available Documents:</span>
+            <span className="tab-bar-label">{t("aiAnalysis.availableDocuments", "Available Documents:")}</span>
             <div className="tab-buttons-scroll">
               {reports.map((rep) => (
                 <button
@@ -155,7 +152,7 @@ const AIAnalysis = () => {
                       rep.analysisStatus?.toLowerCase() || "pending"
                     }`}
                   >
-                    {rep.analysisStatus || "Pending"}
+                    {translateStatus(rep.analysisStatus || "Pending")}
                   </span>
                 </button>
               ))}
@@ -175,13 +172,13 @@ const AIAnalysis = () => {
               <div className="dossier-top-bar">
                 <div className="dossier-title-area">
                   <div className="dossier-badges-row">
-                    <span className="category-pill">{selectedReport.category}</span>
+                    <span className="category-pill">{translateCategory(selectedReport.category)}</span>
                     <span
                       className={`severity-pill ${
                         selectedReport.aiAnalysis?.severity?.toLowerCase() || "unknown"
                       }`}
                     >
-                      Severity: {selectedReport.aiAnalysis?.severity || "Standard"}
+                      {t("aiAnalysis.severity", `Severity: ${selectedReport.aiAnalysis?.severity || "Standard"}`, { level: selectedReport.aiAnalysis?.severity || "Standard" })}
                     </span>
                   </div>
                   <h2>{selectedReport.originalName || selectedReport.fileName}</h2>
@@ -193,7 +190,7 @@ const AIAnalysis = () => {
                     onClick={() => handleViewReport(selectedReport._id)}
                     type="button"
                   >
-                    <FiEye size={16} /> View Original Document
+                    <FiEye size={16} /> {t("aiAnalysis.originalDocumentBtn", "View Original Document")}
                   </button>
                   <button
                     className="btn-refresh-ai"
@@ -205,8 +202,8 @@ const AIAnalysis = () => {
                       className={analyzingId === selectedReport._id ? "spinning" : ""}
                     />
                     {analyzingId === selectedReport._id
-                      ? "Analyzing with Azure OpenAI..."
-                      : "Re-run AI Analysis"}
+                      ? t("aiAnalysis.analyzing", "Analyzing Document...")
+                      : t("aiAnalysis.reAnalyzeBtn", "Re-run AI Analysis")}
                   </button>
                 </div>
               </div>
@@ -214,17 +211,17 @@ const AIAnalysis = () => {
               {/* Dossier Metadata Strip */}
               <div className="dossier-meta-grid">
                 <div className="meta-item">
-                  <span className="meta-label">Processing Pipeline</span>
+                  <span className="meta-label">{t("aiAnalysis.pipeline", "Processing Pipeline")}</span>
                   <span className="meta-value status-done">
-                    <FiCheckCircle size={14} /> {selectedReport.analysisStatus || "Processed"}
+                    <FiCheckCircle size={14} /> {translateStatus(selectedReport.analysisStatus || "Processed")}
                   </span>
                 </div>
                 <div className="meta-item">
-                  <span className="meta-label">Document Pages</span>
-                  <span className="meta-value">{selectedReport.pageCount || 1} Page(s)</span>
+                  <span className="meta-label">{t("aiAnalysis.documentPages", "Document Pages")}</span>
+                  <span className="meta-value">{t("aiAnalysis.pagesCount", `${selectedReport.pageCount || 1} Page(s)`, { count: selectedReport.pageCount || 1 })}</span>
                 </div>
                 <div className="meta-item">
-                  <span className="meta-label">Upload Timestamp</span>
+                  <span className="meta-label">{t("aiAnalysis.uploadTimestamp", "Upload Timestamp")}</span>
                   <span className="meta-value">
                     {new Date(
                       selectedReport.uploadedAt || selectedReport.createdAt
@@ -238,9 +235,9 @@ const AIAnalysis = () => {
                   </span>
                 </div>
                 <div className="meta-item">
-                  <span className="meta-label">Storage Integrity</span>
+                  <span className="meta-label">{t("aiAnalysis.storageIntegrity", "Storage Integrity")}</span>
                   <span className="meta-value">
-                    <FiShield size={14} color="#0d9488" /> Private Azure Vault
+                    <FiShield size={14} color="#0d9488" /> {t("aiAnalysis.privateAzureVault", "Private Azure Vault")}
                   </span>
                 </div>
               </div>
@@ -249,12 +246,12 @@ const AIAnalysis = () => {
               <section className="dossier-sub-section summary-section">
                 <div className="section-title-wrap">
                   <FiCpu className="sec-icon blue" />
-                  <h3>Plain-Language Clinical Summary</h3>
+                  <h3>{t("aiAnalysis.summaryTitle", "Plain-Language Clinical Summary")}</h3>
                 </div>
                 <div className="summary-box-card">
                   <p>
                     {selectedReport.aiAnalysis?.summary ||
-                      "Detailed clinical summary is being generated by Azure OpenAI. If newly configured, click 'Re-run AI Analysis' above."}
+                      t("aiAnalysis.summaryDefault", "Detailed clinical summary is being generated by Azure OpenAI. If newly configured, click 'Re-run AI Analysis' above.")}
                   </p>
                 </div>
               </section>
@@ -263,7 +260,7 @@ const AIAnalysis = () => {
               <section className="dossier-sub-section biomarkers-section">
                 <div className="section-title-wrap">
                   <FiActivity className="sec-icon teal" />
-                  <h3>Flagged Laboratory Biomarkers</h3>
+                  <h3>{t("aiAnalysis.flaggedBiomarkers", "Flagged Laboratory Biomarkers")}</h3>
                 </div>
 
                 {selectedReport.aiAnalysis?.abnormalParameters?.length > 0 ? (
@@ -271,11 +268,11 @@ const AIAnalysis = () => {
                     <table className="biomarkers-table">
                       <thead>
                         <tr>
-                          <th>Biomarker / Test</th>
-                          <th>Measured Value</th>
-                          <th>Reference Range</th>
-                          <th>Clinical Flag</th>
-                          <th>Context / Interpretation</th>
+                          <th>{t("aiAnalysis.biomarkerName", "Biomarker / Test")}</th>
+                          <th>{t("aiAnalysis.measuredValue", "Measured Value")}</th>
+                          <th>{t("aiAnalysis.referenceRange", "Reference Range")}</th>
+                          <th>{t("aiAnalysis.clinicalFlag", "Clinical Flag")}</th>
+                          <th>{t("aiAnalysis.contextInterpretation", "Context / Interpretation")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -295,7 +292,7 @@ const AIAnalysis = () => {
                                     item.status?.toLowerCase() || "abnormal"
                                   }`}
                                 >
-                                  {item.status || "Abnormal"}
+                                  {translateStatus(item.status || "Abnormal")}
                                 </span>
                               </td>
                               <td className="bio-context-cell">
@@ -311,10 +308,9 @@ const AIAnalysis = () => {
                   <div className="no-abnormal-box">
                     <FiCheckCircle size={24} className="green-icon" />
                     <div>
-                      <strong>No High-Risk Biomarker Deviations Flagged</strong>
+                      <strong>{t("aiAnalysis.noAbnormalTitle", "No High-Risk Biomarker Deviations Flagged")}</strong>
                       <p>
-                        Measured parameters align within expected laboratory reference
-                        thresholds or standard baseline parameters.
+                        {t("aiAnalysis.noAbnormalDesc", "Measured parameters align within expected laboratory reference thresholds or standard baseline parameters.")}
                       </p>
                     </div>
                   </div>
@@ -326,11 +322,11 @@ const AIAnalysis = () => {
                 <section className="dossier-sub-section doctor-questions-section">
                   <div className="section-title-wrap">
                     <FiHelpCircle className="sec-icon purple" />
-                    <h3>Questions for Your Physician Consultation</h3>
+                    <h3>{t("aiAnalysis.doctorQuestionsTitle", "Questions for Your Physician Consultation")}</h3>
                   </div>
                   <div className="questions-card">
                     <p className="questions-intro">
-                      Take these clinical talking points to your next doctor checkup:
+                      {t("aiAnalysis.doctorQuestionsIntro", "Take these clinical talking points to your next doctor checkup:")}
                     </p>
                     <ul className="questions-list">
                       {Array.isArray(selectedReport.aiAnalysis.doctorAdvice) ? (
@@ -350,7 +346,7 @@ const AIAnalysis = () => {
                 <section className="dossier-sub-section lifestyle-section">
                   <div className="section-title-wrap">
                     <FiHeart className="sec-icon orange" />
-                    <h3>General Wellness & Dietary Considerations</h3>
+                    <h3>{t("aiAnalysis.lifestyleTitle", "General Wellness & Dietary Considerations")}</h3>
                   </div>
                   <div className="lifestyle-guidance-card">
                     <p>

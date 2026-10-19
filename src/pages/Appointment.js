@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useContext, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import "./Appointment.css";
 import { appointmentsAPI, authAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -32,8 +33,69 @@ import {
   FiMail,
 } from "react-icons/fi";
 
+export const CLINIC_TIMEZONE =
+  process.env.REACT_APP_CLINIC_TIMEZONE ||
+  process.env.REACT_APP_TIMEZONE ||
+  "Asia/Kolkata";
+
+export const getCurrentClinicTime = (tz = CLINIC_TIMEZONE) => {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const map = {};
+    for (const p of parts) map[p.type] = p.value;
+
+    const year = map.year;
+    const month = map.month;
+    const day = map.day;
+    let hour = parseInt(map.hour, 10);
+    if (hour === 24) hour = 0;
+    const minute = parseInt(map.minute, 10);
+
+    const dateStr = `${year}-${month}-${day}`;
+    const currentMinutes = hour * 60 + minute;
+
+    return { dateStr, currentMinutes, hour, minute };
+  } catch (err) {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return {
+      dateStr: `${year}-${month}-${day}`,
+      currentMinutes: d.getHours() * 60 + d.getMinutes(),
+      hour: d.getHours(),
+      minute: d.getMinutes(),
+    };
+  }
+};
+
+export const parseSlotToMinutes = (timeSlotStr) => {
+  if (!timeSlotStr || typeof timeSlotStr !== "string") return -1;
+  const startPart = timeSlotStr.split("-")[0]?.trim();
+  const match = startPart.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return -1;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const modifier = match[3].toUpperCase();
+  if (modifier === "PM" && hours < 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
+
 const Appointment = () => {
   const { user } = useContext(AuthContext);
+  const { t } = useLanguage();
 
   const isDoctor = user?.role === "doctor";
   const currentTime = useConsultationTimer(15000);
@@ -74,45 +136,44 @@ const Appointment = () => {
   const [patientAddress, setPatientAddress] = useState(user?.address || "");
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const getTodayISO = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  const getTodayISO = useCallback(() => {
+    return getCurrentClinicTime(CLINIC_TIMEZONE).dateStr;
+  }, []);
 
-  // Helper to determine if an appointment date/time is in the past
+  const [clinicNow, setClinicNow] = useState(() => getCurrentClinicTime(CLINIC_TIMEZONE));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setClinicNow(getCurrentClinicTime(CLINIC_TIMEZONE));
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Helper to determine if an appointment date/time is in the past in clinic timezone
   const checkIsPast = (appointmentDate, timeSlot) => {
     if (!appointmentDate) return false;
-    const d = new Date(appointmentDate);
-    if (isNaN(d.getTime())) return false;
+    let apptDateStr = "";
+    if (typeof appointmentDate === "string") {
+      const match = appointmentDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) apptDateStr = `${match[1]}-${match[2]}-${match[3]}`;
+    }
+    if (!apptDateStr) {
+      const d = new Date(appointmentDate);
+      if (isNaN(d.getTime())) return false;
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      apptDateStr = `${y}-${m}-${day}`;
+    }
 
-    const now = new Date();
-    const y = d.getUTCFullYear();
-    const m = d.getUTCMonth();
-    const day = d.getUTCDate();
-
-    const apptLocalMidnight = new Date(y, m, day, 0, 0, 0, 0).getTime();
-    const todayLocalMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
-
-    if (apptLocalMidnight < todayLocalMidnight) {
+    if (apptDateStr < clinicNow.dateStr) {
       return true;
     }
 
-    if (apptLocalMidnight === todayLocalMidnight && timeSlot) {
-      const slotStartStr = String(timeSlot).split("-")[0]?.trim();
-      const match = slotStartStr?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      if (match) {
-        let hours = parseInt(match[1], 10);
-        const minutes = parseInt(match[2], 10);
-        const modifier = match[3].toUpperCase();
-        if (modifier === "PM" && hours < 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-        const slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
-        if (slotTime.getTime() <= now.getTime()) {
-          return true;
-        }
+    if (apptDateStr === clinicNow.dateStr && timeSlot) {
+      const slotMins = parseSlotToMinutes(timeSlot);
+      if (slotMins !== -1 && slotMins <= clinicNow.currentMinutes) {
+        return true;
       }
     }
 
@@ -157,7 +218,7 @@ const Appointment = () => {
     setLoadingSlots(true);
     setSlotsError("");
     try {
-      const res = await appointmentsAPI.getSlots(docId, dateStr);
+      const res = await appointmentsAPI.getSlots(docId, dateStr, CLINIC_TIMEZONE);
       const slots = res.data?.slots || [];
       setSlotsData(slots);
     } catch (err) {
@@ -168,6 +229,67 @@ const Appointment = () => {
       setLoadingSlots(false);
     }
   }, []);
+
+  // Dynamically compute processed slots with real-time past check against clinic clock
+  const processedSlots = useMemo(() => {
+    if (!slotsData || slotsData.length === 0) return [];
+
+    const selectedDate = formData.appointmentDate;
+    const isPastDate = Boolean(selectedDate && selectedDate < clinicNow.dateStr);
+    const isToday = Boolean(selectedDate && selectedDate === clinicNow.dateStr);
+
+    return slotsData.map((slot) => {
+      const slotMins = parseSlotToMinutes(slot.timeSlot);
+      let isPast = Boolean(slot.isPast);
+
+      if (isPastDate) {
+        isPast = true;
+      } else if (isToday) {
+        if (slotMins !== -1 && slotMins <= clinicNow.currentMinutes) {
+          isPast = true;
+        }
+      } else {
+        isPast = false;
+      }
+
+      const isBooked = Boolean(slot.isBooked);
+      const isAvailable = !isBooked && !isPast;
+
+      let reason = slot.reason || "Available";
+      if (isPast) {
+        reason = isPastDate ? "Appointment date has passed" : "Time slot has passed";
+      } else if (isBooked) {
+        reason = "Booked by another patient";
+      }
+
+      return {
+        ...slot,
+        isPast,
+        isBooked,
+        isAvailable,
+        reason,
+      };
+    });
+  }, [slotsData, formData.appointmentDate, clinicNow]);
+
+  // Automatically clear selected slot if it becomes invalid, booked, or elapsed
+  useEffect(() => {
+    if (!formData.timeSlot) return;
+
+    if (processedSlots.length > 0) {
+      const currentSelected = processedSlots.find(
+        (s) => s.timeSlot === formData.timeSlot
+      );
+      if (
+        !currentSelected ||
+        !currentSelected.isAvailable ||
+        currentSelected.isPast ||
+        currentSelected.isBooked
+      ) {
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
+      }
+    }
+  }, [processedSlots, formData.timeSlot]);
 
   // 2. Fetch Verified Doctors from Atlas (for patient booking)
   const fetchDoctors = useCallback(async () => {
@@ -199,7 +321,7 @@ const Appointment = () => {
     } finally {
       setLoadingDoctors(false);
     }
-  }, [formData.doctorId, formData.appointmentDate, fetchSlots, isDoctor]);
+  }, [formData.doctorId, formData.appointmentDate, fetchSlots, getTodayISO, isDoctor]);
 
   // 3. Fetch User's Appointments
   const fetchAppointments = useCallback(async () => {
@@ -343,6 +465,26 @@ const Appointment = () => {
     return { days, hours, minutes, seconds };
   };
 
+  const handleOpenBookingModal = useCallback(() => {
+    const todayStr = getCurrentClinicTime(CLINIC_TIMEZONE).dateStr;
+    const candidateDate =
+      formData.appointmentDate && formData.appointmentDate >= todayStr
+        ? formData.appointmentDate
+        : todayStr;
+
+    setFormData((prev) => ({
+      ...prev,
+      appointmentDate: candidateDate,
+      timeSlot: "",
+    }));
+    setSlotsError("");
+    setShowBookModal(true);
+    fetchDoctors();
+    if (formData.doctorId) {
+      fetchSlots(formData.doctorId, candidateDate);
+    }
+  }, [formData.appointmentDate, formData.doctorId, fetchDoctors, fetchSlots]);
+
   const handleDoctorChange = (e) => {
     const docId = e.target.value;
     const found = doctorsList.find((d) => d._id === docId);
@@ -368,6 +510,7 @@ const Appointment = () => {
       appointmentDate: chosenDate,
       timeSlot: "",
     }));
+    setSlotsError("");
     if (!chosenDate) {
       setSlotsData([]);
       return;
@@ -430,6 +573,26 @@ const Appointment = () => {
       return;
     }
 
+    // Validate date and slot against clinic timezone before submission
+    const currentClinic = getCurrentClinicTime(CLINIC_TIMEZONE);
+    if (formData.appointmentDate < currentClinic.dateStr) {
+      alert("The selected appointment date has already passed. Please choose today or a future date.");
+      setFormData((prev) => ({ ...prev, timeSlot: "" }));
+      return;
+    }
+
+    if (formData.appointmentDate === currentClinic.dateStr) {
+      const slotMins = parseSlotToMinutes(formData.timeSlot);
+      if (slotMins !== -1 && slotMins <= currentClinic.currentMinutes) {
+        alert(
+          `The selected time slot (${formData.timeSlot}) has already passed for today. Please select an upcoming slot.`
+        );
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
+        fetchSlots(formData.doctorId, formData.appointmentDate);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setErrorMessage("");
 
@@ -441,6 +604,7 @@ const Appointment = () => {
         department: formData.department,
         appointmentDate: formData.appointmentDate,
         timeSlot: formData.timeSlot,
+        timezone: CLINIC_TIMEZONE,
         consultationType: formData.consultationType,
         type: formData.type,
         notes: consultationReason,
@@ -464,11 +628,16 @@ const Appointment = () => {
     } catch (err) {
       console.error("Booking failed:", err);
       if (err.response?.status === 409) {
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
         alert(
           err.response?.data?.message ||
             "Slot Conflict: This time slot was just booked by another patient! Please select another available slot."
         );
         // Refresh slots immediately
+        fetchSlots(formData.doctorId, formData.appointmentDate);
+      } else if (err.response?.status === 400 && err.response?.data?.message?.includes("passed")) {
+        setFormData((prev) => ({ ...prev, timeSlot: "" }));
+        alert(err.response?.data?.message);
         fetchSlots(formData.doctorId, formData.appointmentDate);
       } else if (err.response?.data?.profileIncomplete) {
         setProfileIncomplete(true);
@@ -820,32 +989,32 @@ const Appointment = () => {
               title="Cancel scheduled consultation"
               aria-label={`Cancel appointment with ${docName}`}
             >
-              <FiXCircle size={14} /> Cancel Appointment
+              <FiXCircle size={14} /> {t("appointment.cancelAppointment", "Cancel Appointment")}
             </button>
           ) : (
             <div className={`appt-terminal-badge ${statusClean.toLowerCase().replace(/\s+/g, "-")}`}>
               {statusNorm === "COMPLETED" && (
                 <>
                   <FiCheckCircle size={13} />
-                  <span>Consultation Completed</span>
+                  <span>{t("appointment.appointmentCompleted", "Consultation Completed")}</span>
                 </>
               )}
               {statusNorm === "CANCELLED" && (
                 <>
                   <FiXCircle size={13} />
-                  <span>Consultation Cancelled</span>
+                  <span>{t("appointment.appointmentCancelled", "Consultation Cancelled")}</span>
                 </>
               )}
               {statusNorm === "REJECTED" && (
                 <>
                   <FiAlertCircle size={13} />
-                  <span>Consultation Declined</span>
+                  <span>{t("appointment.appointmentDeclined", "Consultation Declined")}</span>
                 </>
               )}
               {statusNorm === "EXPIRED" && (
                 <>
                   <FiAlertCircle size={13} />
-                  <span>Consultation Expired</span>
+                  <span>{t("appointment.appointmentExpired", "Consultation Expired")}</span>
                 </>
               )}
               {isPast &&
@@ -905,13 +1074,13 @@ const Appointment = () => {
           </div>
           <h1>
             {isDoctor
-              ? "Assigned Consultations & Schedule"
-              : "Doctor Consultations & Appointments"}
+              ? t("appointment.doctorPageTitle", "Assigned Consultations & Schedule")
+              : t("appointment.pageTitle", "Doctor Consultations & Appointments")}
           </h1>
           <p>
             {isDoctor
-              ? "Review your patient consultation requests, manage appointment status in real time, and access patient medical records."
-              : "Connect directly with verified hospital physicians, choose verified slots in real time, and monitor upcoming visits."}
+              ? t("appointment.doctorPageSubtitle", "Review your patient consultation requests, manage appointment status in real time, and access patient medical records.")
+              : t("appointment.pageSubtitle", "Connect directly with verified hospital physicians, choose verified slots in real time, and monitor upcoming visits.")}
           </p>
         </div>
 
@@ -924,20 +1093,10 @@ const Appointment = () => {
         ) : (
           <button
             className="btn-book-new"
-            onClick={() => {
-              setShowBookModal(true);
-              const currentDate = formData.appointmentDate || getTodayISO();
-              if (!formData.appointmentDate) {
-                setFormData((prev) => ({ ...prev, appointmentDate: currentDate, timeSlot: "" }));
-              }
-              fetchDoctors();
-              if (formData.doctorId) {
-                fetchSlots(formData.doctorId, currentDate);
-              }
-            }}
+            onClick={handleOpenBookingModal}
             type="button"
           >
-            <FiPlus /> Book New Appointment
+            <FiPlus /> {t("appointment.bookNewBtn", "Book New Appointment")}
           </button>
         )}
       </header>
@@ -1077,22 +1236,22 @@ const Appointment = () => {
           <div className="live-countdown-clock">
             <div className="countdown-unit">
               <span className="unit-number">{days}</span>
-              <span className="unit-label">Days</span>
+              <span className="unit-label">{t("appointment.days", "Days")}</span>
             </div>
             <div className="clock-divider">:</div>
             <div className="countdown-unit">
               <span className="unit-number">{hours}</span>
-              <span className="unit-label">Hours</span>
+              <span className="unit-label">{t("appointment.hours", "Hours")}</span>
             </div>
             <div className="clock-divider">:</div>
             <div className="countdown-unit">
               <span className="unit-number">{minutes}</span>
-              <span className="unit-label">Mins</span>
+              <span className="unit-label">{t("appointment.mins", "Mins")}</span>
             </div>
             <div className="clock-divider">:</div>
             <div className="countdown-unit">
               <span className="unit-number">{seconds}</span>
-              <span className="unit-label">Secs</span>
+              <span className="unit-label">{t("appointment.secs", "Secs")}</span>
             </div>
           </div>
         </section>
@@ -1124,7 +1283,7 @@ const Appointment = () => {
                 className={`view-tab-btn ${viewTab === "all" ? "active" : ""}`}
                 onClick={() => setViewTab("all")}
               >
-                All <span className="tab-count-pill">{appointments.length}</span>
+                {t("common.all", "All")} <span className="tab-count-pill">{appointments.length}</span>
               </button>
               <button
                 type="button"
@@ -1133,7 +1292,7 @@ const Appointment = () => {
                 className={`view-tab-btn ${viewTab === "upcoming" ? "active" : ""}`}
                 onClick={() => setViewTab("upcoming")}
               >
-                Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
+                {t("appointment.upcomingTab", "Upcoming")} <span className="tab-count-pill">{upcomingAppointments.length}</span>
               </button>
               <button
                 type="button"
@@ -1142,7 +1301,7 @@ const Appointment = () => {
                 className={`view-tab-btn ${viewTab === "past" ? "active" : ""}`}
                 onClick={() => setViewTab("past")}
               >
-                Past <span className="tab-count-pill">{pastAppointments.length}</span>
+                {t("appointment.pastTab", "Past")} <span className="tab-count-pill">{pastAppointments.length}</span>
               </button>
             </div>
           )}
@@ -1164,17 +1323,7 @@ const Appointment = () => {
             ) : (
               <button
                 className="btn-book-first"
-                onClick={() => {
-                  setShowBookModal(true);
-                  const currentDate = formData.appointmentDate || getTodayISO();
-                  if (!formData.appointmentDate) {
-                    setFormData((prev) => ({ ...prev, appointmentDate: currentDate, timeSlot: "" }));
-                  }
-                  fetchDoctors();
-                  if (formData.doctorId) {
-                    fetchSlots(formData.doctorId, currentDate);
-                  }
-                }}
+                onClick={handleOpenBookingModal}
                 type="button"
               >
                 <FiPlus /> Book Consultation Now
@@ -1264,8 +1413,8 @@ const Appointment = () => {
               <div className="title-wrap">
                 <FiCalendar className="header-icon" />
                 <div>
-                  <h3>Schedule Clinical Consultation</h3>
-                  <p>Choose your verified specialist and reserve an atomic time slot</p>
+                  <h3>{t("appointment.modalTitle", "Schedule Clinical Consultation")}</h3>
+                  <p>{t("appointment.modalSubtitle", "Choose your verified specialist and reserve an atomic time slot")}</p>
                 </div>
               </div>
               <button
@@ -1331,7 +1480,7 @@ const Appointment = () => {
             <form onSubmit={handleBookSubmit} className="booking-form">
               {/* Doctor Selector */}
               <div className="form-group">
-                <label>Select Verified Healthcare Specialist *</label>
+                <label>{t("appointment.selectDoctor", "Select Verified Healthcare Specialist *")}</label>
                 {loadingDoctors ? (
                   <div className="loading-row">
                     <FiRefreshCw className="spinner-icon small" /> Loading verified doctors...
@@ -1398,7 +1547,7 @@ const Appointment = () => {
               {/* Date & Mode Selection */}
               <div className="form-row-2">
                 <div className="form-group">
-                  <label>Appointment Date *</label>
+                  <label>{t("appointment.selectDate", "Appointment Date *")}</label>
                   <input
                     type="date"
                     name="appointmentDate"
@@ -1411,7 +1560,7 @@ const Appointment = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Consultation Mode</label>
+                  <label>{t("appointment.consultationType", "Consultation Mode")}</label>
                   <select
                     name="consultationType"
                     value={formData.consultationType}
@@ -1428,7 +1577,7 @@ const Appointment = () => {
               {/* Dynamic Time Slot Picker */}
               <div className="form-group">
                 <div className="slot-header-row">
-                  <label>Select Available Time Slot *</label>
+                  <label>{t("appointment.selectSlot", "Select Available Time Slot *")}</label>
                   {loadingSlots && (
                     <span className="loading-slot-tag">
                       <FiRefreshCw className="spinner-icon small" /> Calculating open slots...
@@ -1442,11 +1591,15 @@ const Appointment = () => {
                   </p>
                 ) : slotsError ? (
                   <p className="slot-error-text">{slotsError}</p>
-                ) : slotsData.length === 0 && !loadingSlots ? (
+                ) : processedSlots.length === 0 && !loadingSlots ? (
                   <p className="slot-hint-text">No time slots found for this date.</p>
                 ) : (
-                  <div className="slots-grid-container">
-                    {slotsData.map((slot, idx) => {
+                  <div
+                    className="slots-grid-container"
+                    role="group"
+                    aria-label="Available appointment time slots"
+                  >
+                    {processedSlots.map((slot, idx) => {
                       const isSelected = formData.timeSlot === slot.timeSlot;
                       const isBooked = slot.isBooked;
                       const isAvailable = slot.isAvailable;
@@ -1457,11 +1610,13 @@ const Appointment = () => {
                           key={idx}
                           type="button"
                           disabled={!isAvailable}
+                          aria-disabled={!isAvailable}
+                          tabIndex={!isAvailable ? -1 : 0}
                           className={`slot-chip ${
                             isSelected
                               ? "selected"
                               : isPast
-                              ? "unavailable"
+                              ? "unavailable passed"
                               : isBooked
                               ? "occupied"
                               : !isAvailable
@@ -1481,7 +1636,7 @@ const Appointment = () => {
                           <FiClock className="chip-icon" />
                           <span className="chip-time">{slot.timeSlot}</span>
                           {isPast ? (
-                            <span className="chip-badge unavailable">Passed</span>
+                            <span className="chip-badge unavailable passed">Passed</span>
                           ) : isBooked ? (
                             <span className="chip-badge occupied">Booked</span>
                           ) : isSelected ? (
@@ -1495,7 +1650,7 @@ const Appointment = () => {
               </div>
 
               <div className="form-group">
-                <label>Reason for Consultation / Medical Concerns</label>
+                <label>{t("appointment.reasonForVisit", "Reason for Consultation / Medical Concerns")}</label>
                 <textarea
                   name="reason"
                   placeholder="e.g. Follow-up consultation for blood report findings, chest discomfort..."
@@ -1528,7 +1683,7 @@ const Appointment = () => {
                     profileIncomplete
                   }
                 >
-                  {submitting ? "Reserving Slot..." : "Confirm & Schedule Appointment"}
+                  {submitting ? t("common.submitting", "Reserving Slot...") : t("appointment.confirmBookingBtn", "Confirm Appointment Booking")}
                 </button>
               </div>
             </form>
@@ -1578,7 +1733,7 @@ const Appointment = () => {
                     <FiAlertCircle size={22} />
                   </div>
                   <div>
-                    <h3 id="cancel-dialog-title">Cancel Appointment?</h3>
+                    <h3 id="cancel-dialog-title">{t("appointment.cancelModalTitle", "Cancel Clinical Appointment")}</h3>
                     <p className="cancel-subtitle">Review consultation details prior to confirmation</p>
                   </div>
                 </div>
@@ -1595,7 +1750,7 @@ const Appointment = () => {
 
               <div className="cancellation-modal-body">
                 <p id="cancel-dialog-desc" className="cancel-prompt-message">
-                  Are you sure you want to cancel this scheduled consultation?
+                  {t("appointment.cancelModalPrompt", "Are you sure you want to cancel this scheduled consultation?")}
                 </p>
 
                 {/* Consultation Details Card */}
@@ -1657,7 +1812,7 @@ const Appointment = () => {
                   onClick={handleDismissCancelModal}
                   disabled={isCancelling}
                 >
-                  Keep Appointment
+                  {t("appointment.keepAppointmentBtn", "No, Keep Appointment")}
                 </button>
                 <button
                   type="button"
@@ -1674,7 +1829,7 @@ const Appointment = () => {
                   ) : (
                     <>
                       <FiXCircle size={15} />
-                      <span>Confirm Cancellation</span>
+                      <span>{t("appointment.confirmCancelBtn", "Yes, Cancel Appointment")}</span>
                     </>
                   )}
                 </button>

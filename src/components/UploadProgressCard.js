@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import {
   FiUploadCloud,
   FiFileText,
@@ -54,11 +55,36 @@ const UploadProgressCard = ({
   onDismiss = null,
   onViewDocument = null,
 }) => {
+  const { t } = useLanguage();
   const stageIdx = getStageIndex(currentStage);
   const isFailed = Boolean(error);
   const isComplete = currentStage === "Analysis complete" && !isFailed;
   const isServerProcessing = stageIdx >= 2 && !isComplete && !isFailed;
   const isFileUploading = stageIdx === 1 && !isFailed;
+
+  const getLocalizedStageText = (label) => {
+    switch (label) {
+      case "Preparing your report": return t("uploadProgress.preparing", label);
+      case "Uploading your medical report": return t("uploadProgress.uploading", label);
+      case "Extracting text from your document": return t("uploadProgress.extracting", label);
+      case "AI is analyzing your report": return t("uploadProgress.analyzing", label);
+      case "Saving your analysis": return t("uploadProgress.saving", label);
+      case "Analysis complete": return t("uploadProgress.complete", label);
+      default: return label;
+    }
+  };
+
+  const getStageKey = (id) => {
+    switch (id) {
+      case 1: return "preparing";
+      case 2: return "uploading";
+      case 3: return "extracting";
+      case 4: return "analyzing";
+      case 5: return "saving";
+      case 6: return "complete";
+      default: return "preparing";
+    }
+  };
 
   const primaryFile = files[0];
   const fileExtension = primaryFile?.name?.split(".").pop()?.toLowerCase() || "";
@@ -71,7 +97,7 @@ const UploadProgressCard = ({
         isComplete ? "state-complete" : ""
       }`}
       role="region"
-      aria-label="Medical Report Processing Status"
+      aria-label={t("uploadProgress.preparing", "Medical Report Processing Status")}
     >
       {/* Accessible Live Announcement */}
       <div
@@ -83,8 +109,8 @@ const UploadProgressCard = ({
         {isFailed
           ? `Upload failed: ${error}`
           : isComplete
-          ? "Report processing and AI analysis complete."
-          : `Current processing stage: ${currentStage}`}
+          ? t("uploadProgress.complete", "Report processing and AI analysis complete.")
+          : `Current processing stage: ${getLocalizedStageText(currentStage)}`}
       </div>
 
       {/* Header Info */}
@@ -109,15 +135,15 @@ const UploadProgressCard = ({
         <div className="status-badge-indicator">
           {isFailed ? (
             <span className="pill-status error">
-              <FiXCircle size={14} /> Attention Needed
+              <FiXCircle size={14} /> {t("common.attention", "Attention Needed")}
             </span>
           ) : isComplete ? (
             <span className="pill-status success">
-              <FiCheckCircle size={14} /> Ready
+              <FiCheckCircle size={14} /> {t("common.ready", "Ready")}
             </span>
           ) : (
             <span className="pill-status active">
-              <FiRefreshCw className="spin-icon" size={14} /> Processing
+              <FiRefreshCw className="spin-icon" size={14} /> {t("common.processing", "Processing")}
             </span>
           )}
         </div>
@@ -126,16 +152,16 @@ const UploadProgressCard = ({
       {/* Visual Progress Bar */}
       <div className="progress-track-wrapper">
         <div className="progress-label-row">
-          <span className="status-current-text">{currentStage}</span>
+          <span className="status-current-text">{getLocalizedStageText(currentStage)}</span>
           <span className="progress-percentage-text">
             {isFailed
-              ? "Failed"
+              ? t("common.failed", "Failed")
               : isComplete
               ? "100%"
               : isFileUploading
               ? `${Math.min(uploadProgress, 99)}%`
               : isServerProcessing
-              ? "Analyzing..."
+              ? t("common.analyzing", "Analyzing...")
               : "0%"}
           </span>
         </div>
@@ -162,8 +188,7 @@ const UploadProgressCard = ({
         {/* Indeterminate AI Analysis Explanation Notice */}
         {isServerProcessing && (
           <p className="ai-indeterminate-notice">
-            <FiCpu className="pulsing-icon" /> AI is analyzing your report. This
-            may take a little while.
+            <FiCpu className="pulsing-icon" /> {t("uploadProgress.analyzingNotice", "AI is analyzing your report. This may take a little while.")}
           </p>
         )}
       </div>
@@ -195,7 +220,7 @@ const UploadProgressCard = ({
                   <StageIcon size={14} />
                 )}
               </div>
-              <span className="stage-title">{s.label}</span>
+              <span className="stage-title">{t(`uploadProgress.${getStageKey(s.id)}`, s.label)}</span>
             </div>
           );
         })}
@@ -206,7 +231,7 @@ const UploadProgressCard = ({
         <div className="error-alert-box">
           <FiAlertCircle size={20} className="error-icon" />
           <div className="error-copy">
-            <strong>Upload or Analysis Interrupted</strong>
+            <strong>{t("uploadProgress.uploadFailed", "Upload or Analysis Interrupted")}</strong>
             <p>{error}</p>
           </div>
           <div className="error-actions">
@@ -216,7 +241,7 @@ const UploadProgressCard = ({
                 className="btn-retry-action"
                 onClick={onRetry}
               >
-                <FiRefreshCw size={14} /> Retry Upload
+                <FiRefreshCw size={14} /> {t("uploadProgress.retry", "Retry Upload")}
               </button>
             )}
             {onDismiss && (
@@ -225,7 +250,7 @@ const UploadProgressCard = ({
                 className="btn-dismiss-action"
                 onClick={onDismiss}
               >
-                Dismiss
+                {t("uploadProgress.dismiss", "Dismiss")}
               </button>
             )}
           </div>
@@ -238,9 +263,9 @@ const UploadProgressCard = ({
           <div className="completion-header">
             <FiCheckCircle size={24} className="success-icon" />
             <div>
-              <h4>Medical Document Secured & Evaluated</h4>
+              <h4>{t("uploadProgress.securedTitle", "Medical Document Secured & Evaluated")}</h4>
               <p>
-                Clinical markers extracted and interpreted via Azure AI.
+                {t("uploadProgress.securedDesc", "Clinical markers extracted and interpreted via Azure AI.")}
               </p>
             </div>
           </div>
@@ -248,7 +273,7 @@ const UploadProgressCard = ({
           {completedReport?.aiAnalysis && (
             <div className="analysis-quick-preview">
               <div className="preview-stat">
-                <span className="stat-label">Clinical Severity:</span>
+                <span className="stat-label">{t("uploadProgress.severityLabel", "Clinical Severity:")}</span>
                 <span
                   className={`severity-tag ${
                     completedReport.aiAnalysis.severity?.toLowerCase() || "unknown"
@@ -271,7 +296,7 @@ const UploadProgressCard = ({
               className="btn-view-ai-insights"
               onClick={onDismiss}
             >
-              <FiCpu size={16} /> View AI Insights <FiArrowRight size={14} />
+              <FiCpu size={16} /> {t("uploadProgress.viewAnalysis", "View AI Insights")} <FiArrowRight size={14} />
             </Link>
 
             {onViewDocument && (
@@ -280,7 +305,7 @@ const UploadProgressCard = ({
                 className="btn-view-sas-doc"
                 onClick={onViewDocument}
               >
-                <FiEye size={16} /> View Original Document
+                <FiEye size={16} /> {t("aiAnalysis.originalDocumentBtn", "View Original Document")}
               </button>
             )}
 
@@ -290,7 +315,7 @@ const UploadProgressCard = ({
                 className="btn-done-action"
                 onClick={onDismiss}
               >
-                Done
+                {t("common.done", "Done")}
               </button>
             )}
           </div>

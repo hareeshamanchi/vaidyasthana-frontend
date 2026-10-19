@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import "./ResetPasswordPage.css";
 import { authAPI } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 import {
   FiLock,
   FiEye,
@@ -14,6 +15,7 @@ import {
 } from "react-icons/fi";
 
 const ResetPasswordPage = () => {
+  const { t } = useLanguage();
   const { token: routeToken } = useParams();
   const [searchParams] = useSearchParams();
   const queryToken = searchParams.get("token");
@@ -42,7 +44,7 @@ const ResetPasswordPage = () => {
         if (isMounted) {
           setCheckingToken(false);
           setTokenValid(false);
-          setTokenError("No password reset token was provided in the link.");
+          setTokenError(t("resetPassword.noTokenError", "No password reset token was provided in the link."));
         }
         return;
       }
@@ -55,7 +57,7 @@ const ResetPasswordPage = () => {
             setTokenValid(true);
           } else {
             setTokenValid(false);
-            setTokenError("This password reset link is invalid or has expired.");
+            setTokenError(t("resetPassword.invalidTokenDesc", "This password reset link is invalid or has expired."));
           }
         }
       } catch (err) {
@@ -63,7 +65,7 @@ const ResetPasswordPage = () => {
           console.error("Token validation error:", err);
           const errMsg =
             err.response?.data?.message ||
-            "This password reset link is invalid, expired, or has already been used.";
+            t("resetPassword.invalidTokenDesc", "This password reset link is invalid, expired, or has already been used.");
           setTokenValid(false);
           setTokenError(errMsg);
         }
@@ -79,39 +81,21 @@ const ResetPasswordPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [token, t]);
 
-  // Password strength calculation
-  const getPasswordStrength = (pass) => {
-    if (!pass) return { score: 0, label: "None", color: "#94a3b8" };
-    let score = 0;
-    if (pass.length >= 6) score += 1;
-    if (pass.length >= 10) score += 1;
-    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
-    if (/[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
-    if (score <= 2) return { score: 1, label: "Weak", color: "#ef4444" };
-    if (score <= 3) return { score: 2, label: "Medium", color: "#f59e0b" };
-    if (score === 4) return { score: 3, label: "Strong", color: "#10b981" };
-    return { score: 4, label: "Very Strong", color: "#059669" };
-  };
-
-  const strength = getPasswordStrength(password);
-  const passwordsMatch = password && confirmPassword && password === confirmPassword;
-  const passwordsMismatch = confirmPassword && password !== confirmPassword;
-
+  // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setError("");
 
     if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError(t("resetPassword.tooShortError", "Password must be at least 6 characters long."));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match. Please re-enter both password fields.");
+      setError(t("resetPassword.matchError", "Passwords do not match."));
       return;
     }
 
@@ -122,73 +106,105 @@ const ResetPasswordPage = () => {
       if (res.data?.success) {
         setSuccess(true);
       } else {
-        setError(res.data?.message || "Failed to reset password. Please try again.");
+        setError(res.data?.message || t("common.error", "Failed to reset password. Please try again."));
       }
     } catch (err) {
       console.error("Password reset error:", err);
       const errMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        "Failed to reset password. The link may have expired or was already used.";
+        t("common.error", "An error occurred while resetting your password. The link may have expired.");
       setError(errMsg);
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Password Strength calculation
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, label: "None", color: "#e2e8f0" };
+    let score = 0;
+    if (pass.length >= 6) score += 1;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    switch (score) {
+      case 1:
+        return { score: 1, label: "Weak", color: "#ef4444" };
+      case 2:
+        return { score: 2, label: "Fair", color: "#f59e0b" };
+      case 3:
+        return { score: 3, label: "Good", color: "#3b82f6" };
+      case 4:
+        return { score: 4, label: "Strong", color: "#10b981" };
+      default:
+        return { score: 1, label: "Weak", color: "#ef4444" };
+    }
+  };
+
+  const strength = getPasswordStrength(password);
+  const passwordsMatch = confirmPassword && password === confirmPassword;
+  const passwordsMismatch = confirmPassword && password !== confirmPassword;
+
   return (
     <div className="reset-password-page-container">
       <div className="reset-password-card">
-        {/* Loading Token Validation */}
+        {/* Token Validation Loading State */}
         {checkingToken && (
-          <div className="token-loading-state">
-            <FiRefreshCw className="spinning-icon" size={36} color="#0284c7" />
-            <h3>Validating Security Token</h3>
-            <p>Verifying single-use cryptographic token with MongoDB Atlas...</p>
+          <div className="token-checking-state">
+            <FiRefreshCw className="token-spinner-icon" size={36} color="#0284c7" />
+            <h3>{t("resetPassword.checkingToken", "Validating Security Token")}</h3>
+            <p>Please wait while we validate your single-use security token with the server.</p>
           </div>
         )}
 
-        {/* Invalid or Expired Token State */}
+        {/* Token Validation Error / Expired */}
         {!checkingToken && !tokenValid && !success && (
           <div className="token-invalid-state">
-            <div className="icon-wrap error">
-              <FiAlertCircle size={32} />
+            <div className="token-error-icon-wrap">
+              <FiAlertCircle size={40} color="#dc2626" />
             </div>
-            <h2>Invalid or Expired Link</h2>
-            <p className="invalid-desc">
+            <h2>{t("resetPassword.invalidTokenTitle", "Invalid or Expired Link")}</h2>
+            <p className="error-desc">
               {tokenError ||
-                "This password reset link is invalid, has expired, or has already been used to reset an account."}
+                t("resetPassword.invalidTokenDesc", "This password reset link is invalid, expired, or has already been used.")}
             </p>
             <div className="security-note">
               <FiShield size={16} />
               <span>
-                For your account security, password reset tokens are strictly single-use and expire 15 minutes after issuance.
+                {t("resetPassword.securityNote", "For your account security, password reset tokens are strictly single-use and expire 15 minutes after issuance.")}
               </span>
             </div>
-            <Link to="/forgot-password" className="btn-request-new">
-              Request a New Reset Link &rarr;
-            </Link>
+            <div className="token-error-actions">
+              <Link to="/forgot-password" className="btn-request-new">
+                {t("resetPassword.requestNewLinkBtn", "Request a New Reset Link")}
+              </Link>
+              <Link to="/" className="btn-return-home">
+                {t("forgotPassword.backToSignIn", "Return to Homepage")}
+              </Link>
+            </div>
           </div>
         )}
 
-        {/* Success State */}
+        {/* Reset Success State */}
         {success && (
           <div className="reset-success-state">
-            <div className="icon-wrap success">
-              <FiCheckCircle size={36} />
+            <div className="success-icon-wrap">
+              <FiCheckCircle size={44} color="#16a34a" />
             </div>
-            <h2>Password Reset Complete</h2>
+            <h2>{t("resetPassword.successTitle", "Password Reset Complete")}</h2>
             <p className="success-desc">
-              Your Vaidyasthana account password has been updated securely in MongoDB. Your single-use reset token has been invalidated.
+              {t("resetPassword.successDesc", "Your Vaidyasthana account password has been updated securely. Your single-use reset token has been invalidated.")}
             </p>
             <div className="security-notice-box">
               <FiShield size={16} />
               <span>
-                You can now log in to access your encrypted medical reports, appointments, and AI clinical summaries with your new credentials.
+                {t("auth.signInSubtitle", "You can now log in to access your encrypted medical reports, appointments, and AI clinical summaries with your new credentials.")}
               </span>
             </div>
             <Link to="/?auth=login" className="btn-proceed-login">
-              Return to Homepage & Sign In <FiArrowRight size={16} />
+              {t("resetPassword.signInNowBtn", "Return to Homepage & Sign In")} <FiArrowRight size={16} />
             </Link>
           </div>
         )}
@@ -200,9 +216,9 @@ const ResetPasswordPage = () => {
               <div className="reset-icon-wrap">
                 <FiLock size={26} color="#0284c7" />
               </div>
-              <h2>Create New Password</h2>
+              <h2>{t("resetPassword.title", "Create New Password")}</h2>
               <p className="reset-subtitle">
-                Please enter a secure new password for your Vaidyasthana account.
+                {t("resetPassword.subtitle", "Please enter a secure new password for your Vaidyasthana account.")}
               </p>
             </div>
 
@@ -216,14 +232,14 @@ const ResetPasswordPage = () => {
             <form onSubmit={handleSubmit} className="reset-form">
               {/* New Password */}
               <div className="form-group">
-                <label htmlFor="new-password">New Password *</label>
+                <label htmlFor="new-password">{t("resetPassword.newPasswordLabel", "New Password *")}</label>
                 <div className="field-input-wrap">
                   <FiLock className="input-icon" />
                   <input
                     id="new-password"
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="Minimum 6 characters"
+                    placeholder={t("resetPassword.newPasswordPlaceholder", "Minimum 6 characters")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={submitting}
@@ -261,14 +277,14 @@ const ResetPasswordPage = () => {
 
               {/* Confirm New Password */}
               <div className="form-group">
-                <label htmlFor="confirm-password">Confirm New Password *</label>
+                <label htmlFor="confirm-password">{t("resetPassword.confirmPasswordLabel", "Confirm New Password *")}</label>
                 <div className="field-input-wrap">
                   <FiLock className="input-icon" />
                   <input
                     id="confirm-password"
                     type={showConfirmPassword ? "text" : "password"}
                     required
-                    placeholder="Re-type new password"
+                    placeholder={t("resetPassword.confirmPasswordPlaceholder", "Re-type new password")}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={submitting}
@@ -291,7 +307,7 @@ const ResetPasswordPage = () => {
 
                 {passwordsMismatch && (
                   <div className="match-status invalid">
-                    <FiAlertCircle size={14} /> Passwords do not match
+                    <FiAlertCircle size={14} /> {t("resetPassword.matchError", "Passwords do not match")}
                   </div>
                 )}
               </div>
@@ -302,16 +318,16 @@ const ResetPasswordPage = () => {
                 disabled={submitting || !password || !confirmPassword || password.length < 6 || password !== confirmPassword}
               >
                 {submitting ? (
-                  <span className="spinner-text">Updating Password...</span>
+                  <span className="spinner-text">{t("resetPassword.updating", "Updating Password...")}</span>
                 ) : (
-                  "Reset Password"
+                  t("resetPassword.submitBtn", "Reset Password")
                 )}
               </button>
             </form>
 
             <div className="reset-card-footer">
               <Link to="/forgot-password" className="btn-cancel-reset">
-                Cancel & Request New Link
+                {t("resetPassword.requestNewLinkBtn", "Cancel & Request New Link")}
               </Link>
             </div>
           </>

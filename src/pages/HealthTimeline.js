@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { timelineAPI, doctorAPI, reportsAPI } from "../services/api";
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
+import { useLanguage } from "../context/LanguageContext";
 import "./HealthTimeline.css";
 import {
   FiActivity,
@@ -27,6 +28,7 @@ import {
 } from "react-icons/fi";
 
 const HealthTimeline = () => {
+  const { t, translateCategory, translateStatus } = useLanguage();
   const { user, loading: authLoading } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -337,18 +339,17 @@ const HealthTimeline = () => {
                 else navigate("/dashboard");
               }}
               type="button"
-              title="Return to dashboard"
+              title={isDoctor ? t("timeline.backToDoctorDashboard", "Back to Doctor Dashboard") : t("timeline.backToMyDashboard", "Back to My Dashboard")}
             >
-              <FiArrowLeft /> Back to {isDoctor ? "Doctor Dashboard" : "My Dashboard"}
+              <FiArrowLeft /> {isDoctor ? t("timeline.backToDoctorDashboard", "Back to Doctor Dashboard") : t("timeline.backToMyDashboard", "Back to My Dashboard")}
             </button>
             <div className="timeline-header-titles">
               <div className="timeline-badge-pill">
-                <FiActivity /> Unified Clinical Record
+                <FiActivity /> {t("timeline.unifiedRecord", "Unified Clinical Record")}
               </div>
-              <h1>Patient Health Timeline</h1>
+              <h1>{t("timeline.pageTitle", "Patient Health Timeline")}</h1>
               <p>
-                Comprehensive chronological health history integrating diagnostic reports, clinical
-                consultations, and AI biomarker extractions.
+                {t("timeline.pageSubtitle", "Comprehensive chronological health history integrating diagnostic reports, clinical consultations, and AI biomarker extractions.")}
               </p>
             </div>
           </div>
@@ -357,7 +358,7 @@ const HealthTimeline = () => {
           {isDoctor && (
             <div className="doctor-patient-switcher-wrap">
               <span className="switcher-label">
-                <FiUser /> Authorized Patient:
+                <FiUser /> {t("timeline.authorizedPatient", "Authorized Patient:")}
               </span>
               <select
                 className="patient-select-dropdown"
@@ -365,7 +366,7 @@ const HealthTimeline = () => {
                 onChange={(e) => handleSelectPatient(e.target.value)}
               >
                 {associatedPatients.length === 0 ? (
-                  <option value="">No Assigned Patients</option>
+                  <option value="">{t("timeline.noAssignedPatients", "No Assigned Patients")}</option>
                 ) : (
                   associatedPatients.map((pat) => (
                     <option key={pat._id || pat.id} value={pat._id || pat.id}>
@@ -401,34 +402,34 @@ const HealthTimeline = () => {
                 <span className="dossier-id-badge">ID: {patient._id || patient.id}</span>
                 {isDoctor && (
                   <span className="dossier-auth-verified">
-                    <FiCheckCircle size={13} /> Clinically Authorized
+                    <FiCheckCircle size={13} /> {t("timeline.clinicallyAuthorized", "Clinically Authorized")}
                   </span>
                 )}
               </div>
               <div className="dossier-meta-chips">
                 {patient.bloodGroup && (
                   <span className="meta-chip blood-group">
-                    <strong>Blood:</strong> {patient.bloodGroup}
+                    <strong>{t("timeline.blood", "Blood:")}</strong> {patient.bloodGroup}
                   </span>
                 )}
                 {patient.gender && (
                   <span className="meta-chip">
-                    <strong>Gender:</strong> {patient.gender}
+                    <strong>{t("timeline.gender", "Gender:")}</strong> {patient.gender}
                   </span>
                 )}
                 {patient.phoneNumber && (
                   <span className="meta-chip">
-                    <strong>Phone:</strong> {patient.phoneNumber}
+                    <strong>{t("timeline.phone", "Phone:")}</strong> {patient.phoneNumber}
                   </span>
                 )}
                 {patient.email && (
                   <span className="meta-chip">
-                    <strong>Email:</strong> {patient.email}
+                    <strong>{t("timeline.email", "Email:")}</strong> {patient.email}
                   </span>
                 )}
                 {patient.address && (
                   <span className="meta-chip address-chip">
-                    <strong>Address:</strong> {patient.address}
+                    <strong>{t("timeline.address", "Address:")}</strong> {patient.address}
                   </span>
                 )}
               </div>
@@ -449,7 +450,7 @@ const HealthTimeline = () => {
             </div>
             <div className="tile-details">
               <span className="tile-value">{metrics.totalRecords}</span>
-              <span className="tile-label">Total Events</span>
+              <span className="tile-label">{t("timeline.totalEvents", "Total Events")}</span>
             </div>
           </div>
 
@@ -464,7 +465,7 @@ const HealthTimeline = () => {
             </div>
             <div className="tile-details">
               <span className="tile-value">{metrics.totalReports}</span>
-              <span className="tile-label">Diagnostic Reports</span>
+              <span className="tile-label">{t("timeline.reportsOnly", "Diagnostic Reports")}</span>
             </div>
           </div>
 
@@ -480,7 +481,7 @@ const HealthTimeline = () => {
             <div className="tile-details">
               <span className="tile-value">{metrics.totalAppointments}</span>
               <span className="tile-label">
-                Consultations {metrics.upcomingAppointmentsCount > 0 && `(${metrics.upcomingAppointmentsCount} upcoming)`}
+                {t("timeline.appointmentsOnly", "Consultations")} {metrics.upcomingAppointmentsCount > 0 && `(${metrics.upcomingAppointmentsCount} upcoming)`}
               </span>
             </div>
           </div>
@@ -496,7 +497,7 @@ const HealthTimeline = () => {
             </div>
             <div className="tile-details">
               <span className="tile-value">{metrics.abnormalBiomarkersCount}</span>
-              <span className="tile-label">Biomarker Flags</span>
+              <span className="tile-label">{t("timeline.abnormalFlags", "Biomarker Flags")}</span>
             </div>
           </div>
         </section>
@@ -511,28 +512,28 @@ const HealthTimeline = () => {
                 onClick={() => setRecordType("all")}
                 type="button"
               >
-                All Activities
+                {t("timeline.allActivities", "All Activities")}
               </button>
               <button
                 className={`filter-tab ${recordType === "reports" ? "active" : ""}`}
                 onClick={() => setRecordType("reports")}
                 type="button"
               >
-                Reports ({metrics.totalReports})
+                {t("timeline.reportsCount", `Reports (${metrics.totalReports})`, { count: metrics.totalReports })}
               </button>
               <button
                 className={`filter-tab ${recordType === "appointments" ? "active" : ""}`}
                 onClick={() => setRecordType("appointments")}
                 type="button"
               >
-                Consultations ({metrics.totalAppointments})
+                {t("timeline.consultationsCount", `Consultations (${metrics.totalAppointments})`, { count: metrics.totalAppointments })}
               </button>
               <button
                 className={`filter-tab ${recordType === "biomarkers" ? "active" : ""}`}
                 onClick={() => setRecordType("biomarkers")}
                 type="button"
               >
-                Biomarkers ({metrics.abnormalBiomarkersCount})
+                {t("timeline.biomarkersCount", `Biomarkers (${metrics.abnormalBiomarkersCount})`, { count: metrics.abnormalBiomarkersCount })}
               </button>
             </div>
 
@@ -541,7 +542,7 @@ const HealthTimeline = () => {
               <FiSearch className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by diagnosis, doctor, parameter, category..."
+                placeholder={t("timeline.searchPlaceholder", "Search by diagnosis, doctor, parameter, category...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="timeline-search-input"
@@ -562,16 +563,16 @@ const HealthTimeline = () => {
             {/* Category Dropdown */}
             {(recordType === "all" || recordType === "reports") && availableCategories.length > 0 && (
               <div className="filter-select-group">
-                <label htmlFor="cat-filter">Category:</label>
+                <label htmlFor="cat-filter">{t("timeline.filterCategory", "Category:")}</label>
                 <select
                   id="cat-filter"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  <option value="all">All Categories</option>
+                  <option value="all">{t("dashboard.allCategories", "All Categories")}</option>
                   {availableCategories.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {translateCategory(c)}
                     </option>
                   ))}
                 </select>
@@ -581,16 +582,16 @@ const HealthTimeline = () => {
             {/* Appointment Status Dropdown */}
             {(recordType === "all" || recordType === "appointments") && availableStatuses.length > 0 && (
               <div className="filter-select-group">
-                <label htmlFor="status-filter">Status:</label>
+                <label htmlFor="status-filter">{t("timeline.filterStatus", "Status:")}</label>
                 <select
                   id="status-filter"
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                  <option value="all">All Statuses</option>
+                  <option value="all">{t("common.all", "All Statuses")}</option>
                   {availableStatuses.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {translateStatus(s)}
                     </option>
                   ))}
                 </select>
@@ -599,7 +600,7 @@ const HealthTimeline = () => {
 
             {/* Date Range Controls */}
             <div className="filter-select-group date-group">
-              <label htmlFor="start-date">From:</label>
+              <label htmlFor="start-date">{t("timeline.from", "From:")}</label>
               <input
                 id="start-date"
                 type="date"
@@ -609,7 +610,7 @@ const HealthTimeline = () => {
             </div>
 
             <div className="filter-select-group date-group">
-              <label htmlFor="end-date">To:</label>
+              <label htmlFor="end-date">{t("timeline.to", "To:")}</label>
               <input
                 id="end-date"
                 type="date"
@@ -620,14 +621,14 @@ const HealthTimeline = () => {
 
             {/* Sort Order */}
             <div className="filter-select-group">
-              <label htmlFor="sort-order">Order:</label>
+              <label htmlFor="sort-order">{t("timeline.order", "Order:")}</label>
               <select
                 id="sort-order"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
               >
-                <option value="desc">Newest First</option>
-                <option value="asc">Oldest First</option>
+                <option value="desc">{t("timeline.newestFirst", "Newest First")}</option>
+                <option value="asc">{t("timeline.oldestFirst", "Oldest First")}</option>
               </select>
             </div>
 
@@ -637,9 +638,9 @@ const HealthTimeline = () => {
                 className="btn-reset-filters"
                 onClick={handleResetFilters}
                 type="button"
-                title="Clear all filters"
+                title={t("timeline.resetFilters", "Reset Filters")}
               >
-                <FiRefreshCw size={13} /> Reset Filters
+                <FiRefreshCw size={13} /> {t("timeline.resetFilters", "Reset Filters")}
               </button>
             )}
           </div>
@@ -665,8 +666,8 @@ const HealthTimeline = () => {
             <div className="spinner-orbit">
               <FiRefreshCw className="spinner-icon" />
             </div>
-            <h3>Loading Chronological Health Timeline...</h3>
-            <p>Decrypting verified records and compiling clinical milestones.</p>
+            <h3>{t("timeline.loadingTimeline", "Loading Chronological Health Timeline...")}</h3>
+            <p>{t("timeline.decryptingNotice", "Decrypting verified records and compiling clinical milestones.")}</p>
           </div>
         )}
 
@@ -674,10 +675,10 @@ const HealthTimeline = () => {
         {!loading && error && (
           <div className="timeline-state-card error-state">
             <FiAlertCircle className="error-icon" />
-            <h3>Unable to Load Health Timeline</h3>
+            <h3>{t("timeline.unableToLoad", "Unable to Load Health Timeline")}</h3>
             <p>{error}</p>
             <button className="btn-retry-timeline" onClick={fetchTimelineData} type="button">
-              <FiRefreshCw /> Try Again
+              <FiRefreshCw /> {t("timeline.tryAgain", "Try Again")}
             </button>
           </div>
         )}
@@ -686,24 +687,24 @@ const HealthTimeline = () => {
         {!loading && !error && filteredTimeline.length === 0 && (
           <div className="timeline-state-card empty-state">
             <FiLayers className="empty-icon" />
-            <h3>No Records Found for the Selected Criteria</h3>
+            <h3>{t("timeline.noRecordsCriteria", "No Records Found for the Selected Criteria")}</h3>
             <p>
               {hasActiveFilters
-                ? "Try adjusting your filters or date range to view patient history."
-                : "No medical reports or consultations are recorded for this patient yet."}
+                ? t("timeline.adjustFiltersHint", "Try adjusting your filters or date range to view patient history.")
+                : t("timeline.noRecordsYetHint", "No medical reports or consultations are recorded for this patient yet.")}
             </p>
             {hasActiveFilters && (
               <button className="btn-reset-filters" onClick={handleResetFilters} type="button">
-                Clear Filters
+                {t("timeline.clearFilters", "Clear Filters")}
               </button>
             )}
             {isPatient && !hasActiveFilters && (
               <div className="empty-actions-row">
                 <Link to="/appointment" className="btn-empty-action">
-                  <FiCalendar /> Book Consultation
+                  <FiCalendar /> {t("timeline.bookConsultation", "Book Consultation")}
                 </Link>
                 <Link to="/dashboard" className="btn-empty-action secondary">
-                  <FiFileText /> Upload Report
+                  <FiFileText /> {t("timeline.uploadReport", "Upload Report")}
                 </Link>
               </div>
             )}
@@ -719,7 +720,10 @@ const HealthTimeline = () => {
                 <div className="milestone-header-pill">
                   <span className="milestone-period-text">{milestone.period}</span>
                   <span className="milestone-count-badge">
-                    {milestone.items.length} {milestone.items.length === 1 ? "Record" : "Records"}
+                    {milestone.items.length}{" "}
+                    {milestone.items.length === 1
+                      ? t("timeline.record", "Record")
+                      : t("timeline.records", "Records")}
                   </span>
                 </div>
 
@@ -793,7 +797,7 @@ const HealthTimeline = () => {
                               <div className="card-top-bar">
                                 <div className="card-badges-left">
                                   {getFileBadge(event.fileName || event.title)}
-                                  <span className="badge-category">{event.category}</span>
+                                  <span className="badge-category">{translateCategory(event.category)}</span>
                                   {/* Attribution Tag */}
                                   <span
                                     className={`badge-attribution ${
@@ -803,8 +807,8 @@ const HealthTimeline = () => {
                                     }`}
                                   >
                                     {event.uploadedByRole === "doctor"
-                                      ? `Uploaded by ${event.uploaderName}`
-                                      : "Uploaded by Patient"}
+                                      ? t("timeline.uploadedByDoctor", "Uploaded by {name}", { name: event.uploaderName })
+                                      : t("timeline.uploadedByPatient", "Uploaded by Patient")}
                                   </span>
                                 </div>
                                 <div className="card-time-stamp">
@@ -819,7 +823,7 @@ const HealthTimeline = () => {
                                 {/* Notes if present */}
                                 {event.notes && (
                                   <p className="card-notes-text">
-                                    <strong>Clinical Notes:</strong> {event.notes}
+                                    <strong>{t("timeline.clinicalNotes", "Clinical Notes:")}</strong> {event.notes}
                                   </p>
                                 )}
 
@@ -829,7 +833,7 @@ const HealthTimeline = () => {
                                     <div className="ai-box-header">
                                       <div className="ai-title-wrap">
                                         <FiActivity className="ai-sparkle-icon" />
-                                        <span>Azure AI Clinical Interpretation</span>
+                                        <span>{t("timeline.azureInterpretation", "Azure AI Clinical Interpretation")}</span>
                                       </div>
                                       {event.aiAnalysis.severity &&
                                         event.aiAnalysis.severity !== "Unknown" && (
@@ -838,7 +842,7 @@ const HealthTimeline = () => {
                                               event.aiAnalysis.severity
                                             )}`}
                                           >
-                                            Severity: {event.aiAnalysis.severity}
+                                            {t("timeline.severity", "Severity: {level}", { level: translateStatus(event.aiAnalysis.severity) })}
                                           </span>
                                         )}
                                     </div>
@@ -852,7 +856,7 @@ const HealthTimeline = () => {
                                       event.possibleDiseases.length > 0 && (
                                         <div className="ai-tags-group">
                                           <span className="tag-group-label">
-                                            Possible Indications:
+                                            {t("timeline.possibleIndications", "Possible Indications:")}
                                           </span>
                                           <div className="tags-flex">
                                             {event.possibleDiseases.map((dis, idx) => (
@@ -869,7 +873,7 @@ const HealthTimeline = () => {
                                       event.recommendations.length > 0 && (
                                         <div className="ai-recommendations-list">
                                           <span className="tag-group-label">
-                                            AI Care Recommendations:
+                                            {t("timeline.aiCareRecommendations", "AI Care Recommendations:")}
                                           </span>
                                           <ul>
                                             {event.recommendations.map((rec, idx) => (
@@ -889,11 +893,7 @@ const HealthTimeline = () => {
                                             type="button"
                                           >
                                             <FiAlertTriangle className="warn-icon" />
-                                            <span>
-                                              {event.abnormalParameters.length} Abnormal Biomarker
-                                              {event.abnormalParameters.length > 1 ? "s" : ""}{" "}
-                                              Flagged
-                                            </span>
+                                            <span>{event.abnormalParameters.length === 1 ? t("timeline.abnormalBiomarkerFlagged", "{count} Abnormal Biomarker Flagged", { count: event.abnormalParameters.length }) : t("timeline.abnormalBiomarkersFlagged", "{count} Abnormal Biomarkers Flagged", { count: event.abnormalParameters.length })}</span>
                                             {expandedBiomarkers.has(event.id) ? (
                                               <FiChevronUp />
                                             ) : (
@@ -906,10 +906,10 @@ const HealthTimeline = () => {
                                               <table className="biomarkers-data-table">
                                                 <thead>
                                                   <tr>
-                                                    <th>Parameter</th>
-                                                    <th>Observed Value</th>
-                                                    <th>Normal Range</th>
-                                                    <th>Clinical Finding</th>
+                                                    <th>{t("timeline.parameter", "Parameter")}</th>
+                                                    <th>{t("timeline.observedValue", "Observed Value")}</th>
+                                                    <th>{t("timeline.normalRange", "Normal Range")}</th>
+                                                    <th>{t("timeline.clinicalFinding", "Clinical Finding")}</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
@@ -928,7 +928,7 @@ const HealthTimeline = () => {
                                                       </td>
                                                       <td className="param-reason">
                                                         <span className="status-flag">
-                                                          {bm.status || "Abnormal"}
+                                                          {translateStatus(bm.status || "Abnormal")}
                                                         </span>
                                                         {bm.reason && ` ${bm.reason}`}
                                                       </td>
@@ -954,12 +954,11 @@ const HealthTimeline = () => {
                                 >
                                   {viewingDocId === event.id ? (
                                     <>
-                                      <FiRefreshCw className="spinner-icon-sm" /> Generating Secure
-                                      Link...
+                                      <FiRefreshCw className="spinner-icon-sm" /> {t("timeline.generatingSecureLink", "Generating Secure Link...")}
                                     </>
                                   ) : (
                                     <>
-                                      <FiExternalLink /> Open Secure Document
+                                      <FiExternalLink /> {t("timeline.openSecureDocument", "Open Secure Document")}
                                     </>
                                   )}
                                 </button>
@@ -971,19 +970,19 @@ const HealthTimeline = () => {
                               <div className="card-top-bar">
                                 <div className="card-badges-left">
                                   <span className="badge-department">
-                                    {event.department || "General Consultation"}
+                                    {event.department || t("timeline.generalConsultation", "General Consultation")}
                                   </span>
                                   <span
                                     className={`badge-status ${getStatusBadgeClass(
                                       event.status
                                     )}`}
                                   >
-                                    {event.status}
+                                    {translateStatus(event.status)}
                                   </span>
                                   <span className="badge-mode">
                                     {isVideoConsultation ? (
                                       <>
-                                        <FiVideo size={12} /> Video / Online
+                                        <FiVideo size={12} /> {t("timeline.videoOnline", "Video / Online")}
                                       </>
                                     ) : (
                                       <>
@@ -1007,14 +1006,14 @@ const HealthTimeline = () => {
                                   <div className="participant-chip doctor-chip">
                                     <FiShield size={13} />
                                     <span>
-                                      <strong>Physician:</strong> {event.doctorName}
+                                      <strong>{t("timeline.physician", "Physician:")}</strong> {event.doctorName}
                                     </span>
                                   </div>
                                   {isDoctor && (
                                     <div className="participant-chip patient-chip">
                                       <FiUser size={13} />
                                       <span>
-                                        <strong>Patient:</strong> {event.patientName}
+                                        <strong>{t("timeline.patient", "Patient:")}</strong> {event.patientName}
                                       </span>
                                     </div>
                                   )}
@@ -1023,26 +1022,26 @@ const HealthTimeline = () => {
                                 {/* Stored clinical reasons / notes if present in database */}
                                 {event.reason && (
                                   <p className="card-notes-text">
-                                    <strong>Consultation Purpose:</strong> {event.reason}
+                                    <strong>{t("timeline.consultationPurpose", "Consultation Purpose:")}</strong> {event.reason}
                                   </p>
                                 )}
 
                                 {event.notes && (
                                   <p className="card-notes-text clinical-note">
-                                    <strong>Clinical Summary & Advice:</strong> {event.notes}
+                                    <strong>{t("timeline.clinicalSummaryAdvice", "Clinical Summary & Advice:")}</strong> {event.notes}
                                   </p>
                                 )}
 
                                 {event.cancellationReason && (
                                   <p className="card-notes-text reason-cancelled">
-                                    <strong>Cancellation Reason:</strong>{" "}
+                                    <strong>{t("timeline.cancellationReason", "Cancellation Reason:")}</strong>{" "}
                                     {event.cancellationReason}
                                   </p>
                                 )}
 
                                 {event.rejectionReason && (
                                   <p className="card-notes-text reason-rejected">
-                                    <strong>Rejection Reason:</strong> {event.rejectionReason}
+                                    <strong>{t("timeline.rejectionReason", "Rejection Reason:")}</strong> {event.rejectionReason}
                                   </p>
                                 )}
                               </div>
@@ -1053,7 +1052,7 @@ const HealthTimeline = () => {
                                   appointment={event}
                                   currentTime={currentTime}
                                   className="btn-join-video-call"
-                                  customEnabledText="Join Video Consultation"
+                                  customEnabledText={t("timeline.joinVideoConsultation", "Join Video Consultation")}
                                   useVideoPrefixRoute={true}
                                 />
                               </div>

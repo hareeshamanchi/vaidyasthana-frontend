@@ -18,6 +18,8 @@ import {
   subscribeUserToPush,
   unsubscribeUserFromPush,
 } from "../utils/pushManager";
+import { useLanguage } from "../context/LanguageContext";
+import { translateStatus } from "../i18n";
 import "./MedicationReminders.css";
 import {
   FiClock,
@@ -45,6 +47,7 @@ import {
 const MedicationReminders = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Tab & Date State
   const [activeTab, setActiveTab] = useState("doses"); // 'doses' | 'schedules' | 'adherence'
@@ -648,17 +651,16 @@ const MedicationReminders = () => {
               className="btn-med-back"
               onClick={() => navigate(user?.role === "doctor" ? "/doctor-dashboard" : "/dashboard")}
             >
-              <FiArrowLeft /> Back to Dashboard
+              <FiArrowLeft /> {t("timeline.backToMyDashboard", "Back to Dashboard")}
             </button>
             <div className="med-header-title-wrap">
               <div className="med-header-icon">
                 <FiClock />
               </div>
               <div>
-                <h1>Medication Reminders & Dose Tracking</h1>
+                <h1>{t("medications.pageTitle", "Medication Reminders & Dose Tracking")}</h1>
                 <p className="med-header-desc">
-                  Maintain treatment adherence, track timely daily doses, and preserve an accurate
-                  medication history with your care team.
+                  {t("medications.pageSubtitle", "Never miss a scheduled dose. Track prescribed medicines with repeating melodic sound chimes and background alerts.")}
                 </p>
               </div>
             </div>
@@ -666,10 +668,10 @@ const MedicationReminders = () => {
 
           <div className="med-header-actions">
             <button className="btn-med-secondary" onClick={() => fetchDoses(selectedDate)}>
-              <FiRefreshCw /> Refresh
+              <FiRefreshCw /> {t("common.refresh", "Refresh")}
             </button>
             <button className="btn-med-primary" onClick={handleOpenAddModal}>
-              <FiPlus /> Add Medication
+              <FiPlus /> {t("medications.addNewMedicationBtn", "Add Medication Schedule")}
             </button>
           </div>
         </div>
@@ -719,11 +721,11 @@ const MedicationReminders = () => {
               <div>
                 <div className="med-due-title-row">
                   <span className="med-due-title">
-                    Medication Due Now ({activeDueDoses.length})
+                    {t("medications.activeDueBannerTitle", "Medication Due Now")} ({activeDueDoses.length})
                   </span>
                   {secondsUntilNextAlert !== null && soundSettings.soundEnabled && (
                     <span className="med-due-countdown-pill" title="Reminder chime repeats every 90 seconds while pending">
-                      <FiClock /> Repeating chime in {secondsUntilNextAlert}s
+                      <FiClock /> {t("medications.repeatingChimeIn", { seconds: secondsUntilNextAlert }, "Repeating chime in {seconds}s")}
                     </span>
                   )}
                 </div>
@@ -744,21 +746,21 @@ const MedicationReminders = () => {
                       onClick={() => handleUpdateDoseStatus(dueDose._id, "Taken")}
                       title="Mark dose as taken"
                     >
-                      <FiCheck /> Taken
+                      <FiCheck /> {t("medications.takenDoses", "Taken")}
                     </button>
                     <button
                       className="btn-due-snooze"
                       onClick={() => setSnoozeDoseId(dueDose._id)}
                       title="Snooze reminder"
                     >
-                      <FiClock /> Snooze
+                      <FiClock /> {t("medications.doseSnooze", "Snooze")}
                     </button>
                     <button
                       className="btn-due-skip"
                       onClick={() => handleUpdateDoseStatus(dueDose._id, "Skipped")}
                       title="Skip this dose"
                     >
-                      <FiX /> Skip
+                      <FiX /> {t("medications.doseSkipped", "Skip")}
                     </button>
                   </div>
                 ))}
@@ -779,13 +781,13 @@ const MedicationReminders = () => {
             </div>
             <div>
               <div className="med-sound-title-row">
-                <span className="med-sound-title">Sound-Based Dose Reminders</span>
+                <span className="med-sound-title">{t("medications.soundCardTitle", "Sound-Based Dose Reminders")}</span>
                 <span className={`med-sound-badge ${soundSettings.soundEnabled ? "enabled" : "disabled"}`}>
-                  {soundSettings.soundEnabled ? "Active" : "Muted"}
+                  {soundSettings.soundEnabled ? t("common.active", "Active") : t("medications.muted", "Muted")}
                 </span>
               </div>
               <p className="med-sound-desc">
-                Plays a premium 3-tone melodic chime immediately when a scheduled dose is due, repeating every 90 seconds while pending.
+                {t("medications.soundCardSubtitle", "Plays a clear, professional 3-tone melodic chime when a scheduled dose is due, repeating every 90 seconds until acknowledged.")}
               </p>
             </div>
           </div>
@@ -799,7 +801,7 @@ const MedicationReminders = () => {
                 onChange={(e) => handleToggleSound(e.target.checked)}
               />
               <span className="med-toggle-slider" aria-hidden="true"></span>
-              <span className="med-toggle-text">Sound {soundSettings.soundEnabled ? "On" : "Off"}</span>
+              <span className="med-toggle-text">{soundSettings.soundEnabled ? t("medications.soundOn", "Sound ON") : t("medications.soundOff", "Sound Muted")}</span>
             </label>
 
             {soundSettings.soundEnabled && (
@@ -827,7 +829,7 @@ const MedicationReminders = () => {
               onClick={handleTestSound}
               title="Play a sample reminder chime to test audio"
             >
-              <FiVolume2 /> Test Sound
+              <FiVolume2 /> {t("medications.testSoundBtn", "Test Sound")}
             </button>
           </div>
         </div>
@@ -840,7 +842,7 @@ const MedicationReminders = () => {
             </div>
             <div>
               <div className="med-push-title-row">
-                <span className="med-push-title">Background System Push Notifications</span>
+                <span className="med-push-title">{t("medications.pushCardTitle", "Background System Push Notifications")}</span>
                 <span
                   className={`med-push-badge ${
                     pushStatus.isSubscribed
@@ -860,7 +862,7 @@ const MedicationReminders = () => {
                 </span>
               </div>
               <p className="med-push-desc">
-                Delivers system notifications when doses are due, even if this browser tab is closed. Notification chimes and vibration are governed by device and operating system settings.
+                {t("medications.pushCardSubtitle", "Receive native device notifications and alert sounds even when this browser tab is closed or your device is locked.")}
               </p>
             </div>
           </div>
@@ -874,7 +876,7 @@ const MedicationReminders = () => {
                 disabled={pushStatus.loading || !pushStatus.isSupported}
                 title="Enable background Web Push notifications for closed-tab reminders"
               >
-                <FiBell /> {pushStatus.loading ? "Connecting..." : "Enable Background Alerts"}
+                <FiBell /> {pushStatus.loading ? t("common.loading", "Connecting...") : t("medications.enablePushBtn", "Enable Background Alerts")}
               </button>
             ) : (
               <>
@@ -884,7 +886,7 @@ const MedicationReminders = () => {
                   onClick={handleTestPush}
                   title="Dispatch a test push notification to this device"
                 >
-                  <FiSend /> Test Push
+                  <FiSend /> {t("medications.testPushBtn", "Test Push")}
                 </button>
                 <button
                   type="button"
@@ -893,7 +895,7 @@ const MedicationReminders = () => {
                   disabled={pushStatus.loading}
                   title="Disable background push notifications"
                 >
-                  Disable
+                  {t("medications.disablePushBtn", "Disable")}
                 </button>
               </>
             )}
@@ -921,7 +923,7 @@ const MedicationReminders = () => {
             role="tab"
             aria-selected={activeTab === "doses"}
           >
-            <FiCalendar /> Daily Doses
+            <FiCalendar /> {t("medications.dailyDosesTab", "Daily Doses")}
             <span className="med-tab-badge">{doses.length}</span>
           </button>
           <button
@@ -930,7 +932,7 @@ const MedicationReminders = () => {
             role="tab"
             aria-selected={activeTab === "schedules"}
           >
-            <FiClock /> All Schedules
+            <FiClock /> {t("medications.allSchedulesTab", "All Schedules")}
             <span className="med-tab-badge">{schedules.length}</span>
           </button>
           <button
@@ -939,7 +941,7 @@ const MedicationReminders = () => {
             role="tab"
             aria-selected={activeTab === "adherence"}
           >
-            <FiActivity /> Adherence Analytics
+            <FiActivity /> {t("medications.adherenceTab", "Adherence Analytics")}
           </button>
         </div>
 
@@ -950,16 +952,16 @@ const MedicationReminders = () => {
             <div className="date-navigator-card">
               <div className="date-nav-controls">
                 <button className="btn-date-step" onClick={() => handleDateStep(-1)}>
-                  ◀ Yesterday
+                  ◀ {t("common.yesterday", "Yesterday")}
                 </button>
                 <button
                   className={`btn-date-step ${isToday ? "active" : ""}`}
                   onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
                 >
-                  Today
+                  {t("common.today", "Today")}
                 </button>
                 <button className="btn-date-step" onClick={() => handleDateStep(1)}>
-                  Tomorrow ▶
+                  {t("common.tomorrow", "Tomorrow")} ▶
                 </button>
                 <input
                   type="date"
@@ -973,19 +975,19 @@ const MedicationReminders = () => {
               {/* Daily Metrics Summary */}
               <div className="daily-metrics-summary">
                 <div className="metric-pill">
-                  <span className="metric-pill-label">Total Doses</span>
+                  <span className="metric-pill-label">{t("medications.totalDoses", "Total Doses")}</span>
                   <span className="metric-pill-value">{dosesSummary.total}</span>
                 </div>
                 <div className="metric-pill">
-                  <span className="metric-pill-label">Taken</span>
+                  <span className="metric-pill-label">{t("medications.takenDoses", "Taken")}</span>
                   <span className="metric-pill-value taken">{dosesSummary.taken}</span>
                 </div>
                 <div className="metric-pill">
-                  <span className="metric-pill-label">Pending</span>
+                  <span className="metric-pill-label">{t("medications.scheduledDoses", "Pending")}</span>
                   <span className="metric-pill-value pending">{dosesSummary.scheduled}</span>
                 </div>
                 <div className="metric-pill">
-                  <span className="metric-pill-label">Missed</span>
+                  <span className="metric-pill-label">{t("medications.missedDoses", "Missed")}</span>
                   <span className="metric-pill-value missed">{dosesSummary.missed}</span>
                 </div>
               </div>
@@ -1061,7 +1063,7 @@ const MedicationReminders = () => {
                             )}
                             {dose.snoozeUntil && (
                               <span className="snooze-indicator">
-                                <FiBell /> Snoozed until{" "}
+                                <FiBell /> {t("medications.doseSnooze", "Snooze")}d until{" "}
                                 {new Date(dose.snoozeUntil).toLocaleTimeString([], {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -1080,7 +1082,7 @@ const MedicationReminders = () => {
                               className="btn-action-take"
                               onClick={() => handleUpdateDoseStatus(dose._id, "Taken")}
                             >
-                              <FiCheck /> Take Dose
+                              <FiCheck /> {t("medications.doseTaken", "Take Dose")}
                             </button>
                             <button
                               className="btn-action-snooze"
@@ -1092,7 +1094,7 @@ const MedicationReminders = () => {
                               className="btn-action-skip"
                               onClick={() => handleUpdateDoseStatus(dose._id, "Skipped")}
                             >
-                              <FiX /> Skip
+                              <FiX /> {t("medications.doseSkipped", "Skip")}
                             </button>
                           </>
                         )}
@@ -1440,7 +1442,7 @@ const MedicationReminders = () => {
         <div className="med-modal-overlay" role="dialog" aria-modal="true">
           <div className="med-modal-container">
             <div className="med-modal-header">
-              <h2>{editingMedId ? "Edit Medication Schedule" : "Add Medication Schedule"}</h2>
+              <h2>{editingMedId ? t("medications.editModalTitle", "Edit Medication Schedule") : t("medications.addModalTitle", "Create Medication Schedule")}</h2>
               <button
                 className="btn-modal-close"
                 onClick={() => setIsModalOpen(false)}
@@ -1663,7 +1665,7 @@ const MedicationReminders = () => {
         <div className="med-modal-overlay" role="dialog" aria-modal="true">
           <div className="med-modal-container" style={{ maxWidth: "400px" }}>
             <div className="med-modal-header">
-              <h2>Snooze Reminder</h2>
+              <h2>{t("medications.snoozeModalTitle", "Snooze Reminder")}</h2>
               <button
                 className="btn-modal-close"
                 onClick={() => setSnoozeDoseId(null)}
@@ -1673,8 +1675,7 @@ const MedicationReminders = () => {
             </div>
             <div className="med-modal-body">
               <p style={{ margin: "0 0 1rem", fontSize: "0.9rem", color: "#475569" }}>
-                Select how long to postpone this dose reminder. The dose will remain scheduled and not
-                marked completed.
+                {t("medications.snoozeModalDesc", "Select how long to postpone this dose reminder. The dose will remain scheduled and not marked completed.")}
               </p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 {[15, 30, 45, 60].map((mins) => (
@@ -1701,7 +1702,7 @@ const MedicationReminders = () => {
                 className="btn-med-primary"
                 onClick={() => handleSnoozeDose(snoozeDoseId)}
               >
-                Confirm Snooze
+                {t("medications.confirmSnooze", "Confirm Snooze")}
               </button>
             </div>
           </div>

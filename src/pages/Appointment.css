@@ -1277,6 +1277,7 @@
   margin-top: 0.45rem;
   max-height: 220px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 0.25rem 0.1rem;
 }
 
@@ -1318,6 +1319,7 @@
 }
 
 .slot-chip.unavailable,
+.slot-chip.passed,
 .slot-chip:disabled {
   background: #f8fafc;
   border-color: #e2e8f0;
@@ -1342,6 +1344,13 @@
   background: #f1f5f9;
   color: #94a3b8;
   border: 1px solid #e2e8f0;
+}
+
+.chip-badge.unavailable.passed {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
 }
 
 .chip-badge.selected {

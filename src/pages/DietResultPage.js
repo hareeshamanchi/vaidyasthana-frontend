@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import "./DietResultPage.css";
 import { AuthContext } from "../context/AuthContext";
 import { nutritionAPI, reportsAPI } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 import {
   FiHeart,
   FiActivity,
@@ -16,6 +17,7 @@ import {
 } from "react-icons/fi";
 
 const DietResultPage = () => {
+  const { t } = useLanguage();
   const auth = useContext(AuthContext);
   const user = auth?.user || null;
 
@@ -286,11 +288,7 @@ const DietResultPage = () => {
       <div className="diet-safety-banner" role="alert">
         <FiAlertTriangle className="safety-icon" />
         <div className="safety-text">
-          <strong>Nutritional Safety Disclaimer:</strong> This dietary computation
-          is based on the Mifflin-St Jeor metabolic algorithm and general evidence-based
-          macronutrient partitioning. It is intended for general health guidance and does
-          not replace medical nutrition therapy for diabetes, renal illness, hypertension,
-          or pregnancy. Always verify with your clinical dietitian or physician.
+          <strong>{t("diet.safetyDisclaimer", "Nutritional Safety Disclaimer")}:</strong> {t("diet.pageSubtitle", "This dietary computation is based on the Mifflin-St Jeor metabolic algorithm and general evidence-based macronutrient partitioning. Always verify with your clinical dietitian or physician.")}
         </div>
       </div>
 
@@ -298,16 +296,16 @@ const DietResultPage = () => {
       <div className="ollama-status-strip">
         <div className="status-strip-left">
           <FiCpu className="cpu-icon" />
-          <span>AI Engine Status:</span>
+          <span>{t("aiAnalysis.pageTitle", "AI Engine Status")}:</span>
           {loadingStatus ? (
-            <span className="status-tag loading">Checking Ollama Service...</span>
+            <span className="status-tag loading">{t("common.loading", "Checking Service...")}</span>
           ) : ollamaStatus?.available ? (
             <span className="status-tag online">
               <FiCheckCircle /> Ollama Online ({ollamaStatus.configuredModel})
             </span>
           ) : (
             <span className="status-tag offline">
-              <FiInfo /> Ollama Local Engine Offline (Using Deterministic Algorithm)
+              <FiInfo /> Standard Clinical Algorithm
             </span>
           )}
         </div>
@@ -318,20 +316,18 @@ const DietResultPage = () => {
               checked={useAI}
               onChange={(e) => setUseAI(e.target.checked)}
             />
-            <span>Enable Local Ollama Synthesis</span>
+            <span>{t("home.securityCard3Title", "Enable Local AI Synthesis")}</span>
           </label>
         </div>
       </div>
 
       <header className="diet-page-header">
         <div className="diet-badge">
-          <FiHeart /> Clinical Nutrition & Energy Metabolism
+          <FiHeart /> {t("diet.badge", "Clinical Nutrition & Energy Metabolism")}
         </div>
-        <h1>AI-Assisted Nutrition & Diet Advisor</h1>
+        <h1>{t("diet.pageTitle", "AI-Assisted Nutrition & Diet Advisor")}</h1>
         <p className="diet-subtitle">
-          Calculate your Basal Metabolic Rate (BMR), Total Daily Energy Expenditure
-          (TDEE), and receive macronutrient-partitioned meal schedules customized to
-          your biometrics.
+          {t("diet.pageSubtitle", "Calculate your Basal Metabolic Rate (BMR), Total Daily Energy Expenditure (TDEE), and receive macronutrient-partitioned meal schedules customized to your biometrics.")}
         </p>
       </header>
 
@@ -348,15 +344,15 @@ const DietResultPage = () => {
           <div className="card-header-strip">
             <FiActivity size={20} className="header-icon" />
             <div>
-              <h3>Patient Biometrics & Goals</h3>
-              <p>Enter your physiological parameters for metabolic calculation</p>
+              <h3>{t("diet.formTitle", "Patient Biometrics & Goals")}</h3>
+              <p>{t("diet.formSubtitle", "Enter your physiological parameters for metabolic calculation")}</p>
             </div>
           </div>
 
           <form onSubmit={calculatePlan} className="biometrics-form">
             <div className="form-row-2">
               <div className="form-field">
-                <label>Age (years) *</label>
+                <label>{t("diet.ageLabel", "Age (years) *")}</label>
                 <input
                   type="number"
                   name="age"
@@ -369,21 +365,21 @@ const DietResultPage = () => {
               </div>
 
               <div className="form-field">
-                <label>Biological Gender *</label>
+                <label>{t("diet.genderLabel", "Biological Gender *")}</label>
                 <select
                   name="gender"
                   value={formData.gender}
                   onChange={handleInputChange}
                 >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
+                  <option value="Male">{t("diet.male", "Male")}</option>
+                  <option value="Female">{t("diet.female", "Female")}</option>
                 </select>
               </div>
             </div>
 
             <div className="form-row-2">
               <div className="form-field">
-                <label>Height (cm) *</label>
+                <label>{t("diet.heightLabel", "Height (cm) *")}</label>
                 <input
                   type="number"
                   name="height"
@@ -396,7 +392,7 @@ const DietResultPage = () => {
               </div>
 
               <div className="form-field">
-                <label>Current Weight (kg) *</label>
+                <label>{t("diet.weightLabel", "Current Weight (kg) *")}</label>
                 <input
                   type="number"
                   name="weight"
@@ -410,48 +406,48 @@ const DietResultPage = () => {
             </div>
 
             <div className="form-field">
-              <label>Daily Physical Activity Level *</label>
+              <label>{t("diet.activityLabel", "Daily Physical Activity Level *")}</label>
               <select
                 name="activityLevel"
                 value={formData.activityLevel}
                 onChange={handleInputChange}
               >
-                <option value="1.2">Sedentary (Desk work, little to no exercise)</option>
-                <option value="1.375">Light Activity (Exercise 1–3 days/week)</option>
-                <option value="1.55">Moderate Activity (Exercise 3–5 days/week)</option>
-                <option value="1.725">Very Active (Heavy training 6–7 days/week)</option>
+                <option value="1.2">{t("diet.sedentary", "Sedentary (Desk work, little to no exercise)")}</option>
+                <option value="1.375">{t("diet.light", "Light Activity (Exercise 1–3 days/week)")}</option>
+                <option value="1.55">{t("diet.moderate", "Moderate Activity (Exercise 3–5 days/week)")}</option>
+                <option value="1.725">{t("diet.active", "Very Active (Heavy training 6–7 days/week)")}</option>
               </select>
             </div>
 
             <div className="form-field">
-              <label>Dietary Food Preference *</label>
+              <label>{t("diet.dietPreferenceLabel", "Dietary Food Preference *")}</label>
               <select
                 name="dietaryPreference"
                 value={formData.dietaryPreference}
                 onChange={handleInputChange}
               >
-                <option value="Vegetarian">Vegetarian (Includes dairy, legumes)</option>
-                <option value="Non-Vegetarian">Non-Vegetarian (Eggs, poultry, fish)</option>
-                <option value="Vegan">Vegan (100% plant-based)</option>
-                <option value="Eggetarian">Eggetarian (Vegetarian + Eggs)</option>
+                <option value="Vegetarian">{t("diet.vegetarian", "Vegetarian (Includes dairy, legumes)")}</option>
+                <option value="Non-Vegetarian">{t("diet.nonVegetarian", "Non-Vegetarian (Eggs, poultry, fish)")}</option>
+                <option value="Vegan">{t("diet.vegan", "Vegan (100% plant-based)")}</option>
+                <option value="Eggetarian">{t("diet.eggetarian", "Eggetarian (Vegetarian + Eggs)")}</option>
               </select>
             </div>
 
             <div className="form-field">
-              <label>Primary Wellness Objective *</label>
+              <label>{t("diet.healthGoalLabel", "Primary Wellness Objective *")}</label>
               <select
                 name="healthGoal"
                 value={formData.healthGoal}
                 onChange={handleInputChange}
               >
                 <option value="General Wellness & Immunity">
-                  General Wellness & Optimal Immunity
+                  {t("diet.generalWellness", "General Wellness & Optimal Immunity")}
                 </option>
                 <option value="Weight Loss / Calorie Deficit">
-                  Healthy Weight Reduction (Moderate Deficit)
+                  {t("diet.weightLoss", "Healthy Weight Reduction (Moderate Deficit)")}
                 </option>
                 <option value="Muscle Building / Hypertrophy">
-                  Lean Mass Building (Hypertrophy Surplus)
+                  {t("diet.muscleBuilding", "Lean Mass Building (Hypertrophy Surplus)")}
                 </option>
               </select>
             </div>
@@ -460,14 +456,14 @@ const DietResultPage = () => {
             {user && userReports.length > 0 && (
               <div className="form-field">
                 <label>
-                  <FiFileText /> Ground Plan with Medical Report (Optional)
+                  <FiFileText /> {t("diet.groundingReportLabel", "Ground Plan with Medical Report (Optional)")}
                 </label>
                 <select
                   name="selectedReportId"
                   value={formData.selectedReportId}
                   onChange={handleInputChange}
                 >
-                  <option value="">None (General Biometrics Only)</option>
+                  <option value="">{t("diet.noReportSelected", "None (General Biometrics Only)")}</option>
                   {userReports.map((rep) => (
                     <option key={rep._id} value={rep._id}>
                       {rep.originalName || rep.fileName || `Report ${rep._id.slice(-6)}`} (
@@ -476,7 +472,7 @@ const DietResultPage = () => {
                   ))}
                 </select>
                 <small className="field-hint">
-                  Incorporates documented abnormal biomarkers (e.g. cholesterol, glucose) from your vault.
+                  {t("diet.groundingHint", "Incorporates documented abnormal biomarkers (e.g. cholesterol, glucose) from your vault.")}
                 </small>
               </div>
             )}
@@ -488,11 +484,11 @@ const DietResultPage = () => {
             >
               {computing ? (
                 <>
-                  <FiRefreshCw className="spin" /> Computing Nutrition Targets...
+                  <FiRefreshCw className="spin" /> {t("diet.calculating", "Computing Nutrition Targets...")}
                 </>
               ) : (
                 <>
-                  <FiZap /> Compute Nutrition Plan
+                  <FiZap /> {t("diet.calculateBtn", "Compute Nutrition Plan")}
                 </>
               )}
             </button>
@@ -504,10 +500,9 @@ const DietResultPage = () => {
           {!dietPlan ? (
             <div className="empty-diet-state">
               <FiHeart size={48} className="empty-heart-icon" />
-              <h3>Personalized Nutrition Architect</h3>
+              <h3>{t("diet.architectTitle", "Personalized Nutrition Architect")}</h3>
               <p>
-                Fill in your biometrics and click <strong>"Compute Nutrition Plan"</strong> to
-                calculate metabolic targets and receive a structured daily meal routine.
+                {t("diet.emptyPrompt", "Fill in your biometrics and click \"Compute Nutrition Plan\" to calculate metabolic targets and receive a structured daily meal routine.")}
               </p>
             </div>
           ) : (
@@ -516,7 +511,7 @@ const DietResultPage = () => {
               <div className="plan-engine-badge">
                 <FiCpu />
                 <span>
-                  Synthesized via: <strong>{dietPlan.engine || "Standard Clinical Model"}</strong>
+                  {t("diet.synthesizedVia", "Synthesized via:")} <strong>{dietPlan.engine || "Standard Clinical Model"}</strong>
                   {dietPlan.model ? ` (${dietPlan.model})` : ""}
                 </span>
               </div>
@@ -531,48 +526,48 @@ const DietResultPage = () => {
               {/* Metabolic Targets Cards */}
               <div className="metabolic-metrics-grid">
                 <div className="target-card primary">
-                  <span className="card-label">Target Energy</span>
+                  <span className="card-label">{t("diet.targetEnergy", "Target Energy")}</span>
                   <div className="card-val">{dietPlan.metabolicTargets?.targetCalories}</div>
-                  <span className="card-unit">kcal / day</span>
+                  <span className="card-unit">{t("diet.caloriesPerDay", "kcal / day")}</span>
                 </div>
 
                 <div className="target-card">
-                  <span className="card-label">Basal Rate (BMR)</span>
+                  <span className="card-label">{t("diet.basalRate", "Basal Rate (BMR)")}</span>
                   <div className="card-val">{dietPlan.metabolicTargets?.bmr}</div>
-                  <span className="card-unit">kcal at rest</span>
+                  <span className="card-unit">{t("diet.kcalAtRest", "kcal at rest")}</span>
                 </div>
 
                 <div className="target-card">
-                  <span className="card-label">Maintenance (TDEE)</span>
+                  <span className="card-label">{t("diet.maintenanceEnergy", "Maintenance (TDEE)")}</span>
                   <div className="card-val">{dietPlan.metabolicTargets?.tdee}</div>
-                  <span className="card-unit">kcal / day</span>
+                  <span className="card-unit">{t("diet.caloriesPerDay", "kcal / day")}</span>
                 </div>
 
                 <div className="target-card hydration">
-                  <span className="card-label">Target Hydration</span>
+                  <span className="card-label">{t("diet.targetHydration", "Target Hydration")}</span>
                   <div className="card-val">
                     {dietPlan.macronutrients?.waterLiters || "2.5"}
                   </div>
-                  <span className="card-unit">Liters / day</span>
+                  <span className="card-unit">{t("diet.litersPerDay", "Liters / day")}</span>
                 </div>
               </div>
 
               {/* Macronutrient Partitioning */}
               <div className="macronutrient-breakdown-card">
-                <h4>Macronutrient Target Distribution</h4>
+                <h4>{t("diet.macronutrientsTitle", "Macronutrient Target Distribution")}</h4>
                 <div className="macros-pills-row">
                   <div className="macro-pill protein">
-                    <span className="m-name">Daily Protein</span>
+                    <span className="m-name">{t("diet.protein", "Daily Protein")}</span>
                     <span className="m-val">{dietPlan.macronutrients?.proteinGrams}g</span>
                     <span className="m-pct">(25% Energy)</span>
                   </div>
                   <div className="macro-pill carbs">
-                    <span className="m-name">Carbohydrates</span>
+                    <span className="m-name">{t("diet.carbs", "Carbohydrates")}</span>
                     <span className="m-val">{dietPlan.macronutrients?.carbGrams}g</span>
                     <span className="m-pct">(50% Energy)</span>
                   </div>
                   <div className="macro-pill fats">
-                    <span className="m-name">Healthy Fats</span>
+                    <span className="m-name">{t("diet.fats", "Healthy Fats")}</span>
                     <span className="m-val">{dietPlan.macronutrients?.fatGrams}g</span>
                     <span className="m-pct">(25% Energy)</span>
                   </div>
@@ -589,7 +584,7 @@ const DietResultPage = () => {
                 <div className="meals-routine-card">
                   <div className="routine-header">
                     <FiClock className="routine-icon" />
-                    <h4>Structured Daily Meal Routine</h4>
+                    <h4>{t("diet.mealPlanTitle", "Structured Daily Meal Routine")}</h4>
                   </div>
 
                   <div className="meals-timeline">
@@ -599,7 +594,7 @@ const DietResultPage = () => {
                         <div className="meal-details">
                           <h5>{meal.mealName || meal.name}</h5>
                           {meal.portionGrams && (
-                            <span className="portion-tag">Portion: {meal.portionGrams}</span>
+                            <span className="portion-tag">{t("diet.portion", "Portion:")} {meal.portionGrams}</span>
                           )}
                           <ul className="meal-food-list">
                             {(meal.items || []).map((item, i) => (
@@ -608,7 +603,7 @@ const DietResultPage = () => {
                           </ul>
                           {meal.clinicalPurpose && (
                             <p className="meal-purpose-text">
-                              <em>Clinical Focus:</em> {meal.clinicalPurpose}
+                              <em>{t("diet.clinicalFocus", "Clinical Focus:")}</em> {meal.clinicalPurpose}
                             </p>
                           )}
                         </div>
@@ -621,7 +616,7 @@ const DietResultPage = () => {
               {/* Foods to Emphasize & Limit */}
               <div className="foods-recommendation-grid">
                 <div className="foods-card emphasize">
-                  <h5>✅ Foods to Emphasize</h5>
+                  <h5>✅ {t("diet.foodsToEmphasize", "Foods to Emphasize")}</h5>
                   <ul>
                     {(dietPlan.foodsToEmphasize || []).map((item, i) => (
                       <li key={i}>{item}</li>
@@ -630,7 +625,7 @@ const DietResultPage = () => {
                 </div>
 
                 <div className="foods-card limit">
-                  <h5>⚠️ Foods to Moderate or Limit</h5>
+                  <h5>⚠️ {t("diet.foodsToLimit", "Foods to Moderate or Limit")}</h5>
                   <ul>
                     {(dietPlan.foodsToLimit || []).map((item, i) => (
                       <li key={i}>{item}</li>
@@ -645,7 +640,7 @@ const DietResultPage = () => {
                   <div className="disclosures-card">
                     <div className="disclosures-header">
                       <FiInfo />
-                      <h5>Clinical Data Limitations & Disclosures</h5>
+                      <h5>{t("diet.disclosures", "Clinical Data Limitations & Disclosures")}</h5>
                     </div>
                     <ul>
                       {dietPlan.missingDataDisclosures.map((disc, idx) => (

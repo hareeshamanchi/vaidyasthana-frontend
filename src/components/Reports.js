@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./Report.css";
 import { reportsAPI } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 
 const Reports = () => {
+  const { t, isTelugu } = useLanguage();
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
@@ -12,7 +14,7 @@ const Reports = () => {
       .catch((err) => console.error("Error fetching reports:", err));
   }, []);
 
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleString();
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleString(isTelugu ? "te-IN" : undefined);
 
   const getFileIcon = (fileName) => {
     if (!fileName) return "📁";
@@ -36,10 +38,10 @@ const Reports = () => {
 
   return (
     <div className="reports-container">
-      <h2>Uploaded Medical Reports</h2>
+      <h2>{t("dashboard.recordsVaultTitle", "Uploaded Medical Reports")}</h2>
 
       {reports.length === 0 ? (
-        <p>No reports found.</p>
+        <p>{t("dashboard.noMatchingRecords", "No reports found.")}</p>
       ) : (
         <ul className="report-list">
           {reports.map((report) => (
@@ -54,7 +56,7 @@ const Reports = () => {
                 </p>
 
                 <p className="upload-date">
-                  Uploaded: {formatDate(report.uploadedAt || report.createdAt)}
+                  {t("dashboard.tableDate", "Uploaded")}: {formatDate(report.uploadedAt || report.createdAt)}
                 </p>
               </div>
 
@@ -63,7 +65,7 @@ const Reports = () => {
                 onClick={() => handleView(report._id)}
                 className="view-btn"
               >
-                View
+                {t("common.view", "View")}
               </button>
             </li>
           ))}

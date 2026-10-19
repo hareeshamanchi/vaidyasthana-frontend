@@ -12,23 +12,24 @@ import {
 } from "react-icons/fi";
 import { notificationsAPI } from "../services/api";
 import { getSocket } from "../services/socket";
+import { useLanguage } from "../context/LanguageContext";
 import "./NotificationDropdown.css";
 
-const formatRelativeTime = (dateString) => {
+const formatRelativeTime = (dateString, isTelugu = false) => {
   if (!dateString) return "";
   const date = new Date(dateString);
   const now = new Date();
   const diffInSec = Math.floor((now - date) / 1000);
 
-  if (diffInSec < 30) return "Just now";
-  if (diffInSec < 60) return `${diffInSec}s ago`;
+  if (diffInSec < 30) return isTelugu ? "ఇప్పుడే" : "Just now";
+  if (diffInSec < 60) return isTelugu ? `${diffInSec}సె క్రితం` : `${diffInSec}s ago`;
   const diffInMin = Math.floor(diffInSec / 60);
-  if (diffInMin < 60) return `${diffInMin}m ago`;
-  const diffInHours = Math.floor(diffInMin / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInMin < 60) return isTelugu ? `${diffInMin}ని క్రితం` : `${diffInMin}m ago`;
+  const diffInHours = Math.floor(diffInSec / 60);
+  if (diffInHours < 24) return isTelugu ? `${diffInHours}గం క్రితం` : `${diffInHours}h ago`;
   const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffInDays < 7) return isTelugu ? `${diffInDays}రో క్రితం` : `${diffInDays}d ago`;
+  return date.toLocaleDateString(isTelugu ? "te-IN" : "en-US", { month: "short", day: "numeric" });
 };
 
 const getNotificationIcon = (type) => {
@@ -50,6 +51,7 @@ const getNotificationIcon = (type) => {
 };
 
 const NotificationDropdown = ({ user }) => {
+  const { t, isTelugu } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -88,11 +90,11 @@ const NotificationDropdown = ({ user }) => {
       }
     } catch (err) {
       console.error("Failed to load notifications:", err);
-      setError("Unable to load notifications. Please try again.");
+      setError(t("notifications.error", "Unable to load notifications. Please try again."));
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   // Initial load & window focus listener
   useEffect(() => {
@@ -243,9 +245,9 @@ const NotificationDropdown = ({ user }) => {
         type="button"
         className={`notification-bell-btn ${isOpen ? "active" : ""}`}
         onClick={toggleDropdown}
-        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+        aria-label={`${t("notifications.title", "Notifications")} ${unreadCount > 0 ? `(${unreadCount} ${t("notifications.unreadCount", { count: unreadCount }, "unread")})` : ""}`}
         aria-expanded={isOpen}
-        title={unreadCount > 0 ? `${unreadCount} unread notification(s)` : "Notifications"}
+        title={unreadCount > 0 ? `${unreadCount} ${t("notifications.unreadCount", { count: unreadCount }, "unread notification(s)")}` : t("notifications.title", "Notifications")}
       >
         <FiBell className="bell-icon" />
         {unreadCount > 0 && (
@@ -256,12 +258,12 @@ const NotificationDropdown = ({ user }) => {
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown-panel" role="region" aria-label="Notifications Panel">
+        <div className="notification-dropdown-panel" role="region" aria-label={t("notifications.title", "Notifications Panel")}>
           <div className="notification-panel-header">
             <div className="panel-title-wrap">
-              <h3 className="panel-title">Notifications</h3>
+              <h3 className="panel-title">{t("notifications.title", "Notifications")}</h3>
               {unreadCount > 0 && (
-                <span className="panel-unread-pill">{unreadCount} unread</span>
+                <span className="panel-unread-pill">{t("notifications.unreadCount", { count: unreadCount }, `${unreadCount} unread`)}</span>
               )}
             </div>
             {unreadCount > 0 && (
@@ -269,9 +271,9 @@ const NotificationDropdown = ({ user }) => {
                 type="button"
                 className="btn-mark-all-read"
                 onClick={handleMarkAllAsRead}
-                title="Mark all notifications as read"
+                title={t("notifications.markAllAsRead", "Mark all read")}
               >
-                <FiCheckCircle size={14} /> Mark all read
+                <FiCheckCircle size={14} /> {t("notifications.markAllAsRead", "Mark all read")}
               </button>
             )}
           </div>
@@ -280,7 +282,7 @@ const NotificationDropdown = ({ user }) => {
             {loading ? (
               <div className="notification-loading-state">
                 <div className="notif-spinner"></div>
-                <span>Checking latest updates...</span>
+                <span>{t("notifications.checking", "Checking latest updates...")}</span>
               </div>
             ) : error ? (
               <div className="notification-error-state">
@@ -291,7 +293,7 @@ const NotificationDropdown = ({ user }) => {
                   className="btn-retry-notifs"
                   onClick={fetchNotifications}
                 >
-                  Retry
+                  {t("common.retry", "Retry")}
                 </button>
               </div>
             ) : notifications.length === 0 ? (
@@ -299,9 +301,9 @@ const NotificationDropdown = ({ user }) => {
                 <div className="empty-bell-icon-wrap">
                   <FiBell size={28} />
                 </div>
-                <h4 className="empty-title">No notifications yet</h4>
+                <h4 className="empty-title">{t("notifications.noNotifications", "No notifications yet")}</h4>
                 <p className="empty-desc">
-                  You are all caught up! New appointment updates, report alerts, and messages will appear here.
+                  {t("notifications.caughtUpDesc", "You are all caught up! New appointment updates, report alerts, and messages will appear here.")}
                 </p>
               </div>
             ) : (
@@ -329,7 +331,7 @@ const NotificationDropdown = ({ user }) => {
                       <div className="notif-item-header">
                         <span className="notif-item-title">{notif.title}</span>
                         <span className="notif-item-time">
-                          {formatRelativeTime(notif.createdAt)}
+                          {formatRelativeTime(notif.createdAt, isTelugu)}
                         </span>
                       </div>
                       <p className="notif-item-message">{notif.message}</p>
@@ -341,8 +343,8 @@ const NotificationDropdown = ({ user }) => {
                           type="button"
                           className="btn-action-read"
                           onClick={(e) => handleMarkAsRead(notif._id, e)}
-                          title="Mark as read"
-                          aria-label="Mark as read"
+                          title={t("notifications.markAllAsRead", "Mark as read")}
+                          aria-label={t("notifications.markAllAsRead", "Mark as read")}
                         >
                           <span className="unread-dot" />
                         </button>
@@ -351,8 +353,8 @@ const NotificationDropdown = ({ user }) => {
                         type="button"
                         className="btn-action-delete"
                         onClick={(e) => handleDeleteNotification(notif._id, e)}
-                        title="Remove notification"
-                        aria-label="Remove notification"
+                        title={t("common.delete", "Remove notification")}
+                        aria-label={t("common.delete", "Remove notification")}
                       >
                         <FiTrash2 size={13} />
                       </button>
@@ -366,11 +368,11 @@ const NotificationDropdown = ({ user }) => {
           {notifications.length > 0 && (
             <div className="notification-panel-footer">
               <span className="footer-status-text">
-                Encrypted clinical alerts & updates
+                {t("notifications.encryptedUpdates", "Encrypted clinical alerts & updates")}
               </span>
               {unreadCount === 0 && (
                 <span className="footer-all-read">
-                  <FiCheck size={13} /> All caught up
+                  <FiCheck size={13} /> {t("notifications.allCaughtUp", "All caught up")}
                 </span>
               )}
             </div>

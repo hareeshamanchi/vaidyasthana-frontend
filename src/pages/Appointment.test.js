@@ -267,3 +267,197 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
+
+describe("Appointment Booking - Time Slots & Elapsed Slot Validation", () => {
+  const mockDoctor = {
+    _id: "doc-101",
+    name: "Dr. Suresh Menon",
+    specialization: "Cardiology",
+    experienceYears: 12,
+    consultationFee: 700,
+    city: "Bangalore",
+  };
+
+  const mockSlotsToday = [
+    {
+      timeSlot: "08:00 AM",
+      isAvailable: false,
+      isBooked: false,
+      isPast: true,
+      reason: "Time slot has passed",
+    },
+    {
+      timeSlot: "08:30 AM",
+      isAvailable: false,
+      isBooked: false,
+      isPast: true,
+      reason: "Time slot has passed",
+    },
+    {
+      timeSlot: "06:00 PM",
+      isAvailable: false,
+      isBooked: true,
+      isPast: false,
+      reason: "Booked by another patient",
+    },
+    {
+      timeSlot: "06:30 PM",
+      isAvailable: true,
+      isBooked: false,
+      isPast: false,
+      reason: "Available",
+    },
+    {
+      timeSlot: "07:00 PM",
+      isAvailable: true,
+      isBooked: false,
+      isPast: false,
+      reason: "Available",
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    appointmentsAPI.getAppointments.mockResolvedValue({
+      data: {
+        success: true,
+        appointments: [mockUpcomingAppointment],
+      },
+    });
+    appointmentsAPI.getDoctors.mockResolvedValue({
+      data: {
+        success: true,
+        doctors: [mockDoctor],
+      },
+    });
+    appointmentsAPI.getSlots.mockResolvedValue({
+      data: {
+        success: true,
+        slots: mockSlotsToday,
+      },
+    });
+  });
+
+  test("renders available and elapsed time slots: marks elapsed slots as disabled with 'Passed' badge", async () => {
+    renderAppointmentPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /book new appointment/i })).toBeInTheDocument();
+    });
+
+    // Open booking modal
+    fireEvent.click(screen.getByRole("button", { name: /book new appointment/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Schedule Clinical Consultation")).toBeInTheDocument();
+    });
+
+    // Verify elapsed slot 08:00 AM
+    await waitFor(() => {
+      const slot0800 = screen.getByRole("button", { name: /08:00 AM Passed/i });
+      expect(slot0800).toBeInTheDocument();
+      expect(slot0800).toBeDisabled();
+      expect(slot0800).toHaveAttribute("aria-disabled", "true");
+      expect(slot0800).toHaveAttribute("tabindex", "-1");
+      expect(slot0800).toHaveClass("unavailable");
+      expect(slot0800).toHaveClass("passed");
+      expect(within(slot0800).getByText("Passed")).toBeInTheDocument();
+    });
+
+    // Verify booked slot 06:00 PM (on future date)
+    const dateInput = document.querySelector('input[name="appointmentDate"]');
+    fireEvent.change(dateInput, { target: { value: "2028-11-20" } });
+
+    await waitFor(() => {
+      const slot0600 = screen.getByRole("button", { name: /06:00 PM Booked/i });
+      expect(slot0600).toBeInTheDocument();
+      expect(slot0600).toBeDisabled();
+      expect(slot0600).toHaveClass("occupied");
+    });
+
+    // Verify open slot 06:30 PM is interactive
+    const slot0630 = screen.getByRole("button", { name: /06:30 PM/i });
+    expect(slot0630).toBeInTheDocument();
+    expect(slot0630).not.toBeDisabled();
+    expect(slot0630).toHaveAttribute("tabindex", "0");
+  });
+
+  test("elapsed time slot cannot be clicked or selected", async () => {
+    renderAppointmentPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book new appointment/i }));
+
+    const slot0800 = await screen.findByRole("button", { name: /08:00 AM Passed/i });
+    expect(slot0800).toBeDisabled();
+
+    // Click on disabled elapsed slot
+    fireEvent.click(slot0800);
+
+    // It must NOT have selected styling or Selected badge
+    expect(slot0800).not.toHaveClass("selected");
+    expect(within(slot0800).queryByText("Selected")).not.toBeInTheDocument();
+  });
+
+  test("selecting an open slot marks it selected and changing date clears selection", async () => {
+    renderAppointmentPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book new appointment/i }));
+
+    const dateInput = document.querySelector('input[name="appointmentDate"]');
+    fireEvent.change(dateInput, { target: { value: "2028-11-20" } });
+
+    const slot0630 = await screen.findByRole("button", { name: /06:30 PM/i });
+    expect(slot0630).not.toBeDisabled();
+
+    // Click available slot
+    fireEvent.click(slot0630);
+
+    // Slot is now selected
+    expect(slot0630).toHaveClass("selected");
+    expect(within(slot0630).getByText("Selected")).toBeInTheDocument();
+
+    // Change appointment date
+    fireEvent.change(dateInput, { target: { value: "2028-11-25" } });
+
+    // Selection should be immediately cleared
+    expect(slot0630).not.toHaveClass("selected");
+    expect(within(slot0630).queryByText("Selected")).not.toBeInTheDocument();
+  });
+
+  test("booking confirmation submits selected slot with clinic timezone", async () => {
+    appointmentsAPI.createAppointment.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Appointment confirmed",
+      },
+    });
+
+    renderAppointmentPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book new appointment/i }));
+
+    const dateInput = document.querySelector('input[name="appointmentDate"]');
+    fireEvent.change(dateInput, { target: { value: "2028-11-20" } });
+
+    const slot0630 = await screen.findByRole("button", { name: /06:30 PM/i });
+    fireEvent.click(slot0630);
+
+    // Submit booking
+    const confirmBtn = screen.getByRole("button", { name: /confirm appointment booking/i });
+    expect(confirmBtn).not.toBeDisabled();
+
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(appointmentsAPI.createAppointment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          doctorId: "doc-101",
+          appointmentDate: "2028-11-20",
+          timeSlot: "06:30 PM",
+          timezone: "Asia/Kolkata",
+        })
+      );
+    });
+  });
+});
+

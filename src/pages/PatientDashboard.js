@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useContext, useCallback, useRef, useMemo } from "react";
+import { useLanguage } from "../context/LanguageContext";
+import { translateCategory, translateStatus } from "../i18n";
 import "./PatientDashboard.css";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -37,6 +39,7 @@ import {
 
 const PatientDashboard = () => {
   const { user, loading, updateUserProfile } = useContext(AuthContext);
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [files, setFiles] = useState([]);
@@ -534,11 +537,10 @@ const PatientDashboard = () => {
       <header className="dashboard-hero-header">
         <div className="dashboard-header-inner">
           <div className="dashboard-user-greeting">
-            <span className="welcome-tag">Encrypted Patient Vault</span>
-            <h1>Welcome, {user.name}</h1>
+            <span className="welcome-tag">{t("aiAnalysis.privateAzureVault", "Encrypted Patient Vault")}</span>
+            <h1>{t("dashboard.welcome", "Welcome back")}, {user.name}</h1>
             <p className="dashboard-header-desc">
-              Centralized medical record management with automated Azure Document
-              Intelligence & OpenAI clinical interpretation.
+              {t("dashboard.subtitle", "Manage your encrypted clinical documents, appointments, and AI biomarker summaries")}
             </p>
           </div>
 
@@ -552,7 +554,7 @@ const PatientDashboard = () => {
               onClick={() => setIsUploadModalOpen(true)}
               type="button"
             >
-              <FiPlus /> Upload Medical Records
+              <FiPlus /> {t("dashboard.uploadRecordBtn", "Upload Medical Record")}
             </button>
             <button
               className="btn-open-upload btn-timeline-nav"
@@ -564,7 +566,7 @@ const PatientDashboard = () => {
               onClick={() => navigate("/timeline")}
               type="button"
             >
-              <FiActivity /> Health Timeline
+              <FiActivity /> {t("nav.healthTimeline", "Health Timeline")}
             </button>
             <button
               className="btn-open-upload btn-meds-nav"
@@ -576,7 +578,7 @@ const PatientDashboard = () => {
               onClick={() => navigate("/medications")}
               type="button"
             >
-              <FiClock /> Medication Reminders
+              <FiClock /> {t("nav.medications", "Medication Reminders")}
             </button>
           </div>
         </div>
@@ -588,11 +590,8 @@ const PatientDashboard = () => {
           <div className="banner-left">
             <FiAlertTriangle className="banner-icon" />
             <div className="banner-text">
-              <h4>Mandatory Clinical Profile Details Incomplete</h4>
-              <p>
-                A verified mobile phone number and complete address are required for clinical identification
-                and to book appointments with hospital doctors.
-              </p>
+              <h4>{t("dashboard.completeProfileTitle", "Complete Your Patient Profile")}</h4>
+              <p>{t("dashboard.completeProfileDesc", "Add your contact phone number and residential address for accurate appointment scheduling and emergency medical records linking.")}</p>
             </div>
           </div>
           <button
@@ -600,7 +599,7 @@ const PatientDashboard = () => {
             onClick={() => setIsProfileModalOpen(true)}
             type="button"
           >
-            <FiUserCheck /> Complete Profile Now
+            <FiUserCheck /> {t("dashboard.completeProfileBtn", "Update Profile Details")}
           </button>
         </div>
       )}
@@ -613,7 +612,7 @@ const PatientDashboard = () => {
           </div>
           <div className="metric-data">
             <span className="metric-number">{reports.length}</span>
-            <span className="metric-title">Medical Reports</span>
+            <span className="metric-title">{t("dashboard.totalRecords", "Medical Reports")}</span>
           </div>
         </div>
 
@@ -623,7 +622,7 @@ const PatientDashboard = () => {
           </div>
           <div className="metric-data">
             <span className="metric-number">{completedAiCount}</span>
-            <span className="metric-title">AI Analyzed</span>
+            <span className="metric-title">{t("dashboard.tableAIStatus", "AI Analyzed")}</span>
           </div>
         </div>
 
@@ -638,7 +637,7 @@ const PatientDashboard = () => {
           </div>
           <div className="metric-data">
             <span className="metric-number">{appointmentsCount}</span>
-            <span className="metric-title">Appointments</span>
+            <span className="metric-title">{t("dashboard.appointments", "Appointments")}</span>
           </div>
         </div>
 
@@ -648,7 +647,7 @@ const PatientDashboard = () => {
           </div>
           <div className="metric-data">
             <span className="metric-number">{insuranceCount}</span>
-            <span className="metric-title">Insurance Plans</span>
+            <span className="metric-title">{t("dashboard.insurancePolicies", "Insurance Plans")}</span>
           </div>
         </div>
       </section>
@@ -676,7 +675,7 @@ const PatientDashboard = () => {
             <FiSearch className="search-icon" />
             <input
               type="text"
-              placeholder="Search reports by filename or notes..."
+              placeholder={t("dashboard.searchPlaceholder", "Search records by document name, category, or notes...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="records-search-input"
@@ -694,7 +693,7 @@ const PatientDashboard = () => {
           <div className="category-filter-chips">
             {categoriesList.map((cat) => (
               <button
-                key={cat}
+                key={translateCategory(cat)}
                 className={`filter-chip ${selectedCategory === cat ? "active" : ""}`}
                 onClick={() => setSelectedCategory(cat)}
                 type="button"
@@ -731,12 +730,12 @@ const PatientDashboard = () => {
               <table className="vault-table">
                 <thead>
                   <tr>
-                    <th>Type</th>
-                    <th>Document Name</th>
-                    <th>Category</th>
-                    <th>Uploaded Date</th>
-                    <th>OCR / AI Status</th>
-                    <th>Actions</th>
+                    <th>{t("timeline.filterType", "Type")}</th>
+                    <th>{t("dashboard.tableName", "Document Name")}</th>
+                    <th>{t("dashboard.tableCategory", "Category")}</th>
+                    <th>{t("dashboard.tableDate", "Uploaded Date")}</th>
+                    <th>{t("dashboard.tableAIStatus", "OCR / AI Status")}</th>
+                    <th>{t("dashboard.tableActions", "Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -766,7 +765,7 @@ const PatientDashboard = () => {
                         )}
                       </td>
                       <td>
-                        <span className="category-badge">{rep.category}</span>
+                        <span className="category-badge">{translateCategory(rep.category)}</span>
                       </td>
                       <td className="timestamp-col">
                         {new Date(
@@ -827,7 +826,7 @@ const PatientDashboard = () => {
       <section className="patient-appointments-section">
         <div className="section-header-row">
           <div>
-            <h3>Your Scheduled Consultations ({patientAppointments.length})</h3>
+            <h3>{t("dashboard.consultationsTitle", "Consultations & Doctor Visits")} ({patientAppointments.length})</h3>
             <p>Upcoming and completed clinical appointments with verified hospital specialists</p>
           </div>
 
@@ -841,7 +840,7 @@ const PatientDashboard = () => {
                   className={`view-tab-btn ${patientApptTab === "all" ? "active" : ""}`}
                   onClick={() => setPatientApptTab("all")}
                 >
-                  All <span className="tab-count-pill">{patientAppointments.length}</span>
+                  {t("common.all", "All")} <span className="tab-count-pill">{patientAppointments.length}</span>
                 </button>
                 <button
                   type="button"
@@ -850,7 +849,7 @@ const PatientDashboard = () => {
                   className={`view-tab-btn ${patientApptTab === "upcoming" ? "active" : ""}`}
                   onClick={() => setPatientApptTab("upcoming")}
                 >
-                  Upcoming <span className="tab-count-pill">{upcomingAppointments.length}</span>
+                  {t("dashboard.upcomingTab", "Upcoming")} <span className="tab-count-pill">{upcomingAppointments.length}</span>
                 </button>
                 <button
                   type="button"
@@ -859,7 +858,7 @@ const PatientDashboard = () => {
                   className={`view-tab-btn ${patientApptTab === "past" ? "active" : ""}`}
                   onClick={() => setPatientApptTab("past")}
                 >
-                  Past <span className="tab-count-pill">{pastAppointments.length}</span>
+                  {t("dashboard.pastTab", "Past")} <span className="tab-count-pill">{pastAppointments.length}</span>
                 </button>
               </div>
             )}
@@ -1117,26 +1116,22 @@ const PatientDashboard = () => {
             <div className="confirm-icon danger">
               <FiTrash2 size={24} />
             </div>
-            <h3>Delete Medical Document?</h3>
-            <p>
-              This action will permanently delete this document from Azure Blob
-              Storage and remove all associated AI biomarker records. This action
-              cannot be undone.
-            </p>
+            <h3>{t("dashboard.confirmDeleteTitle", "Confirm Record Deletion")}</h3>
+            <p>{t("dashboard.confirmDeleteDesc", "Are you sure you want to permanently delete this medical record? This action will remove the document and all associated AI biomarker extractions from your vault.")}</p>
             <div className="confirm-actions">
               <button
                 className="btn-dialog-cancel"
                 onClick={() => setDeleteConfirmId(null)}
                 type="button"
               >
-                Keep Record
+                {t("common.cancel", "Keep Record")}
               </button>
               <button
                 className="btn-danger-confirm"
                 onClick={() => handleDeleteReport(deleteConfirmId)}
                 type="button"
               >
-                Permanently Delete
+                {t("dashboard.deletePermanently", "Permanently Delete")}
               </button>
             </div>
           </div>
@@ -1158,7 +1153,7 @@ const PatientDashboard = () => {
             <div className="modal-header">
               <div className="modal-title-wrap">
                 <FiUserCheck className="modal-icon" />
-                <h3 id="profile-modal-title">Complete Clinical Profile</h3>
+                <h3 id="profile-modal-title">{t("dashboard.editProfileTitle", "Edit Patient Profile")}</h3>
               </div>
               <button
                 className="close-modal-btn"
@@ -1181,7 +1176,7 @@ const PatientDashboard = () => {
 
                 <div className="form-group">
                   <label htmlFor="pat-phone">
-                    <FiPhone /> Mobile Phone Number *
+                    <FiPhone /> {t("dashboard.phoneLabel", "Contact Phone Number")} *
                   </label>
                   <input
                     id="pat-phone"
@@ -1203,7 +1198,7 @@ const PatientDashboard = () => {
 
                 <div className="form-group">
                   <label htmlFor="pat-addr">
-                    <FiMapPin /> Complete Residential Address *
+                    <FiMapPin /> {t("dashboard.addressLabel", "Residential Address")} *
                   </label>
                   <textarea
                     id="pat-addr"
@@ -1222,7 +1217,7 @@ const PatientDashboard = () => {
 
                 <div className="form-row-3">
                   <div className="form-group">
-                    <label htmlFor="pat-city">City / District</label>
+                    <label htmlFor="pat-city">{t("dashboard.cityLabel", "City / District")}</label>
                     <input
                       id="pat-city"
                       type="text"
@@ -1238,7 +1233,7 @@ const PatientDashboard = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="pat-state">State</label>
+                    <label htmlFor="pat-state">{t("dashboard.stateLabel", "State")}</label>
                     <input
                       id="pat-state"
                       type="text"
@@ -1254,7 +1249,7 @@ const PatientDashboard = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="pat-pin">Postal Code</label>
+                    <label htmlFor="pat-pin">{t("dashboard.postalCodeLabel", "Postal Code")}</label>
                     <input
                       id="pat-pin"
                       type="text"
@@ -1285,7 +1280,7 @@ const PatientDashboard = () => {
                   className="btn-save-profile"
                   disabled={savingProfile}
                 >
-                  {savingProfile ? "Saving Profile..." : "Save Profile & Enable Booking"}
+                  {savingProfile ? t("common.saving", "Saving Profile...") : t("dashboard.saveProfileBtn", "Save Profile Changes")}
                 </button>
               </div>
             </form>
