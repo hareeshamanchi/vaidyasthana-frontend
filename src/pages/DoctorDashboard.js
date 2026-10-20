@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react";
 import "./DoctorDashboard.css";
-import { doctorAPI, reportsAPI, appointmentsAPI } from "../services/api";
+import { doctorAPI, reportsAPI, appointmentsAPI, authAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getSocket } from "../services/socket";
@@ -11,6 +11,7 @@ import {
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
+import DoctorFollowUpManagement from "../components/DoctorFollowUpManagement";
 import {
   FiShield,
   FiSearch,
@@ -30,6 +31,9 @@ import {
   FiMail,
   FiCheck,
   FiActivity,
+  FiEdit2,
+  FiLock,
+  FiLogOut,
 } from "react-icons/fi";
 
 const CATEGORIES = [
@@ -43,7 +47,7 @@ const CATEGORIES = [
 ];
 
 const DoctorDashboard = () => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, updateUserProfile, logoutAll } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -65,6 +69,9 @@ const DoctorDashboard = () => {
   const { upcoming: upcomingAppointments, past: pastAppointments } = useMemo(() => {
     return partitionAppointments(doctorAppointments, currentTime);
   }, [doctorAppointments, currentTime]);
+
+  // Quick Follow-Up Pre-fill State
+  const [followUpPrefillRequest, setFollowUpPrefillRequest] = useState(null);
 
   // Doctor Verification State
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
@@ -92,6 +99,182 @@ const DoctorDashboard = () => {
   const [auditData, setAuditData] = useState(null);
   const [isAuditing, setIsAuditing] = useState(false);
   const [reassigningId, setReassigningId] = useState(null);
+
+  // Doctor Profile Editing State
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+  const [doctorProfileData, setDoctorProfileData] = useState({
+    profilePhoto: user?.profilePhoto || "",
+    specialization: user?.specialization || "General Medicine",
+    qualifications: user?.qualifications || "",
+    medicalRegistrationNumber: user?.medicalRegistrationNumber || "",
+    experienceYears: user?.experienceYears !== undefined ? user.experienceYears : 5,
+    consultationFee: user?.consultationFee !== undefined ? user.consultationFee : 500,
+    languagesSpoken: Array.isArray(user?.languagesSpoken)
+      ? user.languagesSpoken.join(", ")
+      : "English, Hindi",
+  });
+  const [savingDoctorProfile, setSavingDoctorProfile] = useState(false);
+  const [doctorProfileMsg, setDoctorProfileMsg] = useState("");
+  const [doctorProfileError, setDoctorProfileError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setDoctorProfileData({
+        profilePhoto: user.profilePhoto || "",
+        specialization: user.specialization || "General Medicine",
+        qualifications: user.qualifications || "",
+        medicalRegistrationNumber: user.medicalRegistrationNumber || "",
+        experienceYears: user.experienceYears !== undefined ? user.experienceYears : 5,
+        consultationFee: user.consultationFee !== undefined ? user.consultationFee : 500,
+        languagesSpoken: Array.isArray(user.languagesSpoken)
+          ? user.languagesSpoken.join(", ")
+          : "English, Hindi",
+      });
+    }
+  }, [user]);
+
+  const handleSaveDoctorProfile = async (e) => {
+    e.preventDefault();
+    setSavingDoctorProfile(true);
+    setDoctorProfileMsg("");
+    setDoctorProfileError("");
+
+    const payload = {
+      profilePhoto: doctorProfileData.profilePhoto.trim(),
+      specialization: doctorProfileData.specialization.trim(),
+      qualifications: doctorProfileData.qualifications.trim(),
+      medicalRegistrationNumber: doctorProfileData.medicalRegistrationNumber.trim(),
+      experienceYears: Number(doctorProfileData.experienceYears) || 0,
+      consultationFee: Number(doctorProfileData.consultationFee) || 0,
+      languagesSpoken: doctorProfileData.languagesSpoken
+        ? doctorProfileData.languagesSpoken
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    };
+
+    try {
+      const res = await authAPI.updateDoctorProfile(payload);
+      if (updateUserProfile && res.data?.doctor) {
+        updateUserProfile(res.data.doctor);
+      }
+      setDoctorProfileMsg("Doctor credentials updated successfully.");
+      setTimeout(() => {
+        setIsProfileEditOpen(false);
+        setDoctorProfileMsg("");
+      }, 1200);
+    } catch (err) {
+      console.error("Save doctor profile error:", err);
+      setDoctorProfileError(
+        err.response?.data?.message || "Failed to update doctor profile."
+      );
+    } finally {
+      setSavingDoctorProfile(false);
+    }
+  };
+
+  // Security & 2FA State
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [twoFactorSetupData, setTwoFactorSetupData] = useState(null);
+  const [twoFactorVerifyCode, setTwoFactorVerifyCode] = useState("");
+  const [loading2FA, setLoading2FA] = useState(false);
+  const [securityMsg, setSecurityMsg] = useState("");
+  const [securityError, setSecurityError] = useState("");
+  const [disablePasswordInput, setDisablePasswordInput] = useState("");
+  const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+
+  const handleStart2FASetup = async () => {
+    setLoading2FA(true);
+    setSecurityError("");
+    setSecurityMsg("");
+    try {
+      const res = await authAPI.setup2FA();
+      setTwoFactorSetupData(res.data);
+    } catch (err) {
+      console.error("2FA setup error:", err);
+      setSecurityError(
+        err.response?.data?.message || "Failed to initiate 2FA setup."
+      );
+    } finally {
+      setLoading2FA(false);
+    }
+  };
+
+  const handleConfirm2FAEnable = async (e) => {
+    e.preventDefault();
+    if (!twoFactorVerifyCode || twoFactorVerifyCode.trim().length !== 6) {
+      setSecurityError("Please enter the 6-digit code from your authenticator app.");
+      return;
+    }
+    setLoading2FA(true);
+    setSecurityError("");
+    try {
+      const res = await authAPI.enable2FA(twoFactorVerifyCode.trim());
+      setSecurityMsg(res.data?.message || "Two-Factor Authentication is now active!");
+      if (updateUserProfile) {
+        updateUserProfile({ twoFactorEnabled: true });
+      }
+      setTwoFactorSetupData(null);
+      setTwoFactorVerifyCode("");
+    } catch (err) {
+      console.error("Enable 2FA error:", err);
+      setSecurityError(
+        err.response?.data?.message ||
+          "Invalid authenticator code. Please check your clock and code."
+      );
+    } finally {
+      setLoading2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async (e) => {
+    e.preventDefault();
+    if (!disablePasswordInput) {
+      setSecurityError("Account password is required to disable 2FA.");
+      return;
+    }
+    setLoading2FA(true);
+    setSecurityError("");
+    try {
+      const res = await authAPI.disable2FA({ password: disablePasswordInput });
+      setSecurityMsg(res.data?.message || "Two-Factor Authentication disabled.");
+      if (updateUserProfile) {
+        updateUserProfile({ twoFactorEnabled: false });
+      }
+      setIsDisabling2FA(false);
+      setDisablePasswordInput("");
+    } catch (err) {
+      console.error("Disable 2FA error:", err);
+      setSecurityError(
+        err.response?.data?.message || "Failed to disable 2FA. Verify password."
+      );
+    } finally {
+      setLoading2FA(false);
+    }
+  };
+
+  const handleLogoutAllDevices = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to log out from all devices? All other active sessions will be terminated immediately."
+      )
+    ) {
+      return;
+    }
+    try {
+      if (logoutAll) {
+        await logoutAll();
+      } else {
+        await authAPI.logoutAll();
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Logout all error:", err);
+      alert("Failed to revoke all sessions.");
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -701,6 +884,22 @@ const DoctorDashboard = () => {
                               >
                                 <FiActivity size={12} /> Timeline
                               </button>
+                              <button
+                                className="btn-vault-link"
+                                style={{ borderColor: "#2563eb", color: "#1d4ed8" }}
+                                onClick={() => {
+                                  setFollowUpPrefillRequest({
+                                    patientId: targetPatientRefId,
+                                    consultationId: app._id,
+                                    patientName: patientDisplayName,
+                                    reason: app.reason || app.notes || "",
+                                  });
+                                }}
+                                type="button"
+                                title="Prescribe Follow-Up Plan for this consultation"
+                              >
+                                <FiPlus size={12} /> Follow-Up
+                              </button>
                             </>
                           )}
                         </div>
@@ -734,13 +933,44 @@ const DoctorDashboard = () => {
         <div className="doctor-header-actions">
           <div className="doctor-profile-box">
             <div className="doc-avatar">
-              <FiUser size={22} />
+              {user?.profilePhoto ? (
+                <img
+                  src={user.profilePhoto}
+                  alt={user.name}
+                  className="doc-avatar-img"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <FiUser size={22} />
+              )}
             </div>
             <div className="doc-meta">
               <span className="doc-name">{user?.name || "Dr. Clinician"}</span>
-              <span className="doc-role">Hospital Medical Staff</span>
+              <span className="doc-role">
+                {user?.specialization || "Physician"} • ₹{user?.consultationFee || 500}
+              </span>
             </div>
           </div>
+
+          <button
+            className="btn-doctor-header-action"
+            onClick={() => setIsProfileEditOpen(true)}
+            type="button"
+            title="Edit Physician Profile & Credentials"
+          >
+            <FiEdit2 size={13} /> Edit Profile
+          </button>
+
+          <button
+            className="btn-doctor-header-action"
+            onClick={() => setIsSecurityModalOpen(true)}
+            type="button"
+            title="Manage Two-Factor Authentication & Active Sessions"
+          >
+            <FiLock size={13} /> Security & 2FA
+          </button>
 
           <button
             className="btn-audit-reports"
@@ -927,6 +1157,18 @@ const DoctorDashboard = () => {
           </div>
         )}
       </section>
+
+      {/* Physician Follow-Up Management Section */}
+      <DoctorFollowUpManagement
+        associatedPatients={associatedPatients}
+        doctorAppointments={doctorAppointments}
+        onOpenVault={(pId) => {
+          setPatientId(pId);
+          handleFetchReports(pId);
+        }}
+        prefillRequest={followUpPrefillRequest}
+        onClearPrefillRequest={() => setFollowUpPrefillRequest(null)}
+      />
 
       {/* Patient Search Card */}
       <section className="patient-search-card">
@@ -1512,6 +1754,453 @@ const DoctorDashboard = () => {
                 {isSubmittingVerification ? "Uploading Documents..." : "Submit Credentials for Verification"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Doctor Profile Credentials Modal */}
+      {isProfileEditOpen && (
+        <div
+          className="doctor-modal-backdrop"
+          onClick={() => !savingDoctorProfile && setIsProfileEditOpen(false)}
+        >
+          <div
+            className="doctor-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="doc-profile-modal-title"
+          >
+            <div className="doctor-modal-header">
+              <div>
+                <h3 id="doc-profile-modal-title">Edit Physician Credentials</h3>
+                <p>
+                  Update your public consultation directory profile, fees, and
+                  specialization
+                </p>
+              </div>
+              <button
+                className="close-btn"
+                onClick={() => setIsProfileEditOpen(false)}
+                type="button"
+                disabled={savingDoctorProfile}
+                aria-label="Close dialog"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDoctorProfile} className="doctor-modal-body">
+              {doctorProfileError && (
+                <div className="profile-error-alert" role="alert">
+                  <FiAlertCircle />
+                  <span>{doctorProfileError}</span>
+                </div>
+              )}
+              {doctorProfileMsg && (
+                <div className="auth-alert success" role="alert">
+                  <FiCheckCircle />
+                  <span>{doctorProfileMsg}</span>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Profile Photo URL</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/photo.jpg"
+                  value={doctorProfileData.profilePhoto}
+                  onChange={(e) =>
+                    setDoctorProfileData((prev) => ({
+                      ...prev,
+                      profilePhoto: e.target.value,
+                    }))
+                  }
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label>Clinical Specialization *</label>
+                  <select
+                    value={doctorProfileData.specialization}
+                    onChange={(e) =>
+                      setDoctorProfileData((prev) => ({
+                        ...prev,
+                        specialization: e.target.value,
+                      }))
+                    }
+                    className="form-select"
+                    required
+                  >
+                    <option value="General Medicine">General Medicine</option>
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Orthopedics">Orthopedics</option>
+                    <option value="Pediatrics">Pediatrics</option>
+                    <option value="Dermatology">Dermatology</option>
+                    <option value="Neurology">Neurology</option>
+                    <option value="ENT">ENT (Otolaryngology)</option>
+                    <option value="Oncology">Oncology</option>
+                    <option value="Gynecology">Gynecology</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Registration / License # *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. MCI-2024-89712"
+                    value={doctorProfileData.medicalRegistrationNumber}
+                    onChange={(e) =>
+                      setDoctorProfileData((prev) => ({
+                        ...prev,
+                        medicalRegistrationNumber: e.target.value,
+                      }))
+                    }
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Degrees & Qualifications</label>
+                <input
+                  type="text"
+                  placeholder="e.g. MBBS, MD (General Medicine), DNB"
+                  value={doctorProfileData.qualifications}
+                  onChange={(e) =>
+                    setDoctorProfileData((prev) => ({
+                      ...prev,
+                      qualifications: e.target.value,
+                    }))
+                  }
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label>Years of Clinical Experience</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="70"
+                    value={doctorProfileData.experienceYears}
+                    onChange={(e) =>
+                      setDoctorProfileData((prev) => ({
+                        ...prev,
+                        experienceYears: e.target.value,
+                      }))
+                    }
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Consultation Fee (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50000"
+                    value={doctorProfileData.consultationFee}
+                    onChange={(e) =>
+                      setDoctorProfileData((prev) => ({
+                        ...prev,
+                        consultationFee: e.target.value,
+                      }))
+                    }
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Languages Spoken (comma separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. English, Hindi, Kannada, Telugu"
+                  value={doctorProfileData.languagesSpoken}
+                  onChange={(e) =>
+                    setDoctorProfileData((prev) => ({
+                      ...prev,
+                      languagesSpoken: e.target.value,
+                    }))
+                  }
+                  className="form-input"
+                />
+              </div>
+
+              <div className="modal-footer" style={{ marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  className="btn-dialog-cancel"
+                  onClick={() => setIsProfileEditOpen(false)}
+                  disabled={savingDoctorProfile}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-save-profile"
+                  disabled={savingDoctorProfile}
+                >
+                  {savingDoctorProfile ? "Saving Profile..." : "Save Credentials"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Security & 2FA Modal */}
+      {isSecurityModalOpen && (
+        <div
+          className="doctor-modal-backdrop"
+          onClick={() => setIsSecurityModalOpen(false)}
+        >
+          <div
+            className="doctor-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="security-modal-title"
+          >
+            <div className="doctor-modal-header">
+              <div>
+                <h3 id="security-modal-title">Account Security & Access</h3>
+                <p>Manage Two-Factor Authentication (2FA) and device sessions</p>
+              </div>
+              <button
+                className="close-btn"
+                onClick={() => setIsSecurityModalOpen(false)}
+                type="button"
+                aria-label="Close dialog"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="doctor-modal-body">
+              {securityError && (
+                <div className="profile-error-alert" role="alert">
+                  <FiAlertCircle />
+                  <span>{securityError}</span>
+                </div>
+              )}
+              {securityMsg && (
+                <div className="auth-alert success" role="alert">
+                  <FiCheckCircle />
+                  <span>{securityMsg}</span>
+                </div>
+              )}
+
+              {/* 2FA Status Card */}
+              <div
+                className={`twofactor-status-card ${
+                  user?.twoFactorEnabled ? "active" : "inactive"
+                }`}
+              >
+                <div>
+                  <h4 style={{ margin: "0 0 0.25rem 0", fontSize: "0.95rem" }}>
+                    Two-Factor Authentication (2FA)
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "0.825rem" }}>
+                    {user?.twoFactorEnabled
+                      ? "Active • Your physician account is protected with TOTP authenticator codes."
+                      : "Not Enabled • Add an extra layer of security using an authenticator app."}
+                  </p>
+                </div>
+                {user?.twoFactorEnabled ? (
+                  <span className="verified-pill-tag">
+                    <FiCheck /> Active
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-family-schedule"
+                    onClick={handleStart2FASetup}
+                    disabled={loading2FA}
+                  >
+                    {loading2FA ? "Loading..." : "Enable 2FA"}
+                  </button>
+                )}
+              </div>
+
+              {/* 2FA Setup Flow Panel */}
+              {twoFactorSetupData && !user?.twoFactorEnabled && (
+                <div className="twofactor-setup-panel">
+                  <h4
+                    style={{ margin: "0", fontSize: "0.95rem", color: "#0f172a" }}
+                  >
+                    Step 1: Scan QR or Enter Secret in Authenticator App
+                  </h4>
+                  <p
+                    style={{ margin: "0", fontSize: "0.825rem", color: "#475569" }}
+                  >
+                    Add this secret to Google Authenticator, Microsoft
+                    Authenticator, or Authy:
+                  </p>
+                  <div className="twofactor-secret-key">
+                    {twoFactorSetupData.secret}
+                  </div>
+
+                  {twoFactorSetupData.otpauthUrl && (
+                    <a
+                      href={twoFactorSetupData.otpauthUrl}
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#0284c7",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Open directly in supported authenticator app &rarr;
+                    </a>
+                  )}
+
+                  {twoFactorSetupData.recoveryCodes && (
+                    <div className="recovery-codes-section">
+                      <h5>Step 2: Save Emergency Recovery Codes</h5>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "0.775rem",
+                          color: "#713f12",
+                        }}
+                      >
+                        Store these single-use codes safely. If you lose your
+                        authenticator device, you can use these to sign in:
+                      </p>
+                      <div className="recovery-codes-grid">
+                        {twoFactorSetupData.recoveryCodes.map((code, idx) => (
+                          <div key={idx} className="recovery-code-pill">
+                            {code}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={handleConfirm2FAEnable}
+                    style={{ marginTop: "0.5rem" }}
+                  >
+                    <div className="form-group">
+                      <label>Step 3: Enter 6-Digit Code to Activate *</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        required
+                        placeholder="123456"
+                        value={twoFactorVerifyCode}
+                        onChange={(e) =>
+                          setTwoFactorVerifyCode(
+                            e.target.value.replace(/\D/g, "")
+                          )
+                        }
+                        className="form-input"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="auth-submit-btn"
+                      disabled={loading2FA || twoFactorVerifyCode.length !== 6}
+                      style={{ marginTop: "0.5rem" }}
+                    >
+                      {loading2FA
+                        ? "Activating 2FA..."
+                        : "Confirm & Activate 2FA"}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* Disable 2FA Form (when enabled) */}
+              {user?.twoFactorEnabled && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  {!isDisabling2FA ? (
+                    <button
+                      type="button"
+                      className="btn-card-cancel-action"
+                      style={{ fontSize: "0.825rem" }}
+                      onClick={() => setIsDisabling2FA(true)}
+                    >
+                      Disable Two-Factor Authentication
+                    </button>
+                  ) : (
+                    <form
+                      onSubmit={handleDisable2FA}
+                      style={{
+                        padding: "1rem",
+                        background: "#fff1f2",
+                        border: "1px solid #fecdd3",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <h5 style={{ margin: "0 0 0.5rem 0", color: "#9f1239" }}>
+                        Confirm 2FA Disabling
+                      </h5>
+                      <div className="form-group">
+                        <label style={{ fontSize: "0.8rem", color: "#9f1239" }}>
+                          Account Password *
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          placeholder="Enter your account password"
+                          value={disablePasswordInput}
+                          onChange={(e) =>
+                            setDisablePasswordInput(e.target.value)
+                          }
+                          className="form-input"
+                        />
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          marginTop: "0.5rem",
+                        }}
+                      >
+                        <button
+                          type="submit"
+                          className="btn-confirm-del"
+                          disabled={loading2FA}
+                        >
+                          {loading2FA ? "Disabling..." : "Disable 2FA"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-cancel-del"
+                          style={{ color: "#475569", borderColor: "#cbd5e1" }}
+                          onClick={() => {
+                            setIsDisabling2FA(false);
+                            setDisablePasswordInput("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {/* Session Management */}
+              <div className="session-management-box">
+                <h4>Session Management</h4>
+                <p>
+                  Revoke all active device logins by invalidating your account's
+                  authorization tokens. Any other active mobile or desktop
+                  sessions will be required to log in again.
+                </p>
+                <button
+                  type="button"
+                  className="btn-revoke-sessions"
+                  onClick={handleLogoutAllDevices}
+                >
+                  <FiLogOut size={14} /> Log Out from All Devices
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

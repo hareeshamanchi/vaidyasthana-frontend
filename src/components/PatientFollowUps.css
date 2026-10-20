@@ -1,0 +1,603 @@
+/* Patient Care Follow-Ups Stylesheet */
+
+.patient-followups-container {
+  margin-top: 36px;
+  margin-bottom: 36px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  padding: 28px;
+}
+
+.followups-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.followups-header-row h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.followups-subtitle {
+  color: #64748b;
+  font-size: 0.92rem;
+  margin: 0;
+  max-width: 680px;
+}
+
+.btn-refresh-followups {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-followups:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btn-refresh-followups:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-inline {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0d9488;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tabs */
+.followup-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+
+.followup-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.followup-tab-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.followup-tab-btn.active {
+  background: #f0fdfa;
+  color: #0f766e;
+  border-color: #99f6e4;
+}
+
+.followup-tab-btn.alert.active {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.followup-tab-count {
+  font-size: 0.76rem;
+  background: #e2e8f0;
+  color: #475569;
+  border-radius: 12px;
+  padding: 2px 7px;
+  font-weight: 700;
+}
+
+.followup-tab-count.highlight {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.followup-tab-count.missed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Error Alert */
+.followup-error-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+}
+
+/* Loading & Empty Cards */
+.followup-loading-card,
+.followup-empty-card {
+  text-align: center;
+  padding: 44px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+}
+
+.followup-empty-icon {
+  color: #0d9488;
+  margin-bottom: 12px;
+}
+
+.followup-empty-card h4 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+
+.followup-empty-card p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 auto;
+  max-width: 500px;
+}
+
+/* Follow-Up Cards Grid */
+.followup-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.followup-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.followup-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.followup-card.urgent {
+  border-left: 4px solid #ef4444;
+}
+
+.followup-card.soon {
+  border-left: 4px solid #f59e0b;
+}
+
+.followup-card.routine {
+  border-left: 4px solid #0d9488;
+}
+
+/* Card Top Bar */
+.followup-card-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.followup-badges-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.followup-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.followup-status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.followup-status-badge.booked {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.followup-status-badge.completed {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.followup-status-badge.missed {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.followup-status-badge.cancelled {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.followup-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.followup-priority-badge.routine {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.followup-priority-badge.soon {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.followup-priority-badge.urgent {
+  background: #fef2f2;
+  color: #dc2626;
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
+.followup-rec-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.followup-rec-date strong {
+  color: #0f172a;
+}
+
+/* Card Body */
+.followup-card-body {
+  padding: 18px 18px 14px 18px;
+  flex: 1;
+}
+
+.followup-doctor-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.doctor-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f0fdfa;
+  color: #0d9488;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccfbf1;
+  flex-shrink: 0;
+}
+
+.followup-doctor-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.followup-doc-spec {
+  font-size: 0.8rem;
+  color: #64748b;
+  display: block;
+}
+
+.followup-field-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.followup-reason-box {
+  margin-bottom: 14px;
+  background: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.followup-reason-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* Clinical Instructions */
+.followup-instructions-box {
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.instructions-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.instructions-content {
+  font-size: 0.88rem;
+  color: #134e4a;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.followup-date-range {
+  font-size: 0.82rem;
+  color: #475569;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* Tests Tags */
+.followup-tests-box {
+  margin-bottom: 14px;
+}
+
+.followup-tests-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.test-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.followup-notes-box {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.notes-text {
+  margin: 0;
+  font-style: italic;
+  color: #475569;
+}
+
+/* Banners */
+.followup-booked-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.followup-booked-banner strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.followup-booked-banner p {
+  margin: 0;
+  color: #1e3a8a;
+}
+
+.followup-missed-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.followup-missed-banner strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.followup-missed-banner p {
+  margin: 0;
+  color: #7f1d1d;
+}
+
+.followup-cancelled-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.followup-cancelled-banner strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.followup-cancelled-banner p {
+  margin: 0;
+}
+
+/* Card Footer */
+.followup-card-footer {
+  padding: 12px 18px 16px 18px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-book-followup {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-book-followup:hover {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-book-followup.rebook {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+}
+
+.btn-book-followup.rebook:hover {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+
+.btn-view-followup-appt {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-view-followup-appt:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.followup-completed-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #059669;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 6px;
+}
+
+@media (max-width: 640px) {
+  .patient-followups-container {
+    padding: 18px 14px;
+    margin-top: 24px;
+  }
+
+  .followup-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

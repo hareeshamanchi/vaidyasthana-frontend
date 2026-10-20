@@ -80,6 +80,32 @@ export const authAPI = {
   validateResetToken: (token) => api.get(`/api/auth/reset-password/${token}`),
   resetPassword: (token, password) =>
     api.post(`/api/auth/reset-password/${token}`, { password }),
+
+  // Phone OTP Authentication
+  sendOtp: (phoneNumber, purpose = "login") =>
+    api.post("/api/auth/otp/send", { phoneNumber, purpose }),
+  verifyOtp: (phoneNumber, otp, purpose = "login") =>
+    api.post("/api/auth/otp/verify", { phoneNumber, otp, purpose }),
+
+  // Session Management
+  logout: () => api.post("/api/auth/logout"),
+  logoutAll: () => api.post("/api/auth/logout-all"),
+
+  // Two-Factor Authentication (2FA)
+  setup2FA: () => api.post("/api/auth/2fa/setup"),
+  enable2FA: (code) => api.post("/api/auth/2fa/enable", { code }),
+  disable2FA: (data) => api.post("/api/auth/2fa/disable", data),
+  verify2FA: (tempToken, code, recoveryCode) =>
+    api.post("/api/auth/2fa/verify", { tempToken, code, recoveryCode }),
+
+  // Doctor Profile Management
+  updateDoctorProfile: (data) => api.put("/api/auth/doctor-profile", data),
+
+  // Family Accounts Management
+  getFamilyMembers: () => api.get("/api/auth/family"),
+  createFamilyMember: (data) => api.post("/api/auth/family", data),
+  updateFamilyMember: (id, data) => api.put(`/api/auth/family/${id}`, data),
+  deleteFamilyMember: (id) => api.delete(`/api/auth/family/${id}`),
 };
 
 // ==========================================
@@ -237,6 +263,18 @@ export const pushAPI = {
   subscribe: (subscription) => api.post("/api/push/subscribe", { subscription }),
   unsubscribe: (endpoint) => api.post("/api/push/unsubscribe", { endpoint }),
   testPush: () => api.post("/api/push/test"),
+};
+
+// ==========================================
+// Smart Follow-Up System API
+// ==========================================
+export const followUpsAPI = {
+  getFollowUps: (params) => api.get("/api/follow-ups", { params }),
+  getFollowUpById: (id) => api.get(`/api/follow-ups/${id}`),
+  createFollowUp: (data) => api.post("/api/follow-ups", data),
+  updateFollowUp: (id, data) => api.put(`/api/follow-ups/${id}`, data),
+  cancelFollowUp: (id, data) => api.patch(`/api/follow-ups/${id}/cancel`, data),
+  getDoctorStats: () => api.get("/api/follow-ups/doctor/stats"),
 };
 
 export default api;

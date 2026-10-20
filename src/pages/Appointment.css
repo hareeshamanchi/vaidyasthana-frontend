@@ -1937,3 +1937,36 @@
     font-size: 1.15rem;
   }
 }
+
+/* Follow-Up Deep-Link Modal Banner */
+.followup-modal-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md, 8px);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.followup-modal-banner .banner-icon {
+  color: #2563eb;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.followup-modal-banner h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0 0 0.2rem 0;
+}
+
+.followup-modal-banner p {
+  font-size: 0.82rem;
+  color: #3b82f6;
+  margin: 0;
+  line-height: 1.35;
+}

@@ -697,3 +697,102 @@
     padding-left: 2.25rem;
   }
 }
+
+/* ==========================================================================
+   Phone OTP & Two-Factor Authentication (2FA) Styles
+   ========================================================================== */
+.login-method-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-secondary, #f8fafc);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.method-chip {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.18s ease);
+}
+
+.method-chip:hover {
+  color: var(--navy-900, #0f172a);
+}
+
+.method-chip.active {
+  background: #ffffff;
+  color: var(--blue-600, #0284c7);
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+.otp-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.85rem;
+  padding: 0 0.25rem;
+}
+
+.resend-otp-btn,
+.change-phone-btn {
+  background: none;
+  border: none;
+  color: var(--blue-600, #0284c7);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.resend-otp-btn:hover:not(:disabled),
+.change-phone-btn:hover {
+  color: var(--blue-700, #0369a1);
+}
+
+.resend-otp-btn:disabled {
+  color: var(--text-muted, #94a3b8);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.toggle-2fa-mode-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--blue-600, #0284c7);
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.toggle-2fa-mode-btn:hover {
+  color: var(--blue-800, #075985);
+}
+
+.otp-expiry-hint {
+  font-size: 0.775rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 400;
+}

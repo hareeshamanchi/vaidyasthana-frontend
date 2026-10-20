@@ -11,6 +11,7 @@ import {
 import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
+import PatientFollowUps from "../components/PatientFollowUps";
 import {
   FiFileText,
   FiUploadCloud,
@@ -33,6 +34,8 @@ import {
   FiMapPin,
   FiPhone,
   FiClock,
+  FiUsers,
+  FiEdit2,
 } from "react-icons/fi";
 
 const PatientDashboard = () => {
@@ -126,6 +129,139 @@ const PatientDashboard = () => {
       setProfileError(err.response?.data?.message || "Failed to update profile.");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // ==========================================
+  // Family Accounts State & Handlers
+  // ==========================================
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [loadingFamily, setLoadingFamily] = useState(false);
+  const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
+  const [editingFamilyMember, setEditingFamilyMember] = useState(null);
+  const [familyFormData, setFamilyFormData] = useState({
+    fullName: "",
+    relationship: "spouse",
+    dateOfBirth: "",
+    gender: "female",
+    bloodGroup: "Unknown",
+    allergies: "",
+    chronicConditions: "",
+    emergencyContact: "",
+    notes: "",
+  });
+  const [savingFamily, setSavingFamily] = useState(false);
+  const [familyError, setFamilyError] = useState("");
+  const [deleteFamilyConfirmId, setDeleteFamilyConfirmId] = useState(null);
+
+  const fetchFamilyMembers = useCallback(async () => {
+    if (!user || typeof authAPI?.getFamilyMembers !== "function") return;
+    setLoadingFamily(true);
+    try {
+      const res = await authAPI.getFamilyMembers();
+      setFamilyMembers(res.data?.familyMembers || []);
+    } catch (err) {
+      console.warn("Failed to fetch family members:", err.message);
+    } finally {
+      setLoadingFamily(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchFamilyMembers();
+  }, [fetchFamilyMembers]);
+
+  const handleOpenAddFamilyModal = () => {
+    setEditingFamilyMember(null);
+    setFamilyFormData({
+      fullName: "",
+      relationship: "spouse",
+      dateOfBirth: "",
+      gender: "female",
+      bloodGroup: "Unknown",
+      allergies: "",
+      chronicConditions: "",
+      emergencyContact: "",
+      notes: "",
+    });
+    setFamilyError("");
+    setIsFamilyModalOpen(true);
+  };
+
+  const handleOpenEditFamilyModal = (member) => {
+    setEditingFamilyMember(member);
+    setFamilyFormData({
+      fullName: member.fullName || "",
+      relationship: member.relationship || "spouse",
+      dateOfBirth: member.dateOfBirth ? member.dateOfBirth.substring(0, 10) : "",
+      gender: member.gender || "female",
+      bloodGroup: member.bloodGroup || "Unknown",
+      allergies: Array.isArray(member.allergies) ? member.allergies.join(", ") : (member.allergies || ""),
+      chronicConditions: Array.isArray(member.chronicConditions) ? member.chronicConditions.join(", ") : (member.chronicConditions || ""),
+      emergencyContact: member.emergencyContact || "",
+      notes: member.notes || "",
+    });
+    setFamilyError("");
+    setIsFamilyModalOpen(true);
+  };
+
+  const handleSaveFamilyMember = async (e) => {
+    e.preventDefault();
+    if (!familyFormData.fullName.trim()) {
+      setFamilyError("Please enter the full name.");
+      return;
+    }
+    if (!familyFormData.dateOfBirth) {
+      setFamilyError("Date of birth is required to calculate medical age and minor guardianship.");
+      return;
+    }
+
+    setSavingFamily(true);
+    setFamilyError("");
+
+    const payload = {
+      fullName: familyFormData.fullName.trim(),
+      relationship: familyFormData.relationship,
+      dateOfBirth: familyFormData.dateOfBirth,
+      gender: familyFormData.gender,
+      bloodGroup: familyFormData.bloodGroup,
+      allergies: familyFormData.allergies
+        ? familyFormData.allergies.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      chronicConditions: familyFormData.chronicConditions
+        ? familyFormData.chronicConditions.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      emergencyContact: familyFormData.emergencyContact.trim(),
+      notes: familyFormData.notes.trim(),
+    };
+
+    try {
+      if (editingFamilyMember) {
+        await authAPI.updateFamilyMember(editingFamilyMember._id, payload);
+        setMessage(`Family profile for ${payload.fullName} updated successfully.`);
+      } else {
+        await authAPI.createFamilyMember(payload);
+        setMessage(`New family profile for ${payload.fullName} added successfully.`);
+      }
+      setIsFamilyModalOpen(false);
+      fetchFamilyMembers();
+    } catch (err) {
+      console.error("Save family member error:", err);
+      setFamilyError(err.response?.data?.message || "Failed to save family profile.");
+    } finally {
+      setSavingFamily(false);
+    }
+  };
+
+  const handleDeleteFamilyMember = async (id) => {
+    try {
+      await authAPI.deleteFamilyMember(id);
+      setMessage("Family profile removed successfully.");
+      setDeleteFamilyConfirmId(null);
+      fetchFamilyMembers();
+    } catch (err) {
+      console.error("Delete family member error:", err);
+      setMessage("Failed to delete family profile.");
     }
   };
 
@@ -823,6 +959,9 @@ const PatientDashboard = () => {
         </div>
       </section>
 
+      {/* Recommended Follow-Up Care Plans Section */}
+      <PatientFollowUps />
+
       {/* Booked Appointments Section */}
       <section className="patient-appointments-section">
         <div className="section-header-row">
@@ -941,6 +1080,178 @@ const PatientDashboard = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Family Health Profiles Section */}
+      <section className="dashboard-family-section">
+        <div className="section-header-row">
+          <div>
+            <h3>Family Health Profiles ({familyMembers.length})</h3>
+            <p className="section-subtitle">
+              Manage medical records, schedule consultations, and oversee dependent minor profiles under your primary vault.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-add-family"
+            onClick={handleOpenAddFamilyModal}
+          >
+            <FiPlus /> Add Family Member
+          </button>
+        </div>
+
+        {loadingFamily ? (
+          <div className="family-loading-box">
+            <FiRefreshCw className="spinning" />
+            <p>Loading linked family profiles...</p>
+          </div>
+        ) : familyMembers.length === 0 ? (
+          <div className="empty-family-card">
+            <FiUsers size={32} />
+            <h4>No Dependent Family Profiles Added Yet</h4>
+            <p>
+              Link spouses, children, or elderly parents to easily schedule consultations on their behalf and track their health records.
+            </p>
+            <button
+              type="button"
+              className="btn-add-family-inline"
+              onClick={handleOpenAddFamilyModal}
+            >
+              <FiPlus /> Add First Family Member
+            </button>
+          </div>
+        ) : (
+          <div className="family-members-grid">
+            {familyMembers.map((member) => {
+              const age = member.dateOfBirth
+                ? Math.floor(
+                    (new Date() - new Date(member.dateOfBirth)) /
+                      (365.25 * 24 * 60 * 60 * 1000)
+                  )
+                : null;
+              return (
+                <div key={member._id} className="family-member-card">
+                  <div className="family-card-header">
+                    <div className="family-avatar-circle">
+                      <FiUser size={20} />
+                    </div>
+                    <div className="family-title-block">
+                      <h4>{member.fullName}</h4>
+                      <div className="family-badges-row">
+                        <span className="family-relationship-badge">
+                          {member.relationship}
+                        </span>
+                        {member.isMinor && (
+                          <span
+                            className="family-minor-badge"
+                            title="Under 18 - Managed by Primary Account Guardian"
+                          >
+                            <FiShield size={10} /> Minor (Guardian Managed)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="family-details-grid">
+                    <div className="family-detail-row">
+                      <span className="label">Age / DOB:</span>
+                      <span className="val">
+                        {age !== null ? `${age} yrs` : "N/A"}{" "}
+                        {member.dateOfBirth &&
+                          `(${new Date(member.dateOfBirth).toLocaleDateString()})`}
+                      </span>
+                    </div>
+                    <div className="family-detail-row">
+                      <span className="label">Gender:</span>
+                      <span className="val" style={{ textTransform: "capitalize" }}>
+                        {member.gender || "N/A"}
+                      </span>
+                    </div>
+                    <div className="family-detail-row">
+                      <span className="label">Blood Group:</span>
+                      <span className="val">{member.bloodGroup || "Unknown"}</span>
+                    </div>
+                    {member.allergies && member.allergies.length > 0 && (
+                      <div className="family-detail-row">
+                        <span className="label">Allergies:</span>
+                        <span className="val alert-val">
+                          {member.allergies.join(", ")}
+                        </span>
+                      </div>
+                    )}
+                    {member.chronicConditions &&
+                      member.chronicConditions.length > 0 && (
+                        <div className="family-detail-row">
+                          <span className="label">Conditions:</span>
+                          <span className="val">
+                            {member.chronicConditions.join(", ")}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+
+                  <div className="family-card-actions">
+                    <button
+                      type="button"
+                      className="btn-family-schedule"
+                      onClick={() =>
+                        navigate(
+                          `/appointment?familyMemberId=${member._id}&familyMemberName=${encodeURIComponent(
+                            member.fullName
+                          )}`
+                        )
+                      }
+                      title={`Schedule a doctor consultation for ${member.fullName}`}
+                    >
+                      <FiCalendar size={13} /> Book Visit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-family-edit"
+                      onClick={() => handleOpenEditFamilyModal(member)}
+                      title="Edit Profile"
+                      aria-label={`Edit ${member.fullName}`}
+                    >
+                      <FiEdit2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-family-delete"
+                      onClick={() => setDeleteFamilyConfirmId(member._id)}
+                      title="Remove Family Member"
+                      aria-label={`Remove ${member.fullName}`}
+                    >
+                      <FiTrash2 size={13} />
+                    </button>
+                  </div>
+
+                  {deleteFamilyConfirmId === member._id && (
+                    <div className="family-delete-confirm-overlay">
+                      <p>Remove {member.fullName} from family account?</p>
+                      <div className="confirm-buttons-row">
+                        <button
+                          type="button"
+                          className="btn-confirm-del"
+                          onClick={() => handleDeleteFamilyMember(member._id)}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-cancel-del"
+                          onClick={() => setDeleteFamilyConfirmId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -1139,6 +1450,241 @@ const PatientDashboard = () => {
                 Permanently Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Family Member Add / Edit Modal */}
+      {isFamilyModalOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={() => !savingFamily && setIsFamilyModalOpen(false)}
+        >
+          <div
+            className="patient-profile-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="family-modal-title"
+          >
+            <div className="modal-header">
+              <div className="modal-title-wrap">
+                <FiUsers className="modal-icon" />
+                <h3 id="family-modal-title">
+                  {editingFamilyMember
+                    ? "Edit Family Health Profile"
+                    : "Add Dependent Family Member"}
+                </h3>
+              </div>
+              <button
+                className="close-modal-btn"
+                onClick={() => setIsFamilyModalOpen(false)}
+                type="button"
+                aria-label="Close dialog"
+                disabled={savingFamily}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFamilyMember} className="profile-edit-form">
+              <div className="modal-body">
+                {familyError && (
+                  <div className="profile-error-alert" role="alert">
+                    <FiAlertCircle />
+                    <span>{familyError}</span>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label htmlFor="fam-name">Full Legal Name *</label>
+                  <input
+                    id="fam-name"
+                    type="text"
+                    required
+                    placeholder="e.g. Priya Sharma"
+                    value={familyFormData.fullName}
+                    onChange={(e) =>
+                      setFamilyFormData((prev) => ({
+                        ...prev,
+                        fullName: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-group">
+                    <label htmlFor="fam-rel">Relationship *</label>
+                    <select
+                      id="fam-rel"
+                      value={familyFormData.relationship}
+                      onChange={(e) =>
+                        setFamilyFormData((prev) => ({
+                          ...prev,
+                          relationship: e.target.value,
+                        }))
+                      }
+                      className="form-select"
+                    >
+                      <option value="spouse">Spouse</option>
+                      <option value="child">Child (Son / Daughter)</option>
+                      <option value="parent">Parent (Mother / Father)</option>
+                      <option value="sibling">Sibling (Brother / Sister)</option>
+                      <option value="dependent">Dependent</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="fam-gender">Gender *</label>
+                    <select
+                      id="fam-gender"
+                      value={familyFormData.gender}
+                      onChange={(e) =>
+                        setFamilyFormData((prev) => ({
+                          ...prev,
+                          gender: e.target.value,
+                        }))
+                      }
+                      className="form-select"
+                    >
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-group">
+                    <label htmlFor="fam-dob">Date of Birth *</label>
+                    <input
+                      id="fam-dob"
+                      type="date"
+                      required
+                      max={new Date().toISOString().substring(0, 10)}
+                      value={familyFormData.dateOfBirth}
+                      onChange={(e) =>
+                        setFamilyFormData((prev) => ({
+                          ...prev,
+                          dateOfBirth: e.target.value,
+                        }))
+                      }
+                    />
+                    <small className="field-hint">
+                      Used for pediatric dosage & minor guardian linking
+                    </small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="fam-blood">Blood Group</label>
+                    <select
+                      id="fam-blood"
+                      value={familyFormData.bloodGroup}
+                      onChange={(e) =>
+                        setFamilyFormData((prev) => ({
+                          ...prev,
+                          bloodGroup: e.target.value,
+                        }))
+                      }
+                      className="form-select"
+                    >
+                      <option value="Unknown">Unknown / Not Tested</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="fam-allergies">Known Allergies (Optional)</label>
+                  <input
+                    id="fam-allergies"
+                    type="text"
+                    placeholder="e.g. Penicillin, Peanuts, Sulfa drugs (comma separated)"
+                    value={familyFormData.allergies}
+                    onChange={(e) =>
+                      setFamilyFormData((prev) => ({
+                        ...prev,
+                        allergies: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="fam-conds">Chronic Medical Conditions (Optional)</label>
+                  <input
+                    id="fam-conds"
+                    type="text"
+                    placeholder="e.g. Asthma, Hypertension, Type-2 Diabetes"
+                    value={familyFormData.chronicConditions}
+                    onChange={(e) =>
+                      setFamilyFormData((prev) => ({
+                        ...prev,
+                        chronicConditions: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="fam-contact">Emergency / Direct Phone (Optional)</label>
+                  <input
+                    id="fam-contact"
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={familyFormData.emergencyContact}
+                    onChange={(e) =>
+                      setFamilyFormData((prev) => ({
+                        ...prev,
+                        emergencyContact: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="fam-notes">Clinical Notes / Medical History</label>
+                  <textarea
+                    id="fam-notes"
+                    rows="2"
+                    placeholder="Previous surgeries, dietary restrictions, pediatrician notes..."
+                    value={familyFormData.notes}
+                    onChange={(e) =>
+                      setFamilyFormData((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-dialog-cancel"
+                  onClick={() => setIsFamilyModalOpen(false)}
+                  disabled={savingFamily}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-save-profile"
+                  disabled={savingFamily}
+                >
+                  {savingFamily ? "Saving Profile..." : "Save Family Profile"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

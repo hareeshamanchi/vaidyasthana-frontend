@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useContext, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import "./Appointment.css";
 import { appointmentsAPI, authAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -99,6 +99,13 @@ export const checkIsDateToday = (dateStr, tz = CLINIC_TIMEZONE) => {
 
 const Appointment = () => {
   const { user } = useContext(AuthContext);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const followUpIdParam = searchParams.get("followUpId");
+  const doctorIdParam = searchParams.get("doctorId");
+  const reasonParam = searchParams.get("reason");
+  const recommendedDateParam = searchParams.get("recommendedDate");
+  const familyMemberIdParam = searchParams.get("familyMemberId");
+  const familyMemberNameParam = searchParams.get("familyMemberName");
 
   const isDoctor = user?.role === "doctor";
   const currentTime = useConsultationTimer(15000);
@@ -194,7 +201,11 @@ const Appointment = () => {
     type: "Consultation",
     notes: "",
     reason: "",
+    followUpId: "",
+    familyMemberId: familyMemberIdParam || "",
   });
+
+  const [familyMembers, setFamilyMembers] = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -271,7 +282,8 @@ const Appointment = () => {
       setDoctorsList(docs);
 
       if (docs.length > 0) {
-        const found = docs.find((d) => d._id === formData.doctorId);
+        const preferredId = doctorIdParam || formData.doctorId;
+        const found = docs.find((d) => d._id === preferredId);
         const selectedDoc = found || docs[0];
         const formattedName = selectedDoc.name.startsWith("Dr.") ? selectedDoc.name : `Dr. ${selectedDoc.name}`;
         const initialDate = formData.appointmentDate || getTodayISO();
@@ -291,7 +303,33 @@ const Appointment = () => {
     } finally {
       setLoadingDoctors(false);
     }
-  }, [formData.doctorId, formData.appointmentDate, fetchSlots, isDoctor]);
+  }, [formData.doctorId, formData.appointmentDate, fetchSlots, isDoctor, doctorIdParam]);
+
+  // Auto-open and prefill booking modal when deep-linked with a follow-up plan
+  useEffect(() => {
+    if (followUpIdParam) {
+      const recDate =
+        recommendedDateParam && !checkIsDateInPast(recommendedDateParam, CLINIC_TIMEZONE)
+          ? recommendedDateParam
+          : getTodayISO();
+
+      setFormData((prev) => ({
+        ...prev,
+        followUpId: followUpIdParam,
+        type: "Follow-up",
+        reason: reasonParam || prev.reason || "Recommended Clinical Follow-Up",
+        notes: reasonParam || prev.notes || "Recommended Clinical Follow-Up",
+        appointmentDate: recDate,
+        ...(doctorIdParam ? { doctorId: doctorIdParam } : {}),
+      }));
+
+      setShowBookModal(true);
+
+      if (doctorIdParam) {
+        fetchSlots(doctorIdParam, recDate);
+      }
+    }
+  }, [followUpIdParam, doctorIdParam, reasonParam, recommendedDateParam, fetchSlots]);
 
   // 3. Fetch User's Appointments
   const fetchAppointments = useCallback(async () => {
@@ -348,6 +386,34 @@ const Appointment = () => {
       }
     }
   }, [user]);
+
+  // Fetch Family Members for patient booking
+  useEffect(() => {
+    if (!isDoctor && user && typeof authAPI?.getFamilyMembers === "function") {
+      const promise = authAPI.getFamilyMembers();
+      if (promise && typeof promise.then === "function") {
+        promise
+          .then((res) => setFamilyMembers(res?.data?.familyMembers || []))
+          .catch(() => {});
+      }
+    }
+  }, [isDoctor, user]);
+
+  // Pre-fill family member booking if familyMemberIdParam is in URL
+  useEffect(() => {
+    if (familyMemberIdParam && !isDoctor) {
+      setFormData((prev) => ({
+        ...prev,
+        familyMemberId: familyMemberIdParam,
+        reason:
+          prev.reason ||
+          (familyMemberNameParam
+            ? `Consultation for family member: ${familyMemberNameParam}`
+            : ""),
+      }));
+      setShowBookModal(true);
+    }
+  }, [familyMemberIdParam, familyMemberNameParam, isDoctor]);
 
   // 4. Socket.IO Real-time Synchronization
   useEffect(() => {
@@ -601,6 +667,8 @@ const Appointment = () => {
         reason: consultationReason,
         patientName: user?.name || "Patient",
         timezone: CLINIC_TIMEZONE,
+        followUpId: formData.followUpId || undefined,
+        familyMemberId: formData.familyMemberId || undefined,
       });
 
       setStatusMessage(
@@ -613,7 +681,10 @@ const Appointment = () => {
         timeSlot: "",
         notes: "",
         reason: "",
+        followUpId: "",
+        familyMemberId: "",
       }));
+      setSearchParams({});
       setSlotsData([]);
       fetchAppointments();
     } catch (err) {
@@ -788,6 +859,15 @@ const Appointment = () => {
             <span>Mode: {app.consultationType || "In-Person"}</span>
           </div>
 
+          {app.familyMemberName && (
+            <div className="detail-item family-item">
+              <FiUser className="detail-icon" />
+              <span>
+                <strong>Patient:</strong> {app.familyMemberName}
+              </span>
+            </div>
+          )}
+
           {patientPhone && (
             <div className="detail-item">
               <FiPhone className="detail-icon" />
@@ -953,6 +1033,15 @@ const Appointment = () => {
             <FiActivity className="detail-icon" />
             <span>Mode: {app.consultationType || "In-Person"}</span>
           </div>
+
+          {app.familyMemberName && (
+            <div className="detail-item family-item">
+              <FiUser className="detail-icon" />
+              <span>
+                <strong>Patient:</strong> {app.familyMemberName}
+              </span>
+            </div>
+          )}
           {(app.reason || app.notes) && (
             <div className="detail-item reason-item">
               <FiFileText className="detail-icon" />
@@ -1420,6 +1509,19 @@ const Appointment = () => {
               </button>
             </div>
 
+            {/* Follow-Up Plan Link Notice */}
+            {formData.followUpId && (
+              <div className="followup-modal-banner">
+                <FiActivity className="banner-icon" />
+                <div>
+                  <h4>Booking Recommended Follow-Up</h4>
+                  <p>
+                    This consultation will be linked directly to your physician's follow-up care plan.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Profile Completeness Inline Alert */}
             {profileIncomplete && (
               <div className="profile-completion-notice">
@@ -1471,6 +1573,27 @@ const Appointment = () => {
             )}
 
             <form onSubmit={handleBookSubmit} className="booking-form">
+              {/* Consultation Beneficiary (Self vs Family Member) */}
+              {familyMembers.length > 0 && (
+                <div className="form-group">
+                  <label>Consultation For</label>
+                  <select
+                    name="familyMemberId"
+                    value={formData.familyMemberId}
+                    onChange={handleInputChange}
+                    className="form-select"
+                  >
+                    <option value="">Myself ({user?.name || "Primary Account"})</option>
+                    {familyMembers.map((fm) => (
+                      <option key={fm._id} value={fm._id}>
+                        {fm.fullName} ({fm.relationship}){" "}
+                        {fm.isMinor ? "• Minor (Guardian Managed)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Doctor Selector */}
               <div className="form-group">
                 <label>Select Verified Healthcare Specialist *</label>

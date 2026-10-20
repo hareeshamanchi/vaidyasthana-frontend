@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 import Appointment from "./Appointment";
 import { AuthContext } from "../context/AuthContext";
 import { appointmentsAPI, authAPI } from "../services/api";
@@ -17,6 +17,7 @@ jest.mock("../services/api", () => ({
     getDoctors: jest.fn(),
     getMe: jest.fn(),
     updateMe: jest.fn(),
+    getFamilyMembers: jest.fn(() => Promise.resolve({ data: { familyMembers: [] } })),
   },
 }));
 
@@ -373,6 +374,70 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
     await waitFor(() => {
       const confirmBtn = within(modal).getByRole("button", { name: /confirm & schedule appointment/i });
       expect(confirmBtn).toBeDisabled();
+    });
+  });
+
+  test("auto-opens booking modal with follow-up banner and links followUpId upon scheduling", async () => {
+    appointmentsAPI.getDoctors.mockResolvedValue({
+      data: {
+        success: true,
+        doctors: [
+          {
+            _id: "doc-999",
+            name: "Dr. Suresh Menon",
+            specialization: "Cardiology",
+            city: "Bangalore",
+          },
+        ],
+      },
+    });
+
+    appointmentsAPI.getSlots.mockResolvedValue({
+      data: {
+        success: true,
+        slots: [
+          { timeSlot: "11:00 AM", isAvailable: true, isPast: false, isBooked: false, reason: "Available" },
+        ],
+      },
+    });
+
+    appointmentsAPI.createAppointment.mockResolvedValue({
+      data: {
+        success: true,
+        appointment: { _id: "appt-new", followUpId: "fu-deep-123" },
+      },
+    });
+
+    render(
+      <AuthContext.Provider value={{ user: mockPatientUser, setUser: jest.fn() }}>
+        <MemoryRouter initialEntries={["/appointment?followUpId=fu-deep-123&doctorId=doc-999&reason=Post-Op%20Review&recommendedDate=2026-10-25"]}>
+          <Appointment />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    // Modal should be auto-opened
+    const modal = await screen.findByRole("dialog");
+    expect(modal).toBeInTheDocument();
+
+    // Context banner should be displayed
+    expect(within(modal).getByText(/Booking Recommended Follow-Up/i)).toBeInTheDocument();
+
+    // Select slot and submit
+    const slotBtn = await within(modal).findByRole("button", { name: /11:00 AM/i });
+    fireEvent.click(slotBtn);
+
+    const submitBtn = within(modal).getByRole("button", { name: /confirm & schedule appointment/i });
+    expect(submitBtn).not.toBeDisabled();
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(appointmentsAPI.createAppointment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          followUpId: "fu-deep-123",
+          reason: "Post-Op Review",
+        })
+      );
     });
   });
 });
