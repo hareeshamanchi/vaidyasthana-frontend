@@ -321,6 +321,11 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
     fireEvent.click(bookBtn);
 
     const modal = await screen.findByRole("dialog");
+
+    // Select a future date to ensure the slot is never elapsed regardless of what time of day tests run
+    const dateInput = within(modal).getByLabelText(/appointment date \*/i);
+    fireEvent.change(dateInput, { target: { value: "2028-12-01" } });
+
     const validSlotBtn = await within(modal).findByRole("button", { name: /07:30 PM/i });
     expect(validSlotBtn).not.toBeDisabled();
 
@@ -336,7 +341,7 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
 
   test("changing appointment date clears the previously selected slot", async () => {
     appointmentsAPI.getSlots.mockImplementation((docId, date) => {
-      if (date === "2028-12-01") {
+      if (date === "2028-12-02") {
         return Promise.resolve({
           data: {
             success: true,
@@ -362,13 +367,17 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
     fireEvent.click(bookBtn);
 
     const modal = await screen.findByRole("dialog");
+
+    // Set future date first
+    const dateInput = within(modal).getByLabelText(/appointment date \*/i);
+    fireEvent.change(dateInput, { target: { value: "2028-12-01" } });
+
     const validSlotBtn = await within(modal).findByRole("button", { name: /07:30 PM/i });
     fireEvent.click(validSlotBtn);
     expect(validSlotBtn).toHaveClass("selected");
 
-    // Change the date
-    const dateInput = within(modal).getByLabelText(/appointment date \*/i);
-    fireEvent.change(dateInput, { target: { value: "2028-12-01" } });
+    // Change the date to another date
+    fireEvent.change(dateInput, { target: { value: "2028-12-02" } });
 
     // The slot should be cleared
     await waitFor(() => {

@@ -106,6 +106,10 @@ export const authAPI = {
   createFamilyMember: (data) => api.post("/api/auth/family", data),
   updateFamilyMember: (id, data) => api.put(`/api/auth/family/${id}`, data),
   deleteFamilyMember: (id) => api.delete(`/api/auth/family/${id}`),
+
+  // Hospital Staff Invitations
+  validateInvitation: (token) => api.get(`/api/auth/invitation/${token}`),
+  acceptInvitation: (data) => api.post("/api/auth/accept-invitation", data),
 };
 
 // ==========================================
@@ -275,6 +279,35 @@ export const followUpsAPI = {
   updateFollowUp: (id, data) => api.put(`/api/follow-ups/${id}`, data),
   cancelFollowUp: (id, data) => api.patch(`/api/follow-ups/${id}/cancel`, data),
   getDoctorStats: () => api.get("/api/follow-ups/doctor/stats"),
+};
+
+// ==========================================
+// Multi-Hospital Platform Owner Tenant API
+// ==========================================
+export const hospitalTenantAPI = {
+  getHospitals: (params) => api.get("/api/hospitals", { params }),
+  getHospitalById: (id) => api.get(`/api/hospitals/${id}`),
+  createHospital: (data) => api.post("/api/hospitals", data),
+  updateHospital: (id, data) => api.put(`/api/hospitals/${id}`, data),
+  updateHospitalStatus: (id, data) => api.patch(`/api/hospitals/${id}/status`, data),
+  updateSubscription: (id, data) => api.put(`/api/hospitals/${id}/subscription`, data),
+  getPlatformMetrics: () => api.get("/api/hospitals/metrics/platform"),
+};
+
+// ==========================================
+// Hospital Admin Operations API
+// ==========================================
+export const hospitalAdminAPI = {
+  getOverview: () => api.get("/api/hospital-admin/overview"),
+  getStaff: (params) => api.get("/api/hospital-admin/staff", { params }),
+  createStaff: (data) => api.post("/api/hospital-admin/staff", data),
+  inviteStaff: (data) => api.post("/api/hospital-admin/invite", data),
+  updateStaff: (id, data) => api.put(`/api/hospital-admin/staff/${id}`, data),
+  updateStaffStatus: (id, data) => api.patch(`/api/hospital-admin/staff/${id}/status`, data),
+  registerPatient: (data) => api.post("/api/hospital-admin/patients", data),
+  getPatients: (params) => api.get("/api/hospital-admin/patients", { params }),
+  updateSettings: (data) => api.put("/api/hospital-admin/settings", data),
+  revokeInvitation: (id) => api.delete(`/api/hospital-admin/invitations/${id}`),
 };
 
 export default api;

@@ -20,6 +20,8 @@ import VideoConsultation from "./pages/VideoConsultation";
 import HealthTimeline from "./pages/HealthTimeline";
 import MedicationReminders from "./pages/MedicationReminders";
 import MedicationAlarmListener from "./components/MedicationAlarmListener";
+import HospitalAdminDashboard from "./pages/HospitalAdminDashboard";
+import AcceptInvitationPage from "./pages/AcceptInvitationPage";
 
 function App() {
   return (
@@ -51,6 +53,8 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/hospital-admin" element={<HospitalAdminDashboard />} />
+            <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           </Routes>
         </main>
 

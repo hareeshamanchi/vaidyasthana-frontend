@@ -17,6 +17,7 @@ import {
   FiCpu,
   FiHeart,
   FiClock,
+  FiUsers,
 } from "react-icons/fi";
 
 function Navbar() {
@@ -74,6 +75,8 @@ function Navbar() {
       navigate("/dashboard");
     } else if (data.user && data.user.role === "doctor") {
       navigate("/doctor-dashboard");
+    } else if (data.user && data.user.role === "hospital_admin") {
+      navigate("/hospital-admin");
     } else if (data.user && (data.user.role === "admin" || data.user.role === "superadmin")) {
       navigate("/admin");
     }
@@ -242,6 +245,20 @@ function Navbar() {
                 </Link>
               </li>
             </>
+          )}
+
+          {/* Hospital Admin links */}
+          {user && (user.role === "hospital_admin" || user.role === "superadmin") && (
+            <li>
+              <Link
+                to="/hospital-admin"
+                className={`nav-link admin-link ${
+                  isActive("/hospital-admin") ? "active" : ""
+                }`}
+              >
+                <FiUsers className="nav-icon" /> Hospital Admin
+              </Link>
+            </li>
           )}
 
           {/* Admin-specific links */}
@@ -543,6 +560,19 @@ function Navbar() {
                     </Link>
                   </li>
                 </>
+              )}
+
+              {/* Hospital Admin Mobile Link */}
+              {user && (user.role === "hospital_admin" || user.role === "superadmin") && (
+                <li>
+                  <Link
+                    to="/hospital-admin"
+                    className={isActive("/hospital-admin") ? "active" : ""}
+                    onClick={closeMobileMenu}
+                  >
+                    Hospital Admin
+                  </Link>
+                </li>
               )}
 
               {/* Admin-specific Mobile Links */}
