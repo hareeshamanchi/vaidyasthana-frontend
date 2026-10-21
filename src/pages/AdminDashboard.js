@@ -34,6 +34,9 @@ import {
   FiMapPin,
   FiPhone,
   FiAlertCircle,
+  FiPauseCircle,
+  FiPlayCircle,
+  FiSliders,
 } from "react-icons/fi";
 import "./AdminDashboard.css";
 
@@ -326,6 +329,14 @@ const AdminDashboard = () => {
   const [subUpdateForm, setSubUpdateForm] = useState({ plan: "trial", maxDoctors: 5, maxStaff: 15 });
   const [subUpdating, setSubUpdating] = useState(false);
 
+  const [deactivationTarget, setDeactivationTarget] = useState(null);
+  const [deactivationReason, setDeactivationReason] = useState("");
+  const [deactivating, setDeactivating] = useState(false);
+
+  const [reactivationTarget, setReactivationTarget] = useState(null);
+  const [reactivationReason, setReactivationReason] = useState("");
+  const [reactivating, setReactivating] = useState(false);
+
   const fetchHospitals = useCallback(async () => {
     if (!isSuperAdmin) return;
     try {
@@ -344,6 +355,65 @@ const AdminDashboard = () => {
       setHospitalsLoading(false);
     }
   }, [isSuperAdmin, hospitalSearch, hospitalStatusFilter]);
+
+  const handleCloseInviteModal = useCallback(() => {
+    setGeneratedInvite(null);
+    setCopiedSetupLink(false);
+    setActiveSection("hospitals");
+    fetchHospitals();
+  }, [fetchHospitals]);
+
+  const handleConfirmDeactivation = async (e) => {
+    e?.preventDefault();
+    if (!deactivationTarget) return;
+    if (!deactivationReason.trim()) {
+      setErrorMessage("Please provide a reason for deactivating the hospital tenant.");
+      return;
+    }
+    setDeactivating(true);
+    setErrorMessage("");
+    try {
+      const res = await hospitalTenantAPI.updateHospitalStatus(deactivationTarget._id, {
+        status: "suspended",
+        reason: deactivationReason.trim(),
+      });
+      if (res.data?.success) {
+        setStatusMessage(res.data.message || `Hospital '${deactivationTarget.name}' has been deactivated.`);
+        setDeactivationTarget(null);
+        setDeactivationReason("");
+        fetchHospitals();
+      }
+    } catch (err) {
+      console.error("Failed to deactivate hospital:", err);
+      setErrorMessage(err.response?.data?.message || "Failed to deactivate hospital tenant.");
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleConfirmReactivation = async (e) => {
+    e?.preventDefault();
+    if (!reactivationTarget) return;
+    setReactivating(true);
+    setErrorMessage("");
+    try {
+      const res = await hospitalTenantAPI.updateHospitalStatus(reactivationTarget._id, {
+        status: "active",
+        reason: reactivationReason.trim() || "Reactivated by Platform Owner",
+      });
+      if (res.data?.success) {
+        setStatusMessage(res.data.message || `Hospital '${reactivationTarget.name}' has been reactivated.`);
+        setReactivationTarget(null);
+        setReactivationReason("");
+        fetchHospitals();
+      }
+    } catch (err) {
+      console.error("Failed to reactivate hospital:", err);
+      setErrorMessage(err.response?.data?.message || "Failed to reactivate hospital tenant.");
+    } finally {
+      setReactivating(false);
+    }
+  };
 
   const handlePlanChange = (newPlan) => {
     let maxDoc = 5;
@@ -829,6 +899,8 @@ const AdminDashboard = () => {
     else if (activeSection === "support") fetchSupportQueries(1);
   }, [
     activeSection,
+    isSuperAdmin,
+    fetchHospitals,
     fetchOverview,
     fetchUsers,
     fetchDoctors,
@@ -862,15 +934,42 @@ const AdminDashboard = () => {
     };
   }, [activeSection, fetchDoctors, fetchOverview, fetchAppointments, appointmentPagination.page]);
 
+  // Manage body scroll lock during open modals
+  const anyModalOpen = Boolean(
+    showOnboardModal ||
+    generatedInvite ||
+    selectedHospitalForStatus ||
+    selectedHospitalForSub ||
+    deactivationTarget ||
+    reactivationTarget ||
+    selectedUserDetails ||
+    suspensionModalUser ||
+    selectedDoctorForReview ||
+    selectedApptForUpdate ||
+    selectedSupportQuery
+  );
+
+  useEffect(() => {
+    if (anyModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow || "";
+      };
+    }
+  }, [anyModalOpen]);
+
   // Dismiss open modals with ESC key
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         if (selectedUserDetails) setSelectedUserDetails(null);
         if (showOnboardModal) setShowOnboardModal(false);
-        if (generatedInvite) setGeneratedInvite(null);
+        if (generatedInvite) handleCloseInviteModal();
         if (selectedHospitalForStatus) setSelectedHospitalForStatus(null);
         if (selectedHospitalForSub) setSelectedHospitalForSub(null);
+        if (deactivationTarget) setDeactivationTarget(null);
+        if (reactivationTarget) setReactivationTarget(null);
         if (suspensionModalUser) setSuspensionModalUser(null);
         if (selectedDoctorForReview) setSelectedDoctorForReview(null);
         if (selectedApptForUpdate) setSelectedApptForUpdate(null);
@@ -881,10 +980,17 @@ const AdminDashboard = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     selectedUserDetails,
+    showOnboardModal,
+    generatedInvite,
+    selectedHospitalForStatus,
+    selectedHospitalForSub,
+    deactivationTarget,
+    reactivationTarget,
     suspensionModalUser,
     selectedDoctorForReview,
     selectedApptForUpdate,
     selectedSupportQuery,
+    handleCloseInviteModal,
   ]);
 
   const handleRefreshCurrentSection = () => {
@@ -1279,86 +1385,221 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               ) : (
-                <div className="table-responsive">
-                  <table className="admin-data-table">
-                    <thead>
-                      <tr>
-                        <th>Hospital Name & Code</th>
-                        <th>Location & Contact</th>
-                        <th>Subscription Plan</th>
-                        <th>Doctors / Staff Quota</th>
-                        <th>Operational Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hospitalsList.map((hosp) => (
-                        <tr key={hosp._id}>
-                          <td>
-                            <div className="hospital-name-col">
-                              <span className="hosp-table-title">{hosp.name}</span>
-                              <span className="hosp-table-code">{hosp.hospitalCode}</span>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="table-responsive-card">
+                    <div className="table-responsive-wrap">
+                      <table className="admin-data-table">
+                        <thead>
+                          <tr>
+                            <th>Hospital Name & Code</th>
+                            <th>Location & Contact</th>
+                            <th>Subscription Plan</th>
+                            <th>Doctors / Staff Quota</th>
+                            <th>Operational Status</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hospitalsList.map((hosp) => (
+                            <tr key={hosp._id}>
+                              <td>
+                                <div className="hospital-name-col">
+                                  <span className="hosp-table-title">{hosp.name}</span>
+                                  <span className="hosp-table-code">{hosp.hospitalCode}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="hosp-contact-col">
+                                  <span><FiMail size={12} /> {hosp.contactEmail}</span>
+                                  {hosp.contactPhone && <span><FiPhone size={12} /> {hosp.contactPhone}</span>}
+                                  {hosp.city && <span><FiMapPin size={12} /> {hosp.city}, {hosp.state}</span>}
+                                </div>
+                              </td>
+                              <td>
+                                <span className={`plan-pill plan-${hosp.subscription?.plan || "trial"}`}>
+                                  {(hosp.subscription?.plan || "trial").toUpperCase()}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="quota-col">
+                                  <span>Doctors: <strong>{hosp.totalDoctors || 0}</strong> / {hosp.subscription?.maxDoctors || 20}</span>
+                                  <span>Staff: <strong>{hosp.totalStaff || 0}</strong> / {hosp.subscription?.maxStaff || 50}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className={`status-pill status-${hosp.status || "active"}`}>
+                                  {(hosp.status || "active").toUpperCase()}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="table-action-buttons">
+                                  <button
+                                    type="button"
+                                    className="action-btn-secondary"
+                                    title="Edit Subscription Plan"
+                                    onClick={() => {
+                                      setSelectedHospitalForSub(hosp);
+                                      setSubUpdateForm({
+                                        plan: hosp.subscription?.plan || "trial",
+                                        maxDoctors: hosp.subscription?.maxDoctors || 20,
+                                        maxStaff: hosp.subscription?.maxStaff || 50,
+                                      });
+                                    }}
+                                  >
+                                    <FiSliders size={13} /> Edit Plan
+                                  </button>
+                                  {hosp.status === "active" ? (
+                                    <button
+                                      type="button"
+                                      className="action-btn-danger"
+                                      title="Deactivate Hospital Tenant"
+                                      onClick={() => {
+                                        setDeactivationTarget(hosp);
+                                        setDeactivationReason("");
+                                      }}
+                                    >
+                                      <FiPauseCircle size={13} /> Deactivate
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="action-btn-success"
+                                      title="Reactivate Hospital Tenant"
+                                      onClick={() => {
+                                        setReactivationTarget(hosp);
+                                        setReactivationReason("");
+                                      }}
+                                    >
+                                      <FiPlayCircle size={13} /> Reactivate
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="action-btn-secondary"
+                                    title="Change Status"
+                                    onClick={() => {
+                                      setSelectedHospitalForStatus(hosp);
+                                      setStatusUpdateForm({
+                                        status: hosp.status || "active",
+                                        reason: "",
+                                      });
+                                    }}
+                                  >
+                                    Status
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Mobile Stacked Card View */}
+                  <div className="hospitals-mobile-card-grid">
+                    {hospitalsList.map((hosp) => (
+                      <div className="hospital-tenant-card" key={`card-${hosp._id}`}>
+                        <div className="tenant-card-header">
+                          <div className="tenant-card-title-group">
+                            <h4 className="tenant-card-name">{hosp.name}</h4>
+                            <span className="tenant-card-code">{hosp.hospitalCode}</span>
+                          </div>
+                          <span className={`status-pill status-${hosp.status || "active"}`}>
+                            {(hosp.status || "active").toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div className="tenant-card-body">
+                          <div className="tenant-info-row">
+                            <span className="tenant-info-label"><FiMail size={12} /> Contact</span>
+                            <span className="tenant-info-val">{hosp.contactEmail}</span>
+                          </div>
+                          {hosp.contactPhone && (
+                            <div className="tenant-info-row">
+                              <span className="tenant-info-label"><FiPhone size={12} /> Phone</span>
+                              <span className="tenant-info-val">{hosp.contactPhone}</span>
                             </div>
-                          </td>
-                          <td>
-                            <div className="hosp-contact-col">
-                              <span><FiMail size={12} /> {hosp.contactEmail}</span>
-                              {hosp.contactPhone && <span><FiPhone size={12} /> {hosp.contactPhone}</span>}
-                              {hosp.city && <span><FiMapPin size={12} /> {hosp.city}, {hosp.state}</span>}
+                          )}
+                          {(hosp.city || hosp.state) && (
+                            <div className="tenant-info-row">
+                              <span className="tenant-info-label"><FiMapPin size={12} /> Location</span>
+                              <span className="tenant-info-val">{[hosp.city, hosp.state].filter(Boolean).join(", ")}</span>
                             </div>
-                          </td>
-                          <td>
+                          )}
+                          <div className="tenant-info-row">
+                            <span className="tenant-info-label">Subscription</span>
                             <span className={`plan-pill plan-${hosp.subscription?.plan || "trial"}`}>
                               {(hosp.subscription?.plan || "trial").toUpperCase()}
                             </span>
-                          </td>
-                          <td>
-                            <div className="quota-col">
-                              <span>Doctors: <strong>{hosp.totalDoctors || 0}</strong> / {hosp.subscription?.maxDoctors || 20}</span>
-                              <span>Staff: <strong>{hosp.totalStaff || 0}</strong> / {hosp.subscription?.maxStaff || 50}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`status-pill status-${hosp.status || "active"}`}>
-                              {(hosp.status || "active").toUpperCase()}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-action-buttons">
-                              <button
-                                className="action-btn-secondary"
-                                title="Edit Subscription Plan"
-                                onClick={() => {
-                                  setSelectedHospitalForSub(hosp);
-                                  setSubUpdateForm({
-                                    plan: hosp.subscription?.plan || "trial",
-                                    maxDoctors: hosp.subscription?.maxDoctors || 20,
-                                    maxStaff: hosp.subscription?.maxStaff || 50,
-                                  });
-                                }}
-                              >
-                                Edit Plan
-                              </button>
-                              <button
-                                className="action-btn-secondary"
-                                title="Change Status"
-                                onClick={() => {
-                                  setSelectedHospitalForStatus(hosp);
-                                  setStatusUpdateForm({
-                                    status: hosp.status || "active",
-                                    reason: "",
-                                  });
-                                }}
-                              >
-                                Status
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                          <div className="tenant-info-row">
+                            <span className="tenant-info-label">Doctors Quota</span>
+                            <span className="tenant-info-val">{hosp.totalDoctors || 0} / {hosp.subscription?.maxDoctors || 20}</span>
+                          </div>
+                          <div className="tenant-info-row">
+                            <span className="tenant-info-label">Staff Quota</span>
+                            <span className="tenant-info-val">{hosp.totalStaff || 0} / {hosp.subscription?.maxStaff || 50}</span>
+                          </div>
+                        </div>
+
+                        <div className="tenant-card-actions">
+                          <button
+                            type="button"
+                            className="action-btn-secondary"
+                            onClick={() => {
+                              setSelectedHospitalForSub(hosp);
+                              setSubUpdateForm({
+                                plan: hosp.subscription?.plan || "trial",
+                                maxDoctors: hosp.subscription?.maxDoctors || 20,
+                                maxStaff: hosp.subscription?.maxStaff || 50,
+                              });
+                            }}
+                          >
+                            <FiSliders size={13} /> Edit Plan
+                          </button>
+                          {hosp.status === "active" ? (
+                            <button
+                              type="button"
+                              className="action-btn-danger"
+                              onClick={() => {
+                                setDeactivationTarget(hosp);
+                                setDeactivationReason("");
+                              }}
+                            >
+                              <FiPauseCircle size={13} /> Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="action-btn-success"
+                              onClick={() => {
+                                setReactivationTarget(hosp);
+                                setReactivationReason("");
+                              }}
+                            >
+                              <FiPlayCircle size={13} /> Reactivate
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="action-btn-secondary"
+                            onClick={() => {
+                              setSelectedHospitalForStatus(hosp);
+                              setStatusUpdateForm({
+                                status: hosp.status || "active",
+                                reason: "",
+                              });
+                            }}
+                          >
+                            Status
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -3534,17 +3775,32 @@ const AdminDashboard = () => {
         {/* MODAL: ONBOARD NEW HOSPITAL                              */}
         {/* ======================================================== */}
         {showOnboardModal && (
-          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
-            <div className="admin-modal-card onboard-hospital-modal">
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="onboard-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !onboardingSubmitting) {
+                setShowOnboardModal(false);
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card onboard-hospital-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <div>
-                  <h3>Onboard New Hospital Tenant</h3>
+                  <h3 id="onboard-modal-title">Onboard New Hospital Tenant</h3>
                   <p className="modal-subheading">
                     Register institution details, configure subscription quotas, and provision/invite the Hospital Admin.
                   </p>
                 </div>
                 <button
+                  type="button"
                   className="modal-close-btn"
+                  aria-label="Close onboard modal"
                   onClick={() => setShowOnboardModal(false)}
                   disabled={onboardingSubmitting}
                 >
@@ -3800,21 +4056,36 @@ const AdminDashboard = () => {
         {/* MODAL: INVITATION LINK READY FOR COPYING                 */}
         {/* ======================================================== */}
         {generatedInvite && (
-          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
-            <div className="admin-modal-card invite-result-modal">
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invite-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleCloseInviteModal();
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card invite-result-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <div className="invite-success-badge">
                   <FiCheckCircle size={28} color="#10b981" />
                   <div>
-                    <h3>Hospital Onboarded Successfully!</h3>
+                    <h3 id="invite-modal-title">Hospital Onboarded Successfully!</h3>
                     <p className="modal-subheading">
                       {generatedInvite.hospitalName} ({generatedInvite.hospitalCode})
                     </p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   className="modal-close-btn"
-                  onClick={() => setGeneratedInvite(null)}
+                  aria-label="Close invitation modal"
+                  onClick={handleCloseInviteModal}
                 >
                   <FiX size={18} />
                 </button>
@@ -3864,8 +4135,8 @@ const AdminDashboard = () => {
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="primary-action-btn"
-                  onClick={() => setGeneratedInvite(null)}
+                  className="primary-action-btn green-btn"
+                  onClick={handleCloseInviteModal}
                 >
                   Done
                 </button>
@@ -3875,16 +4146,195 @@ const AdminDashboard = () => {
         )}
 
         {/* ======================================================== */}
+        {/* MODAL: CONFIRM DEACTIVATE HOSPITAL                       */}
+        {/* ======================================================== */}
+        {deactivationTarget && (
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="deactivate-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !deactivating) {
+                setDeactivationTarget(null);
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <div className="modal-title-with-icon">
+                  <FiAlertCircle size={22} color="#ef4444" />
+                  <h3 id="deactivate-modal-title">Deactivate Hospital Tenant</h3>
+                </div>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={() => setDeactivationTarget(null)}
+                  disabled={deactivating}
+                  aria-label="Close deactivation modal"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleConfirmDeactivation}>
+                <div className="modal-body-content">
+                  <div className="danger-notice-box">
+                    <p>
+                      You are preparing to deactivate <strong>{deactivationTarget.name}</strong> ({deactivationTarget.hospitalCode}).
+                    </p>
+                    <p className="notice-subtext">
+                      Deactivation will immediately suspend hospital staff sessions, block appointment scheduling, and prevent staff onboarding. All historical patient records and institutional data remain preserved and 100% reversible upon reactivation.
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">
+                      Reason for Deactivation <span className="req-star">*</span>
+                    </label>
+                    <textarea
+                      rows="3"
+                      className="modal-textarea"
+                      placeholder="Specify administrative or compliance reason (recorded in immutable audit trail)..."
+                      required
+                      value={deactivationReason}
+                      onChange={(e) => setDeactivationReason(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setDeactivationTarget(null)}
+                    disabled={deactivating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-action-btn red-btn"
+                    disabled={deactivating || !deactivationReason.trim()}
+                  >
+                    {deactivating ? "Deactivating..." : "Confirm Deactivation"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL: CONFIRM REACTIVATE HOSPITAL                       */}
+        {/* ======================================================== */}
+        {reactivationTarget && (
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reactivate-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !reactivating) {
+                setReactivationTarget(null);
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <div className="modal-title-with-icon">
+                  <FiPlayCircle size={22} color="#10b981" />
+                  <h3 id="reactivate-modal-title">Reactivate Hospital Tenant</h3>
+                </div>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={() => setReactivationTarget(null)}
+                  disabled={reactivating}
+                  aria-label="Close reactivation modal"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleConfirmReactivation}>
+                <div className="modal-body-content">
+                  <div className="success-notice-box">
+                    <p>
+                      Reactivate <strong>{reactivationTarget.name}</strong> ({reactivationTarget.hospitalCode})?
+                    </p>
+                    <p className="notice-subtext">
+                      Reactivating restores full operational privileges, allowing doctors and staff to log in, accept appointments, and resume clinical workflows immediately.
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Optional Administrative Note</label>
+                    <textarea
+                      rows="2"
+                      className="modal-textarea"
+                      placeholder="Note for audit log (e.g., Subscription renewed, compliance clearance verified)..."
+                      value={reactivationReason}
+                      onChange={(e) => setReactivationReason(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setReactivationTarget(null)}
+                    disabled={reactivating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-action-btn green-btn"
+                    disabled={reactivating}
+                  >
+                    {reactivating ? "Reactivating..." : "Confirm Reactivation"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
         {/* MODAL: UPDATE HOSPITAL STATUS                            */}
         {/* ======================================================== */}
         {selectedHospitalForStatus && (
-          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
-            <div className="admin-modal-card">
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="status-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !statusUpdating) {
+                setSelectedHospitalForStatus(null);
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
-                <h3>Manage Operational Status: {selectedHospitalForStatus.name}</h3>
+                <h3 id="status-modal-title">Manage Operational Status: {selectedHospitalForStatus.name}</h3>
                 <button
+                  type="button"
                   className="modal-close-btn"
+                  aria-label="Close status modal"
                   onClick={() => setSelectedHospitalForStatus(null)}
+                  disabled={statusUpdating}
                 >
                   <FiX size={18} />
                 </button>
@@ -3943,13 +4393,29 @@ const AdminDashboard = () => {
         {/* MODAL: UPDATE HOSPITAL SUBSCRIPTION                      */}
         {/* ======================================================== */}
         {selectedHospitalForSub && (
-          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
-            <div className="admin-modal-card">
+          <div
+            className="admin-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sub-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !subUpdating) {
+                setSelectedHospitalForSub(null);
+              }
+            }}
+          >
+            <div
+              className="admin-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
-                <h3>Edit Subscription: {selectedHospitalForSub.name}</h3>
+                <h3 id="sub-modal-title">Edit Subscription: {selectedHospitalForSub.name}</h3>
                 <button
+                  type="button"
                   className="modal-close-btn"
+                  aria-label="Close subscription modal"
                   onClick={() => setSelectedHospitalForSub(null)}
+                  disabled={subUpdating}
                 >
                   <FiX size={18} />
                 </button>

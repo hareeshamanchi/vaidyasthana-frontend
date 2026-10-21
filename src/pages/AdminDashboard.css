@@ -1134,24 +1134,32 @@
 .admin-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 1.25rem;
+  z-index: 2000;
+  padding: 1rem;
+  overflow-y: auto;
 }
 
 .admin-modal-card {
-  width: 100%;
-  max-width: 520px;
+  width: min(540px, calc(100vw - 32px));
+  max-width: 100%;
+  max-height: calc(100dvh - 32px);
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 1.5rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05);
   color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2001;
 }
 
 /* --------------------------------------------------------------------------
@@ -1811,13 +1819,26 @@
 }
 
 .modal-close-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.45rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
-.modal-close-btn:hover { color: #ffffff; }
+.modal-close-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.modal-close-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
 
 .modal-instruction-text {
   font-size: 0.85rem;
@@ -1880,13 +1901,27 @@
 }
 
 .primary-action-btn {
-  padding: 0.55rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border: none;
+  background: #0d9488;
   color: #ffffff;
+  transition: all 0.2s ease;
+}
+.primary-action-btn:hover:not(:disabled) {
+  background: #0f766e;
+  transform: translateY(-1px);
+}
+.primary-action-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .green-btn { background: #059669; }
@@ -1896,8 +1931,9 @@
 .red-btn:hover:not(:disabled) { background: #b91c1c; }
 
 .primary-action-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
 }
 
 .table-banner-info {
@@ -2782,13 +2818,206 @@
    ========================================================================== */
 
 .onboard-hospital-modal {
-  max-width: 760px;
-  width: 95%;
+  width: min(720px, calc(100vw - 32px));
+  max-width: min(720px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .invite-result-modal {
-  max-width: 640px;
-  width: 95%;
+  width: min(640px, calc(100vw - 32px));
+  max-width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.deactivate-hospital-modal,
+.reactivate-hospital-modal {
+  width: min(560px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.modal-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.danger-notice-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  color: #fca5a5;
+  font-size: 0.88rem;
+}
+
+.danger-notice-box p {
+  margin: 0 0 0.5rem;
+  color: #fee2e2;
+  font-weight: 500;
+}
+
+.danger-notice-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #fca5a5;
+}
+
+.danger-notice-list li {
+  margin-bottom: 0.25rem;
+}
+
+.success-notice-box {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  color: #6ee7b7;
+  font-size: 0.88rem;
+}
+
+.success-notice-box p {
+  margin: 0 0 0.5rem;
+  color: #d1fae5;
+  font-weight: 500;
+}
+
+.success-notice-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #a7f3d0;
+}
+
+.success-notice-list li {
+  margin-bottom: 0.25rem;
+}
+
+.btn-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #0d9488, #059669);
+  color: #ffffff;
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  border-radius: 8px;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.btn-primary-action:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0f766e, #047857);
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-primary-action:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.btn-primary-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.table-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.action-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-secondary:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.95);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.action-btn-secondary:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.action-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 6px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.action-btn-danger:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
+}
+
+.action-btn-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-success:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.28);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.55);
+}
+
+.action-btn-success:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
 }
 
 .modal-subheading {
@@ -2912,6 +3141,11 @@
   outline: none;
 }
 
+.setup-link-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
 .btn-copy-setup {
   background: #0d9488;
   color: #ffffff;
@@ -2928,8 +3162,13 @@
   white-space: nowrap;
 }
 
-.btn-copy-setup:hover {
+.btn-copy-setup:hover:not(:disabled) {
   background: #0f766e;
+}
+
+.btn-copy-setup:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 .invite-security-notice {
@@ -3020,4 +3259,100 @@
 
 .quota-col strong {
   color: #e2e8f0;
+}
+
+/* Mobile Stacked Card Layout for Hospital Tenants */
+.hospitals-mobile-card-grid {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+
+.hospital-tenant-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.tenant-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.tenant-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tenant-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.tenant-card-code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #38bdf8;
+}
+
+.tenant-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.tenant-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tenant-info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tenant-info-val {
+  color: #cbd5e1;
+  font-weight: 500;
+  text-align: right;
+}
+
+.tenant-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .admin-content-section .table-responsive-card {
+    display: none;
+  }
+  .hospitals-mobile-card-grid {
+    display: flex;
+  }
 }
