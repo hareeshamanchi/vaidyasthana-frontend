@@ -775,3 +775,52 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Unassigned Hospital Tenant Card */
+.hospital-unassigned-card {
+  max-width: 620px;
+  margin: 3rem auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+}
+
+.unassigned-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fef9c3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.hospital-unassigned-card h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.hospital-unassigned-card p {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.hospital-unassigned-card .unassigned-hint {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.unassigned-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}

@@ -71,14 +71,15 @@ function Navbar() {
 
   const handleLoginSuccess = (data) => {
     setAuthModalType(null);
-    if (data.user && data.user.role === "patient") {
-      navigate("/dashboard");
-    } else if (data.user && data.user.role === "doctor") {
-      navigate("/doctor-dashboard");
-    } else if (data.user && data.user.role === "hospital_admin") {
-      navigate("/hospital-admin");
-    } else if (data.user && (data.user.role === "admin" || data.user.role === "superadmin")) {
+    const role = data?.user?.role;
+    if (role === "superadmin" || role === "admin") {
       navigate("/admin");
+    } else if (role === "hospital_admin") {
+      navigate("/hospital-admin");
+    } else if (role === "doctor") {
+      navigate("/doctor-dashboard");
+    } else {
+      navigate("/dashboard");
     }
   };
 
@@ -247,8 +248,8 @@ function Navbar() {
             </>
           )}
 
-          {/* Hospital Admin links */}
-          {user && (user.role === "hospital_admin" || user.role === "superadmin") && (
+          {/* Hospital Admin links (Strictly for assigned hospital administrators) */}
+          {user && user.role === "hospital_admin" && user.hospitalId && (
             <li>
               <Link
                 to="/hospital-admin"
@@ -261,17 +262,17 @@ function Navbar() {
             </li>
           )}
 
-          {/* Admin-specific links */}
+          {/* Admin / Platform Owner links */}
           {isAdmin && (
             <>
               <li>
                 <Link
-                  to="/admin-dashboard"
+                  to="/admin"
                   className={`nav-link admin-link ${
-                    isActive("/admin-dashboard") || isActive("/admin") ? "active" : ""
+                    isActive("/admin") || isActive("/admin-dashboard") ? "active" : ""
                   }`}
                 >
-                  <FiShield className="nav-icon" /> Admin Portal
+                  <FiShield className="nav-icon" /> {user?.role === "superadmin" ? "Platform Admin" : "Admin Portal"}
                 </Link>
               </li>
               <li>
@@ -563,7 +564,7 @@ function Navbar() {
               )}
 
               {/* Hospital Admin Mobile Link */}
-              {user && (user.role === "hospital_admin" || user.role === "superadmin") && (
+              {user && user.role === "hospital_admin" && user.hospitalId && (
                 <li>
                   <Link
                     to="/hospital-admin"
@@ -580,11 +581,11 @@ function Navbar() {
                 <>
                   <li>
                     <Link
-                      to="/admin-dashboard"
-                      className={isActive("/admin-dashboard") || isActive("/admin") ? "active" : ""}
+                      to="/admin"
+                      className={isActive("/admin") || isActive("/admin-dashboard") ? "active" : ""}
                       onClick={closeMobileMenu}
                     >
-                      Administrative Verification
+                      {user?.role === "superadmin" ? "Platform Administration" : "Administrative Verification"}
                     </Link>
                   </li>
                   <li>

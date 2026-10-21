@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { adminAPI } from "../services/api";
+import { adminAPI, hospitalTenantAPI } from "../services/api";
 import { getSocket } from "../services/socket";
 import {
   FiShield,
@@ -29,6 +29,11 @@ import {
   FiMenu,
   FiCopy,
   FiRotateCcw,
+  FiHome,
+  FiPlus,
+  FiMapPin,
+  FiPhone,
+  FiAlertCircle,
 } from "react-icons/fi";
 import "./AdminDashboard.css";
 
@@ -121,6 +126,7 @@ const formatReportDateTime = (dateStr) => {
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
+  const isSuperAdmin = user?.role === "superadmin";
 
   // Active top-level section:
   // "overview" | "users" | "doctors" | "appointments" | "reports" | "security" | "health" | "support"
@@ -279,6 +285,223 @@ const AdminDashboard = () => {
       setActionLoading(false);
     }
   };
+
+  // ==========================================
+  // SECTION: HOSPITAL TENANTS (PLATFORM OWNER ONLY)
+  // ==========================================
+  const [hospitalsList, setHospitalsList] = useState([]);
+  const [hospitalsLoading, setHospitalsLoading] = useState(false);
+  const [hospitalSearch, setHospitalSearch] = useState("");
+  const [hospitalStatusFilter, setHospitalStatusFilter] = useState("all");
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [onboardForm, setOnboardForm] = useState({
+    name: "",
+    hospitalCode: "",
+    contactEmail: "",
+    contactPhone: "",
+    emergencyContact: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    timezone: "Asia/Kolkata",
+    plan: "trial",
+    maxDoctors: 5,
+    maxStaff: 15,
+    adminName: "",
+    adminEmail: "",
+    adminCreationMode: "invite",
+    adminPassword: "",
+  });
+  const [onboardingSubmitting, setOnboardingSubmitting] = useState(false);
+  const [onboardError, setOnboardError] = useState("");
+  const [generatedInvite, setGeneratedInvite] = useState(null);
+  const [copiedSetupLink, setCopiedSetupLink] = useState(false);
+
+  const [selectedHospitalForStatus, setSelectedHospitalForStatus] = useState(null);
+  const [statusUpdateForm, setStatusUpdateForm] = useState({ status: "active", reason: "" });
+  const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const [selectedHospitalForSub, setSelectedHospitalForSub] = useState(null);
+  const [subUpdateForm, setSubUpdateForm] = useState({ plan: "trial", maxDoctors: 5, maxStaff: 15 });
+  const [subUpdating, setSubUpdating] = useState(false);
+
+  const fetchHospitals = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    try {
+      setHospitalsLoading(true);
+      const res = await hospitalTenantAPI.getHospitals({
+        search: hospitalSearch || undefined,
+        status: hospitalStatusFilter !== "all" ? hospitalStatusFilter : undefined,
+      });
+      if (res.data?.success) {
+        setHospitalsList(res.data.hospitals || []);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch hospitals:", err.message);
+      setErrorMessage(err.response?.data?.message || "Failed to load hospital tenants.");
+    } finally {
+      setHospitalsLoading(false);
+    }
+  }, [isSuperAdmin, hospitalSearch, hospitalStatusFilter]);
+
+  const handlePlanChange = (newPlan) => {
+    let maxDoc = 5;
+    let maxStf = 15;
+    if (newPlan === "starter") {
+      maxDoc = 10;
+      maxStf = 30;
+    } else if (newPlan === "professional") {
+      maxDoc = 25;
+      maxStf = 75;
+    } else if (newPlan === "enterprise") {
+      maxDoc = 100;
+      maxStf = 250;
+    }
+    setOnboardForm((prev) => ({
+      ...prev,
+      plan: newPlan,
+      maxDoctors: maxDoc,
+      maxStaff: maxStf,
+    }));
+  };
+
+  const handleOnboardHospitalSubmit = async (e) => {
+    e.preventDefault();
+    setOnboardError("");
+
+    if (!onboardForm.name.trim() || !onboardForm.hospitalCode.trim() || !onboardForm.contactEmail.trim()) {
+      setOnboardError("Hospital Name, unique code, and contact email are required.");
+      return;
+    }
+
+    if (onboardForm.adminEmail.trim()) {
+      if (user?.email && onboardForm.adminEmail.trim().toLowerCase() === user.email.toLowerCase()) {
+        setOnboardError("Platform Owner cannot designate their own account as hospital administrator. Please provide a separate administrator email.");
+        return;
+      }
+    }
+
+    setOnboardingSubmitting(true);
+    try {
+      const payload = {
+        name: onboardForm.name.trim(),
+        hospitalCode: onboardForm.hospitalCode.trim().toUpperCase(),
+        contactEmail: onboardForm.contactEmail.trim().toLowerCase(),
+        contactPhone: onboardForm.contactPhone.trim(),
+        emergencyContact: onboardForm.emergencyContact.trim(),
+        address: onboardForm.address.trim(),
+        city: onboardForm.city.trim(),
+        state: onboardForm.state.trim(),
+        postalCode: onboardForm.postalCode.trim(),
+        timezone: onboardForm.timezone || "Asia/Kolkata",
+        subscription: {
+          plan: onboardForm.plan,
+          status: "active",
+          maxDoctors: Number(onboardForm.maxDoctors) || 5,
+          maxStaff: Number(onboardForm.maxStaff) || 15,
+        },
+      };
+
+      if (onboardForm.adminEmail.trim()) {
+        payload.initialAdmin = {
+          name: onboardForm.adminName.trim() || `${onboardForm.name.trim()} Administrator`,
+          email: onboardForm.adminEmail.trim().toLowerCase(),
+        };
+        if (onboardForm.adminCreationMode === "password" && onboardForm.adminPassword) {
+          payload.initialAdmin.password = onboardForm.adminPassword;
+        }
+      }
+
+      const res = await hospitalTenantAPI.createHospital(payload);
+      if (res.data?.success) {
+        setShowOnboardModal(false);
+        setStatusMessage(res.data.message || `Hospital '${payload.name}' onboarded successfully!`);
+        fetchHospitals();
+
+        if (res.data.invitation && res.data.invitation.setupLink) {
+          const origin = window.location.origin;
+          const fullSetupLink = `${origin}${res.data.invitation.setupLink}`;
+          setGeneratedInvite({
+            hospitalName: payload.name,
+            hospitalCode: payload.hospitalCode,
+            adminEmail: payload.initialAdmin ? payload.initialAdmin.email : "",
+            adminName: payload.initialAdmin ? payload.initialAdmin.name : "",
+            setupLink: fullSetupLink,
+            expiresAt: res.data.invitation.expiresAt,
+          });
+        }
+
+        setOnboardForm({
+          name: "",
+          hospitalCode: "",
+          contactEmail: "",
+          contactPhone: "",
+          emergencyContact: "",
+          address: "",
+          city: "",
+          state: "",
+          postalCode: "",
+          timezone: "Asia/Kolkata",
+          plan: "trial",
+          maxDoctors: 5,
+          maxStaff: 15,
+          adminName: "",
+          adminEmail: "",
+          adminCreationMode: "invite",
+          adminPassword: "",
+        });
+      }
+    } catch (err) {
+      console.error("Onboard hospital error:", err);
+      setOnboardError(err.response?.data?.message || "Failed to onboard hospital tenant.");
+    } finally {
+      setOnboardingSubmitting(false);
+    }
+  };
+
+  const handleUpdateStatusSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedHospitalForStatus) return;
+    setStatusUpdating(true);
+    try {
+      const res = await hospitalTenantAPI.updateHospitalStatus(
+        selectedHospitalForStatus._id,
+        statusUpdateForm
+      );
+      if (res.data?.success) {
+        setStatusMessage(res.data.message || "Hospital status updated successfully.");
+        setSelectedHospitalForStatus(null);
+        fetchHospitals();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update hospital status.");
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleUpdateSubSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedHospitalForSub) return;
+    setSubUpdating(true);
+    try {
+      const res = await hospitalTenantAPI.updateSubscription(
+        selectedHospitalForSub._id,
+        subUpdateForm
+      );
+      if (res.data?.success) {
+        setStatusMessage(res.data.message || "Hospital subscription updated successfully.");
+        setSelectedHospitalForSub(null);
+        fetchHospitals();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update hospital subscription.");
+    } finally {
+      setSubUpdating(false);
+    }
+  };
+
 
   // ==========================================
   // SECTION 3: DOCTOR VERIFICATIONS STATE
@@ -593,6 +816,7 @@ const AdminDashboard = () => {
   // ==========================================
   useEffect(() => {
     if (activeSection === "overview") fetchOverview();
+    else if (activeSection === "hospitals" && isSuperAdmin) fetchHospitals();
     else if (activeSection === "users") fetchUsers(1);
     else if (activeSection === "doctors") fetchDoctors();
     else if (activeSection === "appointments") fetchAppointments(1);
@@ -643,6 +867,10 @@ const AdminDashboard = () => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         if (selectedUserDetails) setSelectedUserDetails(null);
+        if (showOnboardModal) setShowOnboardModal(false);
+        if (generatedInvite) setGeneratedInvite(null);
+        if (selectedHospitalForStatus) setSelectedHospitalForStatus(null);
+        if (selectedHospitalForSub) setSelectedHospitalForSub(null);
         if (suspensionModalUser) setSuspensionModalUser(null);
         if (selectedDoctorForReview) setSelectedDoctorForReview(null);
         if (selectedApptForUpdate) setSelectedApptForUpdate(null);
@@ -661,6 +889,7 @@ const AdminDashboard = () => {
 
   const handleRefreshCurrentSection = () => {
     if (activeSection === "overview") fetchOverview();
+    else if (activeSection === "hospitals" && isSuperAdmin) fetchHospitals();
     else if (activeSection === "users") fetchUsers(userPagination.page);
     else if (activeSection === "doctors") fetchDoctors();
     else if (activeSection === "appointments") fetchAppointments(appointmentPagination.page);
@@ -672,8 +901,6 @@ const AdminDashboard = () => {
     else if (activeSection === "health") fetchSystemHealth();
     else if (activeSection === "support") fetchSupportQueries(supportPagination.page);
   };
-
-  const isSuperAdmin = user?.role === "superadmin";
 
   // Access control guard
   if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
@@ -717,6 +944,18 @@ const AdminDashboard = () => {
         </div>
 
         <nav className="sidebar-nav">
+          {isSuperAdmin && (
+            <button
+              className={`nav-tab-btn ${activeSection === "hospitals" ? "active" : ""}`}
+              onClick={() => {
+                setActiveSection("hospitals");
+                setSidebarOpen(false);
+              }}
+            >
+              <FiHome className="tab-icon" />
+              <span>Hospital Tenants</span>
+            </button>
+          )}
           <button
             className={`nav-tab-btn ${activeSection === "overview" ? "active" : ""}`}
             onClick={() => {
@@ -834,6 +1073,7 @@ const AdminDashboard = () => {
             <div className="header-title-wrap">
               <h1 className="header-page-title">
                 {activeSection === "overview" && "Platform Operations & Analytics"}
+                {activeSection === "hospitals" && "Hospital Tenants & Institutional SaaS Governance"}
                 {activeSection === "users" && "User Directory & Account Governance"}
                 {activeSection === "doctors" && "Clinician Credentialing & Verification"}
                 {activeSection === "appointments" && "Global Consultations & Scheduling"}
@@ -894,6 +1134,233 @@ const AdminDashboard = () => {
             >
               <FiX size={16} />
             </button>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* SECTION 0: HOSPITAL TENANTS (PLATFORM OWNER ONLY)         */}
+        {/* ======================================================== */}
+        {activeSection === "hospitals" && isSuperAdmin && (
+          <div className="admin-content-section">
+            {/* Header / Actions Toolbar */}
+            <div className="section-toolbar-card">
+              <div className="toolbar-left">
+                <div className="search-input-wrap">
+                  <FiSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search by hospital name, code, or city..."
+                    value={hospitalSearch}
+                    onChange={(e) => setHospitalSearch(e.target.value)}
+                    className="admin-search-input"
+                  />
+                  {hospitalSearch && (
+                    <button
+                      className="clear-search-btn"
+                      onClick={() => setHospitalSearch("")}
+                      type="button"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  className="admin-select-filter"
+                  value={hospitalStatusFilter}
+                  onChange={(e) => setHospitalStatusFilter(e.target.value)}
+                >
+                  <option value="all">All Operational Statuses</option>
+                  <option value="active">Active Only</option>
+                  <option value="suspended">Suspended Only</option>
+                  <option value="deactivated">Deactivated Only</option>
+                </select>
+              </div>
+
+              <div className="toolbar-right">
+                <button
+                  className="btn-primary-action"
+                  onClick={() => {
+                    setOnboardError("");
+                    setShowOnboardModal(true);
+                  }}
+                >
+                  <FiPlus size={16} /> Onboard New Hospital
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="kpi-grid">
+              <div className="kpi-card">
+                <div className="kpi-icon-wrap user-kpi">
+                  <FiHome size={22} />
+                </div>
+                <div className="kpi-metric-info">
+                  <span className="kpi-label">Hospital Tenants</span>
+                  <span className="kpi-number">{hospitalsList.length}</span>
+                  <span className="kpi-subtext">Onboarded healthcare institutions</span>
+                </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-wrap verified-kpi">
+                  <FiCheckCircle size={22} />
+                </div>
+                <div className="kpi-metric-info">
+                  <span className="kpi-label">Active Tenants</span>
+                  <span className="kpi-number">
+                    {hospitalsList.filter((h) => h.status === "active").length}
+                  </span>
+                  <span className="kpi-subtext">Operating normally</span>
+                </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-wrap storage-kpi">
+                  <FiAlertTriangle size={22} />
+                </div>
+                <div className="kpi-metric-info">
+                  <span className="kpi-label">Suspended Tenants</span>
+                  <span className="kpi-number">
+                    {hospitalsList.filter((h) => h.status === "suspended").length}
+                  </span>
+                  <span className="kpi-subtext">Restricted / Under review</span>
+                </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-icon-wrap appointment-kpi">
+                  <FiUsers size={22} />
+                </div>
+                <div className="kpi-metric-info">
+                  <span className="kpi-label">Total Staff Across Tenants</span>
+                  <span className="kpi-number">
+                    {hospitalsList.reduce((acc, h) => acc + (h.totalStaff || 0), 0)}
+                  </span>
+                  <span className="kpi-subtext">
+                    Doctors, nurses, allied healthcare staff
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Hospitals Table */}
+            <div className="admin-data-panel">
+              <div className="panel-header">
+                <h3 className="panel-title">
+                  <FiHome className="panel-icon" /> Registered Hospital Tenants ({hospitalsList.length})
+                </h3>
+                <span className="panel-badge">Institutional SaaS Governance</span>
+              </div>
+
+              {hospitalsLoading ? (
+                <div className="panel-loading-state">
+                  <FiRefreshCw className="spin-icon" size={24} />
+                  <span>Loading hospital tenants...</span>
+                </div>
+              ) : hospitalsList.length === 0 ? (
+                <div className="panel-empty-state">
+                  <FiHome size={40} className="empty-icon" />
+                  <h4>No Hospital Tenants Found</h4>
+                  <p>
+                    {hospitalSearch
+                      ? "No hospitals match your search criteria."
+                      : "No hospitals onboarded yet. Click '+ Onboard New Hospital' to register the first healthcare institution."}
+                  </p>
+                  <button
+                    className="btn-primary-action"
+                    onClick={() => {
+                      setOnboardError("");
+                      setShowOnboardModal(true);
+                    }}
+                  >
+                    <FiPlus size={16} /> Onboard First Hospital
+                  </button>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="admin-data-table">
+                    <thead>
+                      <tr>
+                        <th>Hospital Name & Code</th>
+                        <th>Location & Contact</th>
+                        <th>Subscription Plan</th>
+                        <th>Doctors / Staff Quota</th>
+                        <th>Operational Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hospitalsList.map((hosp) => (
+                        <tr key={hosp._id}>
+                          <td>
+                            <div className="hospital-name-col">
+                              <span className="hosp-table-title">{hosp.name}</span>
+                              <span className="hosp-table-code">{hosp.hospitalCode}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="hosp-contact-col">
+                              <span><FiMail size={12} /> {hosp.contactEmail}</span>
+                              {hosp.contactPhone && <span><FiPhone size={12} /> {hosp.contactPhone}</span>}
+                              {hosp.city && <span><FiMapPin size={12} /> {hosp.city}, {hosp.state}</span>}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`plan-pill plan-${hosp.subscription?.plan || "trial"}`}>
+                              {(hosp.subscription?.plan || "trial").toUpperCase()}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="quota-col">
+                              <span>Doctors: <strong>{hosp.totalDoctors || 0}</strong> / {hosp.subscription?.maxDoctors || 20}</span>
+                              <span>Staff: <strong>{hosp.totalStaff || 0}</strong> / {hosp.subscription?.maxStaff || 50}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`status-pill status-${hosp.status || "active"}`}>
+                              {(hosp.status || "active").toUpperCase()}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="table-action-buttons">
+                              <button
+                                className="action-btn-secondary"
+                                title="Edit Subscription Plan"
+                                onClick={() => {
+                                  setSelectedHospitalForSub(hosp);
+                                  setSubUpdateForm({
+                                    plan: hosp.subscription?.plan || "trial",
+                                    maxDoctors: hosp.subscription?.maxDoctors || 20,
+                                    maxStaff: hosp.subscription?.maxStaff || 50,
+                                  });
+                                }}
+                              >
+                                Edit Plan
+                              </button>
+                              <button
+                                className="action-btn-secondary"
+                                title="Change Status"
+                                onClick={() => {
+                                  setSelectedHospitalForStatus(hosp);
+                                  setStatusUpdateForm({
+                                    status: hosp.status || "active",
+                                    reason: "",
+                                  });
+                                }}
+                              >
+                                Status
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -3062,7 +3529,509 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
-      </main>
+      
+        {/* ======================================================== */}
+        {/* MODAL: ONBOARD NEW HOSPITAL                              */}
+        {/* ======================================================== */}
+        {showOnboardModal && (
+          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
+            <div className="admin-modal-card onboard-hospital-modal">
+              <div className="modal-header">
+                <div>
+                  <h3>Onboard New Hospital Tenant</h3>
+                  <p className="modal-subheading">
+                    Register institution details, configure subscription quotas, and provision/invite the Hospital Admin.
+                  </p>
+                </div>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setShowOnboardModal(false)}
+                  disabled={onboardingSubmitting}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleOnboardHospitalSubmit} className="onboard-modal-form">
+                <div className="modal-body-content">
+                  {onboardError && (
+                    <div className="modal-error-banner" role="alert">
+                      <FiAlertCircle /> <span>{onboardError}</span>
+                    </div>
+                  )}
+
+                  {/* Section 1: Institutional Details */}
+                  <div className="form-section-title">1. Hospital Organization & Identity</div>
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Hospital Legal Name <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="modal-input"
+                        placeholder="e.g. Apollo City Multispecialty"
+                        required
+                        value={onboardForm.name}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, name: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">
+                        Unique Hospital Code <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="modal-input code-input"
+                        placeholder="e.g. APOLLO-01"
+                        required
+                        value={onboardForm.hospitalCode}
+                        onChange={(e) =>
+                          setOnboardForm({
+                            ...onboardForm,
+                            hospitalCode: e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""),
+                          })
+                        }
+                      />
+                      <span className="field-hint">Alphanumeric, dashes or underscores (e.g. CITY-001)</span>
+                    </div>
+                  </div>
+
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Primary Contact Email <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        className="modal-input"
+                        placeholder="contact@hospital.com"
+                        required
+                        value={onboardForm.contactEmail}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, contactEmail: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Contact Phone</label>
+                      <input
+                        type="tel"
+                        className="modal-input"
+                        placeholder="+91 80 2345 6789"
+                        value={onboardForm.contactPhone}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, contactPhone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-grid-3">
+                    <div className="form-group">
+                      <label className="form-label">City</label>
+                      <input
+                        type="text"
+                        className="modal-input"
+                        placeholder="Bengaluru"
+                        value={onboardForm.city}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, city: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">State</label>
+                      <input
+                        type="text"
+                        className="modal-input"
+                        placeholder="Karnataka"
+                        value={onboardForm.state}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, state: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Timezone</label>
+                      <input
+                        type="text"
+                        className="modal-input"
+                        value={onboardForm.timezone}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, timezone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 2: Subscription & Limits */}
+                  <div className="form-section-title">2. Subscription Plan & Institutional Quotas</div>
+                  <div className="form-grid-3">
+                    <div className="form-group">
+                      <label className="form-label">Subscription Plan</label>
+                      <select
+                        className="modal-select"
+                        value={onboardForm.plan}
+                        onChange={(e) => handlePlanChange(e.target.value)}
+                      >
+                        <option value="trial">Trial (Evaluation Pilot)</option>
+                        <option value="starter">Starter (Polyclinic / Nursing Home)</option>
+                        <option value="professional">Professional (Multispecialty Hospital)</option>
+                        <option value="enterprise">Enterprise (Hospital Network)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Max Doctors</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        className="modal-input"
+                        value={onboardForm.maxDoctors}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, maxDoctors: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Max Staff Members</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5000"
+                        className="modal-input"
+                        value={onboardForm.maxStaff}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, maxStaff: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 3: Initial Hospital Admin */}
+                  <div className="form-section-title">3. Primary Hospital Administrator</div>
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Administrator Full Name</label>
+                      <input
+                        type="text"
+                        className="modal-input"
+                        placeholder="e.g. Dr. Rajeshwar Rao"
+                        value={onboardForm.adminName}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, adminName: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">
+                        Administrator Email <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        className="modal-input"
+                        placeholder="admin@apollocity.test"
+                        required
+                        value={onboardForm.adminEmail}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, adminEmail: e.target.value })}
+                      />
+                      <span className="field-hint">Must be distinct from the Platform Owner account.</span>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Account Provisioning Mode</label>
+                    <div className="radio-options-row">
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          name="adminCreationMode"
+                          value="invite"
+                          checked={onboardForm.adminCreationMode === "invite"}
+                          onChange={() => setOnboardForm({ ...onboardForm, adminCreationMode: "invite" })}
+                        />
+                        <span>Generate Single-Use Invitation Link (Recommended)</span>
+                      </label>
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          name="adminCreationMode"
+                          value="password"
+                          checked={onboardForm.adminCreationMode === "password"}
+                          onChange={() => setOnboardForm({ ...onboardForm, adminCreationMode: "password" })}
+                        />
+                        <span>Direct Password Provisioning</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {onboardForm.adminCreationMode === "password" && (
+                    <div className="form-group">
+                      <label className="form-label">
+                        Initial Master Password <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        className="modal-input"
+                        placeholder="Minimum 6 characters"
+                        required
+                        value={onboardForm.adminPassword}
+                        onChange={(e) => setOnboardForm({ ...onboardForm, adminPassword: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setShowOnboardModal(false)}
+                    disabled={onboardingSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-action-btn green-btn"
+                    disabled={onboardingSubmitting}
+                  >
+                    {onboardingSubmitting ? "Onboarding Institution..." : "Confirm & Onboard Hospital"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL: INVITATION LINK READY FOR COPYING                 */}
+        {/* ======================================================== */}
+        {generatedInvite && (
+          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
+            <div className="admin-modal-card invite-result-modal">
+              <div className="modal-header">
+                <div className="invite-success-badge">
+                  <FiCheckCircle size={28} color="#10b981" />
+                  <div>
+                    <h3>Hospital Onboarded Successfully!</h3>
+                    <p className="modal-subheading">
+                      {generatedInvite.hospitalName} ({generatedInvite.hospitalCode})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setGeneratedInvite(null)}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <div className="modal-body-content">
+                <div className="invite-info-box">
+                  <p>
+                    A single-use administrator setup link has been created for:
+                  </p>
+                  <p className="invitee-email">
+                    <strong>{generatedInvite.adminName}</strong> ({generatedInvite.adminEmail})
+                  </p>
+                </div>
+
+                <div className="setup-link-box">
+                  <label className="setup-link-label">Secure Activation URL:</label>
+                  <div className="setup-link-input-wrap">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedInvite.setupLink}
+                      className="setup-link-input"
+                    />
+                    <button
+                      type="button"
+                      className="btn-copy-setup"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedInvite.setupLink);
+                        setCopiedSetupLink(true);
+                        setTimeout(() => setCopiedSetupLink(false), 3000);
+                      }}
+                    >
+                      <FiCopy size={16} /> {copiedSetupLink ? "Copied!" : "Copy URL"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="invite-security-notice">
+                  <FiShield size={16} color="#0d9488" />
+                  <span>
+                    Share this URL with the Hospital Administrator. They will use this link to establish their password and manage their hospital staff. Link expires in 7 days.
+                  </span>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="primary-action-btn"
+                  onClick={() => setGeneratedInvite(null)}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL: UPDATE HOSPITAL STATUS                            */}
+        {/* ======================================================== */}
+        {selectedHospitalForStatus && (
+          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
+            <div className="admin-modal-card">
+              <div className="modal-header">
+                <h3>Manage Operational Status: {selectedHospitalForStatus.name}</h3>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setSelectedHospitalForStatus(null)}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateStatusSubmit}>
+                <div className="modal-body-content">
+                  <div className="form-group">
+                    <label className="form-label">Hospital Tenant Status</label>
+                    <select
+                      className="modal-select"
+                      value={statusUpdateForm.status}
+                      onChange={(e) => setStatusUpdateForm({ ...statusUpdateForm, status: e.target.value })}
+                    >
+                      <option value="active">Active (Full Clinical Operations)</option>
+                      <option value="suspended">Suspended (Access Temporarily Blocked)</option>
+                      <option value="deactivated">Deactivated (Terminated / Inactive)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Administrative Reason</label>
+                    <textarea
+                      rows="3"
+                      className="modal-textarea"
+                      placeholder="Document reason for status change (logged to immutable audit trail)..."
+                      value={statusUpdateForm.reason}
+                      onChange={(e) => setStatusUpdateForm({ ...statusUpdateForm, reason: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setSelectedHospitalForStatus(null)}
+                    disabled={statusUpdating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-action-btn"
+                    disabled={statusUpdating}
+                  >
+                    {statusUpdating ? "Updating..." : "Save Status"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL: UPDATE HOSPITAL SUBSCRIPTION                      */}
+        {/* ======================================================== */}
+        {selectedHospitalForSub && (
+          <div className="admin-modal-overlay" role="dialog" aria-modal="true">
+            <div className="admin-modal-card">
+              <div className="modal-header">
+                <h3>Edit Subscription: {selectedHospitalForSub.name}</h3>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setSelectedHospitalForSub(null)}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateSubSubmit}>
+                <div className="modal-body-content">
+                  <div className="form-group">
+                    <label className="form-label">Subscription Tier</label>
+                    <select
+                      className="modal-select"
+                      value={subUpdateForm.plan}
+                      onChange={(e) => {
+                        const newPlan = e.target.value;
+                        let maxDoc = 5;
+                        let maxStf = 15;
+                        if (newPlan === "starter") { maxDoc = 10; maxStf = 30; }
+                        else if (newPlan === "professional") { maxDoc = 25; maxStf = 75; }
+                        else if (newPlan === "enterprise") { maxDoc = 100; maxStf = 250; }
+                        setSubUpdateForm({
+                          plan: newPlan,
+                          maxDoctors: maxDoc,
+                          maxStaff: maxStf,
+                        });
+                      }}
+                    >
+                      <option value="trial">Trial</option>
+                      <option value="starter">Starter</option>
+                      <option value="professional">Professional</option>
+                      <option value="enterprise">Enterprise</option>
+                    </select>
+                  </div>
+
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Max Doctors Quota</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        className="modal-input"
+                        value={subUpdateForm.maxDoctors}
+                        onChange={(e) => setSubUpdateForm({ ...subUpdateForm, maxDoctors: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Max Staff Quota</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5000"
+                        className="modal-input"
+                        value={subUpdateForm.maxStaff}
+                        onChange={(e) => setSubUpdateForm({ ...subUpdateForm, maxStaff: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setSelectedHospitalForSub(null)}
+                    disabled={subUpdating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-action-btn"
+                    disabled={subUpdating}
+                  >
+                    {subUpdating ? "Updating..." : "Update Subscription"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+</main>
     </div>
   );
 };

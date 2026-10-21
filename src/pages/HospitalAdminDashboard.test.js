@@ -5,6 +5,12 @@ import HospitalAdminDashboard from "./HospitalAdminDashboard";
 import { AuthContext } from "../context/AuthContext";
 import { hospitalAdminAPI } from "../services/api";
 
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
+
 jest.mock("../services/api", () => ({
   hospitalAdminAPI: {
     getOverview: jest.fn(),
@@ -103,7 +109,7 @@ const mockPatients = {
   },
 };
 
-const renderDashboard = (userRole = "hospital_admin") => {
+const renderDashboard = (userRole = "hospital_admin", customUser = {}) => {
   const mockUser = {
     _id: "admin-1",
     id: "admin-1",
@@ -111,10 +117,11 @@ const renderDashboard = (userRole = "hospital_admin") => {
     email: "suman@citycare.test",
     role: userRole,
     hospitalId: "hosp-123",
+    ...customUser,
   };
 
   return render(
-    <AuthContext.Provider value={{ user: mockUser }}>
+    <AuthContext.Provider value={{ user: mockUser, logout: jest.fn() }}>
       <BrowserRouter>
         <HospitalAdminDashboard />
       </BrowserRouter>
@@ -282,5 +289,26 @@ describe("HospitalAdminDashboard Component", () => {
     expect(await screen.findByText("Kavita Verma")).toBeInTheDocument();
     expect(screen.getByText("kavita@patient.test")).toBeInTheDocument();
     expect(screen.getByText("B+")).toBeInTheDocument();
+  });
+
+  test("redirects superadmin immediately to /admin without calling hospital admin APIs", async () => {
+    renderDashboard("superadmin", { email: "superadmin@vaidyasthana.com", hospitalId: null });
+
+    expect(screen.getByText(/Redirecting to Platform Owner Dashboard/i)).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith("/admin", { replace: true });
+    expect(hospitalAdminAPI.getOverview).not.toHaveBeenCalled();
+    expect(hospitalAdminAPI.getStaff).not.toHaveBeenCalled();
+    expect(hospitalAdminAPI.getPatients).not.toHaveBeenCalled();
+  });
+
+  test("displays 'Hospital Tenant Required' card when hospital_admin has no hospitalId and halts API calls", async () => {
+    renderDashboard("hospital_admin", { email: "unassigned@hospital.test", hospitalId: null });
+
+    expect(await screen.findByText(/Hospital Tenant Required/i)).toBeInTheDocument();
+    expect(screen.getByText(/unassigned@hospital.test/)).toBeInTheDocument();
+    expect(screen.getByText(/Please contact your Platform Owner/i)).toBeInTheDocument();
+    expect(hospitalAdminAPI.getOverview).not.toHaveBeenCalled();
+    expect(hospitalAdminAPI.getStaff).not.toHaveBeenCalled();
+    expect(hospitalAdminAPI.getPatients).not.toHaveBeenCalled();
   });
 });

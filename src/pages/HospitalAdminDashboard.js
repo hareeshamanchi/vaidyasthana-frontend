@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { hospitalAdminAPI } from "../services/api";
 import {
@@ -47,7 +48,31 @@ const ROLE_BADGE_CLASSES = {
 };
 
 const HospitalAdminDashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Route & Role Protection:
+  // 1. Superadmin / Admin -> Always redirect to Platform Owner dashboard (/admin)
+  // 2. Doctor / Patient / Guest -> Redirect to their respective workspaces
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (user.role === "superadmin" || user.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (user.role !== "hospital_admin") {
+      if (user.role === "doctor") {
+        navigate("/doctor-dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+      return;
+    }
+  }, [user, authLoading, navigate]);
 
   const [activeTab, setActiveTab] = useState("staff");
   const [overview, setOverview] = useState(null);
@@ -136,6 +161,12 @@ const HospitalAdminDashboard = () => {
 
   // Load Data
   const loadDashboardData = useCallback(async () => {
+    // Only load if user is a hospital_admin bound to a valid hospitalId
+    if (!user || user.role !== "hospital_admin" || !user.hospitalId) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -354,6 +385,46 @@ const HospitalAdminDashboard = () => {
       setError(err.response?.data?.message || "Failed to update hospital settings.");
     }
   };
+
+  // Immediate guard: If superadmin/admin, render redirecting placeholder
+  if (user && (user.role === "superadmin" || user.role === "admin")) {
+    return (
+      <div className="hospital-admin-loading">
+        <FiRefreshCw className="spin-icon" />
+        <p>Redirecting to Platform Owner Dashboard...</p>
+      </div>
+    );
+  }
+
+  // Guard: Hospital admin account pending tenant assignment
+  if (user && user.role === "hospital_admin" && !user.hospitalId) {
+    return (
+      <div className="hospital-admin-container">
+        <div className="hospital-unassigned-card">
+          <div className="unassigned-icon-wrap">
+            <FiShield size={48} color="#eab308" />
+          </div>
+          <h2>Hospital Tenant Required</h2>
+          <p>
+            Your account (<strong>{user.email}</strong>) has the Hospital Administrator role,
+            but is not currently associated with an active hospital tenant.
+          </p>
+          <p className="unassigned-hint">
+            Please contact your Platform Owner (Super Administrator) to onboard your hospital or
+            invite your account through a valid institutional setup link.
+          </p>
+          <div className="unassigned-actions">
+            <button className="btn-secondary" onClick={() => navigate("/")}>
+              Return Home
+            </button>
+            <button className="btn-primary" onClick={() => logout()}>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !overview) {
     return (
