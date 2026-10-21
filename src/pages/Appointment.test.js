@@ -449,5 +449,46 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
       );
     });
   });
+
+  test("scopes doctor directory by hospitalId and renders hospital name in doctor select dropdown", async () => {
+    appointmentsAPI.getDoctors.mockResolvedValue({
+      data: {
+        success: true,
+        doctors: [
+          {
+            _id: "doc-mits-jeshu",
+            name: "jeshu",
+            specialization: "General Medicine",
+            hospitalName: "mits college",
+            hospitalId: "6ad849ded99e76a6c29f172b",
+          },
+        ],
+      },
+    });
+
+    render(
+      <AuthContext.Provider value={{ user: { ...mockPatientUser, hospitalId: "6ad849ded99e76a6c29f172b" }, setUser: jest.fn() }}>
+        <MemoryRouter initialEntries={["/appointment"]}>
+          <Appointment />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    // Open booking modal
+    const bookBtn = await screen.findByRole("button", { name: /book new appointment/i });
+    fireEvent.click(bookBtn);
+
+    const modal = await screen.findByRole("dialog");
+    expect(modal).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(appointmentsAPI.getDoctors).toHaveBeenCalledWith({ hospitalId: "6ad849ded99e76a6c29f172b" });
+    });
+
+    // Check doctor option label contains hospital name
+    const doctorOption = within(modal).getByRole("option", { name: /Dr\. jeshu — General Medicine \(mits college\)/i });
+    expect(doctorOption).toBeInTheDocument();
+  });
 });
+
 

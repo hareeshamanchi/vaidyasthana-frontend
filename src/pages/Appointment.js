@@ -102,6 +102,7 @@ const Appointment = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const followUpIdParam = searchParams.get("followUpId");
   const doctorIdParam = searchParams.get("doctorId");
+  const hospitalIdParam = searchParams.get("hospitalId") || searchParams.get("hospital");
   const reasonParam = searchParams.get("reason");
   const recommendedDateParam = searchParams.get("recommendedDate");
   const familyMemberIdParam = searchParams.get("familyMemberId");
@@ -277,7 +278,10 @@ const Appointment = () => {
     if (isDoctor) return;
     setLoadingDoctors(true);
     try {
-      const res = await appointmentsAPI.getDoctors();
+      const targetHospitalId = hospitalIdParam || user?.hospitalId || null;
+      const res = await appointmentsAPI.getDoctors(
+        targetHospitalId ? { hospitalId: targetHospitalId } : {}
+      );
       const docs = res.data?.doctors || [];
       setDoctorsList(docs);
 
@@ -303,7 +307,7 @@ const Appointment = () => {
     } finally {
       setLoadingDoctors(false);
     }
-  }, [formData.doctorId, formData.appointmentDate, fetchSlots, isDoctor, doctorIdParam]);
+  }, [formData.doctorId, formData.appointmentDate, fetchSlots, isDoctor, doctorIdParam, hospitalIdParam, user?.hospitalId]);
 
   // Auto-open and prefill booking modal when deep-linked with a follow-up plan
   useEffect(() => {
@@ -1615,7 +1619,7 @@ const Appointment = () => {
                   >
                     {doctorsList.map((doc) => {
                       const displayName = doc.name.startsWith("Dr.") ? doc.name : `Dr. ${doc.name}`;
-                      const location = doc.city || doc.address || "Hospital";
+                      const location = doc.hospitalName || doc.city || doc.address || "Hospital";
                       return (
                         <option key={doc._id} value={doc._id}>
                           {displayName} — {doc.specialization} ({location})
@@ -1645,7 +1649,7 @@ const Appointment = () => {
                         </span>
                       </div>
                       <span className="doc-specialty-sub">
-                        {selectedDoctorObj.specialization} • {selectedDoctorObj.city || selectedDoctorObj.address || "Hospital"}
+                        {selectedDoctorObj.specialization} • {selectedDoctorObj.hospitalName || selectedDoctorObj.city || selectedDoctorObj.address || "Hospital"}
                       </span>
                     </div>
                   </div>
