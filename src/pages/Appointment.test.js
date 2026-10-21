@@ -459,8 +459,21 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
             _id: "doc-mits-jeshu",
             name: "jeshu",
             specialization: "General Medicine",
-            hospitalName: "mits college",
+            hospitalName: "MITS College Hospital",
             hospitalId: "6ad849ded99e76a6c29f172b",
+          },
+          {
+            _id: "doc-independent-1",
+            name: "Suresh",
+            specialization: "Cardiology",
+            hospitalId: null,
+          },
+          {
+            _id: "doc-independent-2",
+            name: "Priya",
+            specialization: "Pediatrics",
+            clinicName: "Sunrise Clinic",
+            hospitalId: null,
           },
         ],
       },
@@ -485,9 +498,20 @@ describe("Appointment Management Page - Custom Accessible Cancellation Modal & L
       expect(appointmentsAPI.getDoctors).toHaveBeenCalledWith({ hospitalId: "6ad849ded99e76a6c29f172b" });
     });
 
-    // Check doctor option label contains hospital name
-    const doctorOption = within(modal).getByRole("option", { name: /Dr\. jeshu — General Medicine \(mits college\)/i });
-    expect(doctorOption).toBeInTheDocument();
+    // 1. Hospital doctor shows actual hospital name dynamically
+    const hospitalDoctorOption = within(modal).getByRole("option", { name: /Dr\. jeshu — General Medicine \(MITS College Hospital\)/i });
+    expect(hospitalDoctorOption).toBeInTheDocument();
+
+    // 2. Independent doctor shows 'Independent Practice' instead of 'Hospital'
+    const independentDoctorOption = within(modal).getByRole("option", { name: /Dr\. Suresh — Cardiology \(Independent Practice\)/i });
+    expect(independentDoctorOption).toBeInTheDocument();
+
+    // 3. Independent doctor with clinicName shows clinic name
+    const clinicDoctorOption = within(modal).getByRole("option", { name: /Dr\. Priya — Pediatrics \(Sunrise Clinic\)/i });
+    expect(clinicDoctorOption).toBeInTheDocument();
+
+    // 4. Summary card shows hospital affiliation
+    expect(within(modal).getByText(/General Medicine • MITS College Hospital/i)).toBeInTheDocument();
   });
 });
 

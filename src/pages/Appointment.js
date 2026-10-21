@@ -210,6 +210,27 @@ const Appointment = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Helper to resolve doctor facility / hospital / clinic affiliation label dynamically
+  const getDoctorAffiliationLabel = useCallback((doc) => {
+    if (!doc) return "";
+    // 1. Hospital-affiliated doctor: display actual hospital name
+    if (doc.hospitalName && typeof doc.hospitalName === "string" && doc.hospitalName.trim()) {
+      return doc.hospitalName.trim();
+    }
+    if (doc.hospitalId && typeof doc.hospitalId === "object" && doc.hospitalId.name) {
+      return doc.hospitalId.name.trim();
+    }
+    // 2. Hospital ID exists but hospital record is missing/unpopulated (graceful fallback)
+    if (doc.hospitalId) {
+      return doc.hospitalCode ? `Hospital (${doc.hospitalCode})` : "Affiliated Hospital";
+    }
+    // 3. Independent doctor: display existing clinic name if present, else "Independent Practice"
+    if (doc.clinicName && typeof doc.clinicName === "string" && doc.clinicName.trim()) {
+      return doc.clinicName.trim();
+    }
+    return "Independent Practice";
+  }, []);
+
   // 1. Fetch Slots for selected Doctor and Date
   const fetchSlots = useCallback(async (docId, dateStr) => {
     if (!docId || !dateStr) {
@@ -1619,10 +1640,10 @@ const Appointment = () => {
                   >
                     {doctorsList.map((doc) => {
                       const displayName = doc.name.startsWith("Dr.") ? doc.name : `Dr. ${doc.name}`;
-                      const location = doc.hospitalName || doc.city || doc.address || "Hospital";
+                      const affiliation = getDoctorAffiliationLabel(doc);
                       return (
                         <option key={doc._id} value={doc._id}>
-                          {displayName} — {doc.specialization} ({location})
+                          {displayName} — {doc.specialization} ({affiliation})
                         </option>
                       );
                     })}
@@ -1649,7 +1670,7 @@ const Appointment = () => {
                         </span>
                       </div>
                       <span className="doc-specialty-sub">
-                        {selectedDoctorObj.specialization} • {selectedDoctorObj.hospitalName || selectedDoctorObj.city || selectedDoctorObj.address || "Hospital"}
+                        {selectedDoctorObj.specialization} • {getDoctorAffiliationLabel(selectedDoctorObj)}
                       </span>
                     </div>
                   </div>
