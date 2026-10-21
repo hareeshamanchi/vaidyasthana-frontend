@@ -310,4 +310,30 @@ export const hospitalAdminAPI = {
   revokeInvitation: (id) => api.delete(`/api/hospital-admin/invitations/${id}`),
 };
 
+// ==========================================
+// Digital Prescriptions API (Feature 3)
+// ==========================================
+export const prescriptionsAPI = {
+  getPrescriptions: (params) => api.get("/api/prescriptions", { params }),
+  getPrescriptionById: (id) => api.get(`/api/prescriptions/${id}`),
+  createPrescription: (data) => api.post("/api/prescriptions", data),
+  updateStatus: (id, status) => api.patch(`/api/prescriptions/${id}/status`, { status }),
+  createReminders: (id) => api.post(`/api/prescriptions/${id}/create-reminders`),
+  downloadPDF: async (id, filename = "Prescription.pdf") => {
+    const response = await api.get(`/api/prescriptions/${id}/pdf`, {
+      responseType: "blob",
+    });
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    return true;
+  },
+};
+
 export default api;

@@ -12,6 +12,7 @@ import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
 import DoctorFollowUpManagement from "../components/DoctorFollowUpManagement";
+import DoctorPrescriptionManagement from "../components/DoctorPrescriptionManagement";
 import {
   FiShield,
   FiSearch,
@@ -72,6 +73,9 @@ const DoctorDashboard = () => {
 
   // Quick Follow-Up Pre-fill State
   const [followUpPrefillRequest, setFollowUpPrefillRequest] = useState(null);
+
+  // Digital Prescription Pre-fill State
+  const [prescriptionPrefillRequest, setPrescriptionPrefillRequest] = useState(null);
 
   // Doctor Verification State
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
@@ -886,6 +890,23 @@ const DoctorDashboard = () => {
                               </button>
                               <button
                                 className="btn-vault-link"
+                                style={{ borderColor: "#0d9488", color: "#0f766e" }}
+                                onClick={() => {
+                                  setPrescriptionPrefillRequest({
+                                    patientId: targetPatientRefId,
+                                    appointmentId: app._id,
+                                    patientName: patientDisplayName,
+                                    patientPhone: patientPhone,
+                                    reason: app.reason || app.notes || "",
+                                  });
+                                }}
+                                type="button"
+                                title="Issue Digital Prescription for this consultation"
+                              >
+                                <FiFileText size={12} /> Prescribe Rx
+                              </button>
+                              <button
+                                className="btn-vault-link"
                                 style={{ borderColor: "#2563eb", color: "#1d4ed8" }}
                                 onClick={() => {
                                   setFollowUpPrefillRequest({
@@ -1168,6 +1189,13 @@ const DoctorDashboard = () => {
         }}
         prefillRequest={followUpPrefillRequest}
         onClearPrefillRequest={() => setFollowUpPrefillRequest(null)}
+      />
+
+      {/* Physician Digital Prescriptions Section (Feature 3) */}
+      <DoctorPrescriptionManagement
+        associatedPatients={associatedPatients}
+        prefillRequest={prescriptionPrefillRequest}
+        onClearPrefillRequest={() => setPrescriptionPrefillRequest(null)}
       />
 
       {/* Patient Search Card */}

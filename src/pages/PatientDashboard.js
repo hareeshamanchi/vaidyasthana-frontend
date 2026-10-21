@@ -12,6 +12,7 @@ import ConsultationJoinButton from "../components/ConsultationJoinButton";
 import { useConsultationTimer } from "../utils/consultationWindow";
 import UploadProgressCard from "../components/UploadProgressCard";
 import PatientFollowUps from "../components/PatientFollowUps";
+import PatientPrescriptions from "../components/PatientPrescriptions";
 import {
   FiFileText,
   FiUploadCloud,
@@ -961,6 +962,9 @@ const PatientDashboard = () => {
 
       {/* Recommended Follow-Up Care Plans Section */}
       <PatientFollowUps />
+
+      {/* Digital Prescriptions Section (Feature 3) */}
+      <PatientPrescriptions />
 
       {/* Booked Appointments Section */}
       <section className="patient-appointments-section">
